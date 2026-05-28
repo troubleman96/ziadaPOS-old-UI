@@ -218,10 +218,11 @@ function CartLineRow({ line, onInc, onDec, onRemove }: { line: CartItem; onInc: 
 }
 
 // ── Cart panel ────────────────────────────────────────────────────────────────
-function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount }: {
+function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, isOpen, onClose }: {
   cart: Cart; setCart: React.Dispatch<React.SetStateAction<Cart>>;
   payment: string; setPayment: (p: string) => void;
   discount: number; setDiscount: (d: number) => void;
+  isOpen?: boolean; onClose?: () => void;
 }) {
   const lines     = Object.values(cart);
   const subtotal  = lines.reduce((s, l) => s + l.qty * l.product.price, 0);
@@ -243,13 +244,18 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount }
   const removeLine = (id: string) => setCart((c) => { const n = { ...c }; delete n[id]; return n; });
 
   return (
-    <aside className="cart">
+    <aside className={'cart' + (isOpen ? ' cart-open' : '')}>
       {/* Header */}
       <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 500 }}>Current sale</div>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 2, letterSpacing: '0.04em' }}>
-            SALE #TXN-2043 · {lines.reduce((s, l) => s + l.qty, 0)} items
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {onClose && (
+            <button className="icon-btn cart-close-btn" onClick={onClose} style={{ width: 28, height: 28, fontSize: 18 }} title="Back">←</button>
+          )}
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500 }}>Current sale</div>
+            <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 2, letterSpacing: '0.04em' }}>
+              SALE #TXN-2043 · {lines.reduce((s, l) => s + l.qty, 0)} items
+            </div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>

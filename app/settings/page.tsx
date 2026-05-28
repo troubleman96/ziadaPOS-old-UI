@@ -150,14 +150,14 @@ function StoreProfilePanel() {
       {/* Fields */}
       <div className="surface" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 2 }}>Business details</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="form-grid-2">
           <TextInput label="Store name" value={name} onChange={setName} placeholder="e.g. Duka Kuu" />
           <TextInput label="Tagline" value={tagline} onChange={setTagline} placeholder="Short description" />
           <TextInput label="Phone" value={phone} onChange={setPhone} placeholder="+255 7XX XXX XXX" />
           <TextInput label="Email" value={email} onChange={setEmail} placeholder="info@store.co.tz" />
         </div>
         <TextInput label="Address" value={address} onChange={setAddress} placeholder="Full address" />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="form-grid-2">
           <TextInput label="TIN Number" value={tin} onChange={setTin} placeholder="Tax Identification Number" note="Required for TRA receipts" />
           <SelectInput label="Business type" value={btype} options={['Retail', 'Wholesale', 'Retail & Wholesale', 'Services']} onChange={setBtype} />
         </div>
@@ -187,7 +187,7 @@ function TaxPanel() {
 
       <div className="surface" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>VAT & currency</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="form-grid-2">
           <TextInput label="VAT rate" value="18%" disabled note="Locked — Tanzania standard rate" />
           <TextInput label="Currency" value="TZS (Tanzanian Shilling)" disabled note="Locked" />
         </div>
@@ -223,7 +223,7 @@ function TaxPanel() {
 
       <div className="surface" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 500 }}>Fiscal year</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="form-grid-2">
           <SelectInput
             label="Fiscal year start month"
             value={fyMonth}
@@ -266,7 +266,7 @@ function PaymentsPanel() {
         <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-3)' }}>Choose which payment methods your cashiers can accept at POS.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div className="form-grid-2" style={{ gap: 12 }}>
         {methods.map((m) => (
           <div key={m.id} className="surface" style={{
             padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12,
@@ -334,7 +334,7 @@ function ReceiptPanel() {
         <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-3)' }}>Customize what appears on printed and digital receipts.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-receipt)', gap: 16, alignItems: 'start' }}>
         {/* Settings */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className="surface" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -444,7 +444,7 @@ function NotificationsPanel() {
 
       <div className="surface" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ fontSize: 13, fontWeight: 500 }}>Notification channels</div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {[
             { icon: '📱', label: 'WhatsApp', value: '+255 712 345 678', active: true },
             { icon: '✉️', label: 'Email', value: 'dukakuu@kariakoo.co.tz', active: true },
@@ -514,21 +514,21 @@ export default function SettingsPage() {
       </div>
 
       {/* Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-settings)', gap: 20, alignItems: 'start' }}>
         {/* Sidebar */}
-        <div className="surface" style={{ padding: '6px 8px', position: 'sticky', top: 20 }}>
+        <div className="surface settings-sidebar" style={{ padding: '6px 8px', position: 'sticky', top: 20 }}>
           {SECTIONS.map((s) => (
             <button
               key={s.id}
               onClick={() => setActive(s.id)}
+              className={'settings-nav-btn' + (active === s.id ? ' active' : '')}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 10,
                 padding: '8px 10px', borderRadius: 7, border: 'none',
                 background: active === s.id ? 'var(--accent-soft)' : 'transparent',
                 color: active === s.id ? 'var(--fg)' : 'var(--fg-2)',
                 fontSize: 13.5, cursor: 'pointer', textAlign: 'left',
-                marginBottom: 2, transition: 'background 100ms, color 100ms',
-                borderLeft: active === s.id ? '2px solid var(--accent)' : '2px solid transparent',
+                marginBottom: 2,
               }}
             >
               <span style={{ color: active === s.id ? 'var(--accent)' : 'var(--fg-4)', flexShrink: 0 }}>{s.icon}</span>

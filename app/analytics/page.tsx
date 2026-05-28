@@ -18,17 +18,11 @@ function AnalyticsNav() {
     ['cashflow',  'Cashflow',   '/analytics/cashflow'],
   ];
   return (
-    <div style={{ borderBottom: '1px solid var(--line)', marginBottom: 20, display: 'flex', gap: 4 }}>
+    <div className="analytics-nav">
       {tabs.map(([k, l, href]) => {
         const active = href === '/analytics' ? pathname === href : pathname.startsWith(href);
         return (
-          <Link key={k} href={href} style={{
-            padding: '10px 14px', fontSize: 13.5,
-            color: active ? 'var(--fg)' : 'var(--fg-3)',
-            borderBottom: '2px solid ' + (active ? 'var(--accent)' : 'transparent'),
-            marginBottom: -1,
-            fontWeight: active ? 500 : 400,
-          }}>{l}</Link>
+          <Link key={k} href={href} className={active ? 'active' : ''}>{l}</Link>
         );
       })}
     </div>
@@ -152,7 +146,7 @@ export default function AnalyticsPage() {
   return (
     <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Analytics' }]}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, gap: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>Analytics</h1>
           <p style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--fg-3)' }}>Performance across all metrics, powered by Ziada AI.</p>
@@ -211,7 +205,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Main chart + payment mix */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12, marginBottom: 16 }}>
         <div className="surface">
           <div className="card-head">
             <span className="card-title">Revenue trend</span>

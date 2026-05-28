@@ -32,7 +32,7 @@ function AgingBar({ buckets }: { buckets: typeof AGING_BUCKETS }) {
           return <div key={b.label} className="aging-seg" style={{ flex: pct, background: b.color }} title={`${b.label}: ${fmt(b.amount)}`}></div>;
         })}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+      <div className="aging-grid">
         {buckets.map((b) => (
           <div key={b.label} style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '8px 10px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -253,7 +253,7 @@ export default function CreditsPage() {
                     <span>Last payment: {lastPay ? fmt(lastPay.amount) + ' · ' + lastPay.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'none'}</span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                <div className="customer-row-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <div style={{ fontSize: 22, fontWeight: 500, color: c.status === 'overdue' ? 'var(--bad)' : c.status === 'due-soon' ? 'var(--warn)' : 'var(--fg)', fontFamily: 'var(--mono)', letterSpacing: '-0.01em' }}>
                     {fmt(c._balance ?? 0)}
                   </div>

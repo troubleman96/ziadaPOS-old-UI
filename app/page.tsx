@@ -220,36 +220,38 @@ function RecentTxn() {
           <Link href="/transactions" className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>View all {Icons.chevRight}</Link>
         </div>
       </div>
-      <div>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '120px 1fr 110px 130px 110px 60px',
-          padding: '10px 16px',
-          fontSize: 10, color: 'var(--fg-4)', fontFamily: 'var(--mono)', letterSpacing: '0.08em',
-          borderBottom: '1px solid var(--line)',
-        }}>
-          <span>TXN ID</span><span>CUSTOMER</span><span>METHOD</span>
-          <span style={{ textAlign: 'right' }}>AMOUNT</span><span>STATUS</span>
-          <span style={{ textAlign: 'right' }}>TIME</span>
-        </div>
-        {rows.map(([id, who, method, amt, status, time], i) => (
-          <div key={id} style={{
+      <div className="table-scroll">
+        <div style={{ minWidth: 580 }}>
+          <div style={{
             display: 'grid',
             gridTemplateColumns: '120px 1fr 110px 130px 110px 60px',
-            padding: '11px 16px',
-            fontSize: 12.5,
-            alignItems: 'center',
-            borderBottom: i < rows.length - 1 ? '1px solid var(--line)' : 0,
-            cursor: 'pointer',
+            padding: '10px 16px',
+            fontSize: 10, color: 'var(--fg-4)', fontFamily: 'var(--mono)', letterSpacing: '0.08em',
+            borderBottom: '1px solid var(--line)',
           }}>
-            <Link href={`/transactions/${id.replace('#', '')}`} className="mono" style={{ color: 'var(--accent)' }}>{id}</Link>
-            <span style={{ color: 'var(--fg)' }}>{who}</span>
-            <span className="mono" style={{ color: 'var(--fg-2)' }}>{method}</span>
-            <span className="mono" style={{ color: 'var(--fg)', textAlign: 'right' }}>{fmt(amt)}</span>
-            <span>{statusPill(status)}</span>
-            <span className="mono" style={{ color: 'var(--fg-3)', textAlign: 'right' }}>{time}</span>
+            <span>TXN ID</span><span>CUSTOMER</span><span>METHOD</span>
+            <span style={{ textAlign: 'right' }}>AMOUNT</span><span>STATUS</span>
+            <span style={{ textAlign: 'right' }}>TIME</span>
           </div>
-        ))}
+          {rows.map(([id, who, method, amt, status, time], i) => (
+            <div key={id} style={{
+              display: 'grid',
+              gridTemplateColumns: '120px 1fr 110px 130px 110px 60px',
+              padding: '11px 16px',
+              fontSize: 12.5,
+              alignItems: 'center',
+              borderBottom: i < rows.length - 1 ? '1px solid var(--line)' : 0,
+              cursor: 'pointer',
+            }}>
+              <Link href={`/transactions/${id.replace('#', '')}`} className="mono" style={{ color: 'var(--accent)' }}>{id}</Link>
+              <span style={{ color: 'var(--fg)' }}>{who}</span>
+              <span className="mono" style={{ color: 'var(--fg-2)' }}>{method}</span>
+              <span className="mono" style={{ color: 'var(--fg)', textAlign: 'right' }}>{fmt(amt)}</span>
+              <span>{statusPill(status)}</span>
+              <span className="mono" style={{ color: 'var(--fg-3)', textAlign: 'right' }}>{time}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -271,7 +273,8 @@ function TopProducts() {
         <span className="card-title">Top products this week</span>
         <button className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.download} Export</button>
       </div>
-      <div style={{ padding: '8px 0' }}>
+      <div className="table-scroll">
+      <div style={{ padding: '8px 0', minWidth: 460 }}>
         {rows.map((r, i) => (
           <div key={r.name} style={{
             padding: '10px 16px',
@@ -293,6 +296,7 @@ function TopProducts() {
             </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -433,7 +437,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Sales chart + payment mix */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12, marginBottom: 16 }}>
         <div className="surface">
           <div className="card-head">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -465,13 +469,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent txn + today summary */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12, marginBottom: 16 }}>
         <RecentTxn />
         <TodaySummary />
       </div>
 
       {/* Top products + low stock */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2.2fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12 }}>
         <TopProducts />
         <LowStock />
       </div>
