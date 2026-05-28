@@ -111,7 +111,7 @@ export default function TransactionsPage() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 20 }}>
         {[
           { label: 'TOTAL INFLOW', value: fmtShort(totals.inflow), sub: `${totals.count} transactions · avg ${totals.count ? fmtShort(Math.round(totals.inflow/totals.count)) : 'TZS 0'}`, color: 'var(--good)', pill: <span className="pill good">↗ +18%</span> },
           { label: 'GROSS PROFIT', value: fmtShort(totals.profit), sub: `${totals.inflow ? (totals.profit/totals.inflow*100).toFixed(1) : '0'}% margin`, pill: <span className="pill good">↗ +12%</span> },
@@ -186,6 +186,7 @@ export default function TransactionsPage() {
                     <span className="mono" style={{ color: 'var(--fg-2)' }}>{fmtShort(dayTotal)}</span>
                   </span>
                 </div>
+                <div className="table-scroll">
                 <table className="table">
                   <thead>
                     <tr>
@@ -226,6 +227,7 @@ export default function TransactionsPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             );
           })

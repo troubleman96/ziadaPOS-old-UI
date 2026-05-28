@@ -230,6 +230,7 @@ function ScheduledTab() {
           {Icons.plus} Schedule report
         </button>
       </div>
+      <div className="table-scroll">
       <table className="table" style={{ width: '100%' }}>
         <thead>
           <tr>
@@ -282,6 +283,7 @@ function ScheduledTab() {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -293,6 +295,7 @@ function HistoryTab() {
         <span className="card-title">Recent exports</span>
         <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>Last 30 days · {RECENT_EXPORTS.length} files</span>
       </div>
+      <div className="table-scroll">
       <table className="table" style={{ width: '100%' }}>
         <thead>
           <tr>
@@ -332,6 +335,7 @@ function HistoryTab() {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -421,7 +425,7 @@ export default function ReportsPage() {
               <span style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--fg-2)' }}>Quick export</span>
               <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)' }}>4 report types</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12 }}>
               {REPORT_CARDS.map((card) => (
                 <QuickExportCard key={card.id} card={card} />
               ))}
@@ -429,7 +433,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Stats strip */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 18 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-3)', gap: 12, marginTop: 18 }}>
             <div className="surface" style={{ padding: '16px 18px' }}>
               <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 8 }}>REPORTS THIS MONTH</div>
               <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em' }}>47</div>

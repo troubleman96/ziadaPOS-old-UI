@@ -98,7 +98,7 @@ export default function InventoryPage() {
       </div>
 
       {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         <div className="surface stat-card">
           <span className="label">TOTAL SKU</span>
           <span className="value">{INVENTORY.length}</span>
@@ -187,6 +187,7 @@ export default function InventoryPage() {
       {/* Table / grid */}
       {view === 'table' ? (
         <div className="surface" style={{ overflow: 'hidden' }}>
+          <div className="table-scroll">
           <table className="table">
             <thead>
               <tr>
@@ -235,6 +236,7 @@ export default function InventoryPage() {
               })}
             </tbody>
           </table>
+          </div>
           {filtered.length === 0 && (
             <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
               <div className="mono" style={{ fontSize: 11, letterSpacing: '0.06em' }}>NO MATCHES</div>

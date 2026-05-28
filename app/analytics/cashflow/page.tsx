@@ -80,7 +80,7 @@ export default function CashflowPage() {
       <AnalyticsNav />
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         {[
           { label: 'TOTAL INFLOW',  value: fmtShort(totals.inflow), sub: 'gross revenue', border: '' },
           { label: 'COST OF GOODS', value: fmtShort(totals.cogs),   sub: `${(totals.cogs / totals.inflow * 100).toFixed(1)}% of inflow`, border: 'var(--bad)' },

@@ -14,9 +14,20 @@ interface TopbarProps {
   crumbs?: Crumb[];
   actions?: React.ReactNode;
   search?: boolean;
+  onMenuToggle?: () => void;
 }
 
-export function Topbar({ crumbs, actions, search = true }: TopbarProps) {
+function HamburgerIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+        <path d="M2 4h12M2 8h12M2 12h12" />
+      </g>
+    </svg>
+  );
+}
+
+export function Topbar({ crumbs, actions, search = true, onMenuToggle }: TopbarProps) {
   const { theme, toggleTheme } = useTheme();
 
   const items: Crumb[] = crumbs || [
@@ -27,6 +38,15 @@ export function Topbar({ crumbs, actions, search = true }: TopbarProps) {
 
   return (
     <header className="topbar">
+      {/* Hamburger — shown only on mobile via CSS */}
+      <button
+        className="hamburger"
+        onClick={onMenuToggle}
+        aria-label="Open navigation menu"
+      >
+        <HamburgerIcon />
+      </button>
+
       <div className="crumb">
         {items.map((item, i) => (
           <React.Fragment key={i}>
@@ -40,7 +60,7 @@ export function Topbar({ crumbs, actions, search = true }: TopbarProps) {
       <div style={{ flex: 1 }}></div>
 
       {search && (
-        <div className="search">
+        <div className="search topbar-search">
           <span style={{ color: 'var(--fg-4)' }}>{Icons.search}</span>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             Search products, customers, transactions…
@@ -51,7 +71,7 @@ export function Topbar({ crumbs, actions, search = true }: TopbarProps) {
         </div>
       )}
 
-      <button className="btn btn-soft" style={{ padding: '6px 10px', fontSize: 12.5 }}>
+      <button className="btn btn-soft topbar-ai" style={{ padding: '6px 10px', fontSize: 12.5 }}>
         <span style={{ color: 'var(--accent)' }}>{Icons.sparkles}</span> Ask Ziada AI
       </button>
 

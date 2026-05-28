@@ -230,7 +230,7 @@ export default function HelpPage() {
       </div>
 
       {/* ── Quick action cards ─────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 32 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-3)', gap: 14, marginBottom: 32 }}>
         {QUICK_ACTIONS.map((a) => (
           <a
             key={a.id}
@@ -280,7 +280,7 @@ export default function HelpPage() {
             <button className="btn btn-ghost" style={{ marginTop: 12 }} onClick={() => setSearch('')}>Clear search</button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-3)', gap: 12 }}>
             {filteredArticles.map((article) => (
               <div
                 key={article.id}

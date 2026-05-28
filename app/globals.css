@@ -449,3 +449,132 @@ input, select, textarea { font-family: inherit; }
 /* ─── Scrollbar hidden for body-level ────────────────────────────────────────── */
 .body::-webkit-scrollbar { width: 6px; }
 .body::-webkit-scrollbar-thumb { border-width: 2px; }
+
+/* ─── Responsive grid CSS variables ─────────────────────────────────────────── */
+:root {
+  --cols-4: repeat(4, 1fr);
+  --cols-3: repeat(3, 1fr);
+  --cols-2: repeat(2, 1fr);
+  --cols-detail: 1fr 320px;
+}
+@media (max-width: 1100px) { :root { --cols-detail: 1fr 280px; } }
+@media (max-width: 900px)  { :root { --cols-4: repeat(2, 1fr); --cols-3: repeat(2, 1fr); --cols-detail: 1fr; } }
+@media (max-width: 540px)  { :root { --cols-4: repeat(2, 1fr); --cols-3: 1fr; --cols-2: 1fr; } }
+@media (max-width: 380px)  { :root { --cols-4: 1fr; } }
+
+/* ─── Mobile hamburger + overlay ─────────────────────────────────────────────── */
+.hamburger {
+  display: none; flex-shrink: 0;
+  width: 34px; height: 34px; border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg-2); color: var(--fg-2);
+  align-items: center; justify-content: center;
+  cursor: pointer; padding: 0;
+  transition: background 120ms;
+}
+.hamburger:hover { background: var(--bg-3); color: var(--fg); }
+
+.mobile-nav-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
+  z-index: 150;
+}
+.mobile-nav-overlay.visible { display: block; }
+
+/* ─── Mobile breakpoint ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  body { overflow: auto; }
+
+  .app { grid-template-columns: 1fr; }
+
+  .sidenav {
+    position: fixed; top: 0; bottom: 0; left: 0;
+    z-index: 200; width: 272px !important;
+    transform: translateX(-100%);
+    transition: transform 230ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 8px 0 32px rgba(0,0,0,0.3);
+  }
+  .sidenav.nav-open { transform: translateX(0); }
+
+  .hamburger { display: flex; }
+
+  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar-search { display: none !important; }
+  .topbar-ai    { display: none !important; }
+
+  .body { padding: 16px 14px 72px; }
+
+  /* Segment pills: allow horizontal scroll */
+  .filter-bar { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+
+  /* Tables need to scroll horizontally */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-scroll table { min-width: 640px; }
+
+  /* Store / KPI grids: CSS vars handle it, but also shrink cards */
+  .stat-card .value { font-size: 22px; }
+
+  /* Drawer full-width on mobile */
+  .drawer { width: 100% !important; max-width: 100vw; }
+}
+
+@media (max-width: 480px) {
+  .body { padding: 12px 10px 72px; }
+  .topbar { padding: 0 8px; gap: 6px; }
+  .crumb { font-size: 12px; gap: 5px; }
+}
+
+/* ─── Sidenav close button (mobile only) ─────────────────────────────────────── */
+.sidenav-close {
+  display: none; width: 26px; height: 26px; border-radius: 5px;
+  border: 1px solid var(--line); background: transparent;
+  color: var(--fg-3); align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; font-size: 16px; line-height: 1;
+}
+@media (max-width: 768px) { .sidenav-close { display: flex; } }
+
+/* ─── Utility: table scroll wrapper ─────────────────────────────────────────── */
+.table-scroll {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+
+/* ─── Detail page two-column layout ─────────────────────────────────────────── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: var(--cols-detail);
+  gap: 16px;
+  align-items: start;
+}
+
+/* ─── Page section heading ───────────────────────────────────────────────────── */
+.page-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 20px; gap: 16px; flex-wrap: wrap;
+}
+.page-title { margin: 0; font-size: 24px; font-weight: 500; letter-spacing: -0.015em; }
+.page-sub   { margin: 6px 0 0; font-size: 13.5px; color: var(--fg-3); }
+
+/* ─── Form inputs (shared) ───────────────────────────────────────────────────── */
+.form-input {
+  width: 100%; padding: 8px 12px; border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--bg-3); color: var(--fg); font-size: 13.5px;
+  outline: none; font-family: inherit; transition: border-color 120ms;
+}
+.form-input:focus { border-color: var(--accent-line); }
+.form-label { display: block; font-size: 12.5px; color: var(--fg-2); margin-bottom: 5px; }
+.form-group { display: flex; flex-direction: column; }
+
+/* ─── Back link ──────────────────────────────────────────────────────────────── */
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--fg-3); cursor: pointer;
+  border: none; background: none; padding: 0;
+  transition: color 100ms;
+}
+.back-link:hover { color: var(--fg); }
+
+/* ─── Topbar responsive tweak: hide redundant actions on small screens ───────── */
+@media (max-width: 640px) {
+  .topbar-actions-hide { display: none !important; }
+}

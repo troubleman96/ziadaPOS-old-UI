@@ -188,7 +188,7 @@ export default function CustomersPage() {
       </div>
 
       {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         <div className="surface" style={{ padding: '16px 18px' }}>
           <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>TOTAL CUSTOMERS</div>
           <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8 }}>755</div>
@@ -276,6 +276,7 @@ export default function CustomersPage() {
 
       {/* Table */}
       <div className="surface" style={{ overflow: 'hidden' }}>
+        <div className="table-scroll">
         <table className="table" style={{ width: '100%' }}>
           <thead>
             <tr>
@@ -369,6 +370,7 @@ export default function CustomersPage() {
             })}
           </tbody>
         </table>
+        </div>
 
         {/* Footer */}
         <div style={{

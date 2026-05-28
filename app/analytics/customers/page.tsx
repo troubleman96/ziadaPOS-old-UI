@@ -76,7 +76,7 @@ export default function CustomersAnalyticsPage() {
       <AnalyticsNav />
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         {[
           { label: 'TOTAL VISITS',    value: totalCustomers.toLocaleString(), sub: 'customer visits', delta: '+12%', good: true },
           { label: 'NEW CUSTOMERS',   value: newCustomers.toLocaleString(),   sub: `${(newCustomers / chartData.length).toFixed(1)}/day`, delta: '+8%', good: true },

@@ -87,6 +87,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
                 <span className="card-title">Open credit tabs</span>
                 <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>{c.tabs.length} transactions</span>
               </div>
+              <div className="table-scroll">
               <table className="table">
                 <thead><tr>
                   <th style={{ width: 120 }}>TXN ID</th>
@@ -107,6 +108,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
 
             {/* Payment history */}
@@ -118,6 +120,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
               {c.payments.length === 0 ? (
                 <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>No payments recorded yet.</div>
               ) : (
+                <div className="table-scroll">
                 <table className="table">
                   <thead><tr>
                     <th style={{ width: 120 }}>DATE</th>
@@ -136,6 +139,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </div>
@@ -173,6 +177,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
             <span className="card-title">All credit tabs · {c.tabs.length} transactions</span>
             <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Total: <span style={{ color: 'var(--bad)' }}>{fmt(c._balance ?? 0)}</span></span>
           </div>
+          <div className="table-scroll">
           <table className="table">
             <thead><tr>
               <th style={{ width: 120 }}>TXN ID</th>
@@ -193,6 +198,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -205,6 +211,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
           {c.payments.length === 0 ? (
             <div style={{ padding: '48px', textAlign: 'center', color: 'var(--fg-3)' }}>No payments recorded yet.</div>
           ) : (
+            <div className="table-scroll">
             <table className="table">
               <thead><tr>
                 <th style={{ width: 120 }}>DATE</th>
@@ -223,6 +230,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

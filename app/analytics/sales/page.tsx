@@ -76,7 +76,7 @@ export default function SalesAnalyticsPage() {
       <AnalyticsNav />
 
       {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         {[
           { label: 'REVENUE',     value: fmtShort(totalRevenue), sub: `vs prev: ${prevRevenue ? fmtShort(prevRevenue) : '—'}`, delta: `+${delta}%`, good: true },
           { label: 'TRANSACTIONS', value: totalTxns.toLocaleString(), sub: `${(totalTxns / chartData.length).toFixed(1)} / day avg`, delta: '+9%', good: true },

@@ -181,6 +181,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <span className="card-title">Recent stock movements</span>
                 <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }} onClick={() => setTab('stock')}>View all {Icons.chevRight}</button>
               </div>
+              <div className="table-scroll">
               <table className="table">
                 <thead><tr>
                   <th style={{ width: 120 }}>WHEN</th>
@@ -201,6 +202,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
           <div>
@@ -252,6 +254,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.download} Export</button>
             </div>
           </div>
+          <div className="table-scroll">
           <table className="table">
             <thead><tr>
               <th style={{ width: 130 }}>DATE</th>
@@ -281,6 +284,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               })()}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

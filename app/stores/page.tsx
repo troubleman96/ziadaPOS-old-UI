@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
@@ -140,7 +141,7 @@ export default function StoresPage() {
       </div>
 
       {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 20 }}>
         {[
           { label: 'STORES OPEN', value: '2 / 3', sub: '1 closed · 0 paused', color: 'var(--good)' },
           { label: 'TODAY REVENUE', value: fmtShort(totalRevenue), sub: 'across open stores', color: 'var(--fg)' },
@@ -156,7 +157,7 @@ export default function StoresPage() {
       </div>
 
       {/* Store cards grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-3)', gap: 14, marginBottom: 20 }}>
         {STORES.map((store) => (
           <div
             key={store.id}
@@ -202,7 +203,7 @@ export default function StoresPage() {
               </div>
 
               {/* KPIs */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-3)', gap: 8 }}>
                 {[
                   { label: store.period + ' rev', value: fmtShort(store.todayRevenue), color: 'var(--fg)' },
                   { label: 'Transactions', value: store.todayTxns.toString(), color: 'var(--fg)' },
@@ -233,8 +234,12 @@ export default function StoresPage() {
                   <div style={{ fontSize: 13, fontWeight: 500, marginTop: 1 }}>{store.manager}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12 }}>View</button>
-                  <button className="icon-btn" style={{ width: 28, height: 28 }}>{Icons.edit}</button>
+                  <Link href={`/stores/${store.id}`}>
+                    <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12 }}>View</button>
+                  </Link>
+                  <Link href={`/stores/${store.id}`}>
+                    <button className="icon-btn" style={{ width: 28, height: 28 }}>{Icons.edit}</button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -248,6 +253,7 @@ export default function StoresPage() {
           <span className="card-title">This week — performance comparison</span>
           <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>Mon 19 – Fri 23 May 2026</span>
         </div>
+        <div className="table-scroll">
         <table className="table" style={{ width: '100%' }}>
           <thead>
             <tr>
@@ -298,6 +304,7 @@ export default function StoresPage() {
             })}
           </tbody>
         </table>
+        </div>
         <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', background: 'var(--bg-3)', display: 'flex', justifyContent: 'space-between' }}>
           <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Combined weekly revenue</span>
           <span className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', fontWeight: 500 }}>

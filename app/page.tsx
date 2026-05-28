@@ -425,7 +425,7 @@ export default function DashboardPage() {
       )}
 
       {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         <KPI label="TODAY'S SALES" value="TZS 1.24M" delta="+18.2%" deltaKind="good" subtitle="vs. yesterday TZS 1.05M" spark={[3,4,3,5,4,6,5,7,8,7,9,10,9,11,12,11,10,12,13,14]} />
         <KPI label="GROSS PROFIT" value="TZS 272K" delta="+12.4%" deltaKind="good" subtitle="22.2% margin" spark={[2,3,2,4,3,4,5,4,6,5,7,6,8,7,9,8,9,10,9,11]} />
         <KPI label="TICKETS" value="87" delta="+9" deltaKind="good" subtitle="avg TZS 14.1K · 87 today" spark={[5,6,5,7,6,7,8,7,9,8,9,10,9,11,10,11,12,11,12,13]} />

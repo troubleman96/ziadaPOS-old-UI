@@ -1,9 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Icons } from './icons';
+
+interface SidenavProps {
+  navOpen: boolean;
+  onClose: () => void;
+}
 
 function StoreSwitcher() {
   return (
@@ -35,7 +40,7 @@ function StoreSwitcher() {
   );
 }
 
-function NavBrand() {
+function NavBrand({ onClose }: { onClose: () => void }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 10,
@@ -49,6 +54,15 @@ function NavBrand() {
       }}>Z</span>
       <span style={{ fontSize: 14, fontWeight: 500 }}>ziada</span>
       <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginLeft: 'auto', padding: '2px 5px', border: '1px solid var(--line)', borderRadius: 4 }}>v2.4</span>
+      {/* Close button — visible only on mobile via CSS */}
+      <button
+        className="sidenav-close"
+        onClick={onClose}
+        aria-label="Close navigation"
+        style={{ marginLeft: 4 }}
+      >
+        ×
+      </button>
     </div>
   );
 }
@@ -59,11 +73,12 @@ interface NavItemProps {
   badge?: string | { color: string } | null;
   active?: boolean;
   href: string;
+  onClick?: () => void;
 }
 
-function NavItem({ icon, label, badge, active, href }: NavItemProps) {
+function NavItem({ icon, label, badge, active, href, onClick }: NavItemProps) {
   return (
-    <Link href={href} className={'nav-item' + (active ? ' active' : '')}>
+    <Link href={href} className={'nav-item' + (active ? ' active' : '')} onClick={onClick}>
       <span className="nav-icon">{icon}</span>
       <span>{label}</span>
       {badge != null && (
@@ -125,8 +140,17 @@ function NavFooter() {
   );
 }
 
-export function Sidenav() {
+export function Sidenav({ navOpen, onClose }: SidenavProps) {
   const pathname = usePathname();
+  const prevPathRef = useRef(pathname);
+
+  // Auto-close on navigation (route change)
+  useEffect(() => {
+    if (prevPathRef.current !== pathname) {
+      prevPathRef.current = pathname;
+      onClose();
+    }
+  }, [pathname, onClose]);
 
   const isActive = (path: string) => {
     if (path === '/') return pathname === '/';
@@ -134,47 +158,47 @@ export function Sidenav() {
   };
 
   const primary = [
-    { id: 'dashboard', label: 'Dashboard', icon: Icons.dashboard, href: '/' },
-    { id: 'pos', label: 'Point of Sale', icon: Icons.pos, href: '/pos', badge: '⌘N' },
-    { id: 'txn', label: 'Transactions', icon: Icons.txn, href: '/transactions' },
-    { id: 'inventory', label: 'Inventory', icon: Icons.inventory, href: '/inventory', badge: { color: 'var(--warn)' } },
-    { id: 'credits', label: 'Credits', icon: Icons.credit, href: '/credits', badge: '14' },
+    { id: 'dashboard', label: 'Dashboard',     icon: Icons.dashboard,  href: '/' },
+    { id: 'pos',       label: 'Point of Sale',  icon: Icons.pos,        href: '/pos',          badge: '⌘N' },
+    { id: 'txn',       label: 'Transactions',   icon: Icons.txn,        href: '/transactions' },
+    { id: 'inventory', label: 'Inventory',      icon: Icons.inventory,  href: '/inventory',    badge: { color: 'var(--warn)' } },
+    { id: 'credits',   label: 'Credits',        icon: Icons.credit,     href: '/credits',      badge: '14' },
   ];
   const insights = [
-    { id: 'analytics', label: 'Analytics', icon: Icons.analytics, href: '/analytics' },
-    { id: 'reports', label: 'Reports', icon: Icons.reports, href: '/reports' },
-    { id: 'ai', label: 'Ziada AI', icon: Icons.ai, href: '/ai', badge: 'NEW' },
+    { id: 'analytics', label: 'Analytics',  icon: Icons.analytics, href: '/analytics' },
+    { id: 'reports',   label: 'Reports',    icon: Icons.reports,   href: '/reports' },
+    { id: 'ai',        label: 'Ziada AI',   icon: Icons.ai,        href: '/ai',      badge: 'NEW' },
   ];
   const directory = [
     { id: 'customers', label: 'Customers', icon: Icons.customers, href: '/customers' },
     { id: 'suppliers', label: 'Suppliers', icon: Icons.suppliers, href: '/suppliers' },
-    { id: 'stores', label: 'Stores', icon: Icons.store, href: '/stores', badge: '3' },
+    { id: 'stores',    label: 'Stores',    icon: Icons.store,     href: '/stores',   badge: '3' },
   ];
   const meta = [
-    { id: 'settings', label: 'Settings', icon: Icons.settings, href: '/settings' },
-    { id: 'help', label: 'Help & support', icon: Icons.help, href: '/help' },
+    { id: 'settings', label: 'Settings',      icon: Icons.settings, href: '/settings' },
+    { id: 'help',     label: 'Help & support', icon: Icons.help,     href: '/help' },
   ];
 
   return (
-    <aside className="sidenav">
-      <NavBrand />
+    <aside className={`sidenav${navOpen ? ' nav-open' : ''}`}>
+      <NavBrand onClose={onClose} />
       <StoreSwitcher />
       <div className="sidenav-scroll">
         <div className="nav-section-label">Operate</div>
         {primary.map((i) => (
-          <NavItem key={i.id} {...i} active={isActive(i.href)} />
+          <NavItem key={i.id} {...i} active={isActive(i.href)} onClick={onClose} />
         ))}
         <div className="nav-section-label">Insights</div>
         {insights.map((i) => (
-          <NavItem key={i.id} {...i} active={isActive(i.href)} />
+          <NavItem key={i.id} {...i} active={isActive(i.href)} onClick={onClose} />
         ))}
         <div className="nav-section-label">Directory</div>
         {directory.map((i) => (
-          <NavItem key={i.id} {...i} active={isActive(i.href)} />
+          <NavItem key={i.id} {...i} active={isActive(i.href)} onClick={onClose} />
         ))}
         <div className="nav-section-label">System</div>
         {meta.map((i) => (
-          <NavItem key={i.id} {...i} active={isActive(i.href)} />
+          <NavItem key={i.id} {...i} active={isActive(i.href)} onClick={onClose} />
         ))}
       </div>
       <NavFooter />

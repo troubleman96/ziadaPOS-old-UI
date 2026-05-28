@@ -62,7 +62,7 @@ export default function ProductsAnalyticsPage() {
       <AnalyticsNav />
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         {[
           { label: 'TOTAL SKUs',   value: filtered.length.toString(),    sub: 'active products' },
           { label: 'REVENUE',      value: fmtShort(totals.rev),          sub: 'from products' },

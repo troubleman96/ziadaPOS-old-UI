@@ -35,6 +35,7 @@ interface AppShellProps {
 
 export function AppShell({ children, crumbs, actions, search, full = false }: AppShellProps) {
   const [theme, setTheme] = useState<Theme>('dark');
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     // Sync with whatever the inline script set before React hydrated
@@ -50,12 +51,26 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
     localStorage.setItem('ziada-theme', next);
   };
 
+  const openNav  = () => setNavOpen(true);
+  const closeNav = () => setNavOpen(false);
+
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {/* Mobile overlay behind sidenav */}
+      <div
+        className={`mobile-nav-overlay${navOpen ? ' visible' : ''}`}
+        onClick={closeNav}
+        aria-hidden="true"
+      />
       <div className="app">
-        <Sidenav />
+        <Sidenav navOpen={navOpen} onClose={closeNav} />
         <div className="main">
-          <Topbar crumbs={crumbs} actions={actions} search={search} />
+          <Topbar
+            crumbs={crumbs}
+            actions={actions}
+            search={search}
+            onMenuToggle={openNav}
+          />
           {full ? (
             // Full-height mode: children own all remaining space (POS, etc.)
             children

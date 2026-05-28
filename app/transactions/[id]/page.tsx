@@ -119,6 +119,7 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
               <span className="card-title">Line items · {t.lines.length} SKU · {t.lines.reduce((s, l) => s + l.qty, 0)} units</span>
               <span className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>VAT 18% included</span>
             </div>
+            <div className="table-scroll">
             <table className="table">
               <thead>
                 <tr>
@@ -143,6 +144,7 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
                 ))}
               </tbody>
             </table>
+            </div>
             <div style={{ borderTop: '1px solid var(--line)', padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16 }}>
               <div></div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
