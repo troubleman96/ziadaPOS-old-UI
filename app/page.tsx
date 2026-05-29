@@ -1,528 +1,620 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { AppShell } from '../components/app-shell';
-import { Icons } from '../components/icons';
-import { fmt, fmtShort } from '../lib/utils';
 
-// ── KPI Spark ─────────────────────────────────────────────────────────────────
-function KPISpark({ data, color }: { data: number[]; color: string }) {
-  const w = 200, h = 32;
+// ── Sparkline ─────────────────────────────────────────────────────────────────
+function Sparkline({ data, color = 'currentColor', height = 28, fill = false, strokeWidth = 1.5 }: {
+  data: number[]; color?: string; height?: number; fill?: boolean; strokeWidth?: number;
+}) {
+  const w = 100, h = height;
   const min = Math.min(...data), max = Math.max(...data);
   const range = max - min || 1;
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w;
-    const y = h - ((v - min) / range) * (h - 6) - 3;
-    return [x, y];
-  });
+  const pts = data.map((v, i) => [(i / (data.length - 1)) * w, h - ((v - min) / range) * (h - 4) - 2]);
   const d = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ');
-  const dFill = d + ` L ${w},${h} L 0,${h} Z`;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
-      <path d={dFill} fill={color} opacity="0.1" />
-      <path d={d} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height, display: 'block', color }}>
+      {fill && <path d={d + ` L ${w},${h} L 0,${h} Z`} fill={color} opacity="0.12" />}
+      <path d={d} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
 
-// ── KPI Card ──────────────────────────────────────────────────────────────────
-interface KPIProps {
-  label: string;
-  value: string;
-  delta?: string;
-  deltaKind?: 'good' | 'bad' | 'warn';
-  subtitle?: string;
-  spark?: number[];
-  accent?: string;
-}
-
-function KPI({ label, value, delta, deltaKind = 'good', subtitle, spark, accent = 'var(--accent)' }: KPIProps) {
+// ── Window chrome ─────────────────────────────────────────────────────────────
+function WindowChrome({ url, children }: { url: string; children: React.ReactNode }) {
   return (
-    <div className="surface" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, minHeight: 130 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>{label}</span>
-        {delta && (
-          <span className={'pill ' + deltaKind} style={{ gap: 3, display: 'flex', alignItems: 'center' }}>
-            {deltaKind === 'good' ? Icons.arrowUpRight : deltaKind === 'bad' ? Icons.arrowDownRight : null}
-            {delta}
-          </span>
-        )}
-      </div>
-      <div>
-        <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
-        {subtitle && <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 4 }}>{subtitle}</div>}
-      </div>
-      {spark && (
-        <div style={{ height: 32, marginTop: 'auto' }}>
-          <KPISpark data={spark} color={accent} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── AI Nudge ──────────────────────────────────────────────────────────────────
-function AINudge({ onDismiss }: { onDismiss: () => void }) {
-  return (
-    <div className="surface" style={{
-      padding: '16px 18px',
-      display: 'flex', gap: 14, alignItems: 'flex-start',
-      borderColor: 'var(--accent-line)',
-      background: 'linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-2) 100%)',
-    }}>
-      <span style={{
-        width: 32, height: 32, borderRadius: 8,
-        background: 'var(--bg-2)', border: '1px solid var(--accent-line)',
-        display: 'grid', placeItems: 'center', color: 'var(--accent)',
-        flexShrink: 0,
-      }}>{Icons.sparkles}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          <span style={{ fontSize: 13, fontWeight: 500 }}>Ziada AI noticed something.</span>
-          <span className="pill accent">insight</span>
-        </div>
-        <div style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.55 }}>
-          <strong style={{ color: 'var(--fg)' }}>Sabuni ya OMO 1kg</strong> is down to <strong style={{ color: 'var(--fg)' }}>3 units</strong> and selling 42/week. You&apos;ll run out by <strong style={{ color: 'var(--fg)' }}>Monday morning</strong>. Draft a restock?
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 6 }}>
-            {Icons.sparkles} Draft restock for 200 units
-          </button>
-          <button className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: 12.5 }}>See projection</button>
-          <button className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: 12.5, marginLeft: 'auto' }} onClick={onDismiss}>Dismiss</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Sales Chart ───────────────────────────────────────────────────────────────
-function SalesChart() {
-  const data = [12,8,15,10,14,28,42,68,95,140,180,210,260,290,310,295,270,230,180,135,95,60,40,22];
-  const labels = ['00','','02','','04','','06','','08','','10','','12','','14','','16','','18','','20','','22',''];
-  const w = 900, h = 220, pad = { l: 38, r: 16, t: 16, b: 28 };
-  const max = Math.max(...data);
-  const stepX = (w - pad.l - pad.r) / (data.length - 1);
-  const yScale = (v: number) => h - pad.b - (v / max) * (h - pad.t - pad.b);
-  const xScale = (i: number) => pad.l + i * stepX;
-  const linePath = data.map((v, i) => (i === 0 ? 'M' : 'L') + xScale(i).toFixed(1) + ',' + yScale(v).toFixed(1)).join(' ');
-  const areaPath = linePath + ` L ${xScale(data.length-1)},${h-pad.b} L ${pad.l},${h-pad.b} Z`;
-  const yTicks = [0, max*0.25, max*0.5, max*0.75, max].map(Math.round);
-  const peakIdx = data.indexOf(max);
-
-  return (
-    <div style={{ padding: '16px 18px' }}>
-      <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
-        <defs>
-          <linearGradient id="salesFill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {yTicks.map((t, i) => (
-          <g key={i}>
-            <line x1={pad.l} x2={w-pad.r} y1={yScale(t)} y2={yScale(t)} stroke="var(--line)" strokeDasharray="2 4" />
-            <text x={pad.l - 8} y={yScale(t) + 3} textAnchor="end" fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">
-              {t === 0 ? '0' : (t/1000).toFixed(0) + 'K'}
-            </text>
-          </g>
-        ))}
-        {labels.map((l, i) => l && (
-          <text key={i} x={xScale(i)} y={h - 10} textAnchor="middle" fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">{l}</text>
-        ))}
-        <path d={areaPath} fill="url(#salesFill)" />
-        <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-        <line x1={xScale(peakIdx)} x2={xScale(peakIdx)} y1={yScale(max)} y2={h-pad.b} stroke="var(--accent)" strokeDasharray="2 3" strokeOpacity="0.5" />
-        <circle cx={xScale(peakIdx)} cy={yScale(max)} r="4" fill="var(--bg-2)" stroke="var(--accent)" strokeWidth="2" />
-        <g transform={`translate(${xScale(peakIdx) - 64}, ${yScale(max) - 38})`}>
-          <rect width="128" height="30" rx="6" fill="var(--bg)" stroke="var(--line-2)" />
-          <text x="10" y="13" fontSize="9.5" fill="var(--fg-4)" fontFamily="var(--mono)">PEAK · 13:00</text>
-          <text x="10" y="24" fontSize="11" fill="var(--fg)" fontWeight="500">TZS 310,000</text>
-        </g>
-      </svg>
-    </div>
-  );
-}
-
-// ── Payment Mix ───────────────────────────────────────────────────────────────
-function PaymentMix() {
-  const slices = [
-    { label: 'M-Pesa',    v: 48, color: '#10b981' },
-    { label: 'Cash',      v: 28, color: 'var(--accent)' },
-    { label: 'Tigo Pesa', v: 14, color: '#f59e0b' },
-    { label: 'Bank',      v: 7,  color: '#60a5fa' },
-    { label: 'Credit',    v: 3,  color: '#fb7185' },
-  ];
-  const total = slices.reduce((s, x) => s + x.v, 0);
-  const R = 56, r = 38, cx = 70, cy = 70;
-  let acc = 0;
-  const arcs = slices.map((s) => {
-    const start = acc / total * Math.PI * 2 - Math.PI / 2;
-    acc += s.v;
-    const end = acc / total * Math.PI * 2 - Math.PI / 2;
-    const large = end - start > Math.PI ? 1 : 0;
-    const x1 = cx + R * Math.cos(start), y1 = cy + R * Math.sin(start);
-    const x2 = cx + R * Math.cos(end),   y2 = cy + R * Math.sin(end);
-    const x3 = cx + r * Math.cos(end),   y3 = cy + r * Math.sin(end);
-    const x4 = cx + r * Math.cos(start), y4 = cy + r * Math.sin(start);
-    const d = `M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${r} ${r} 0 ${large} 0 ${x4} ${y4} Z`;
-    return { d, color: s.color };
-  });
-  return (
-    <div style={{ padding: '16px 18px', display: 'flex', gap: 18, alignItems: 'center' }}>
-      <svg width="140" height="140" viewBox="0 0 140 140">
-        {arcs.map((a, i) => <path key={i} d={a.d} fill={a.color} />)}
-        <text x={cx} y={cy - 2} textAnchor="middle" fontSize="11" fill="var(--fg-3)" fontFamily="var(--mono)" letterSpacing="0.06em">TODAY</text>
-        <text x={cx} y={cy + 14} textAnchor="middle" fontSize="16" fill="var(--fg)" fontWeight="500">1.24M</text>
-      </svg>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
-        {slices.map((s) => (
-          <div key={s.label} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, alignItems: 'center', fontSize: 12 }}>
-            <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, display: 'inline-block' }}></span>
-            <span style={{ color: 'var(--fg-2)' }}>{s.label}</span>
-            <span className="mono" style={{ color: 'var(--fg)' }}>{s.v}%</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Recent Transactions ───────────────────────────────────────────────────────
-const TXN_ROWS = [
-  ['#TXN-2042', 'Walk-in',   'M-Pesa',    271400, 'completed', '14:32'],
-  ['#TXN-2041', 'Fatuma A.', 'Credit',     38500, 'credit',    '14:21'],
-  ['#TXN-2040', 'Walk-in',   'Cash',        6200, 'completed', '14:18'],
-  ['#TXN-2039', 'Juma K.',   'M-Pesa',     84200, 'completed', '14:04'],
-  ['#TXN-2038', 'Walk-in',   'Tigo Pesa',  22000, 'completed', '13:55'],
-  ['#TXN-2037', 'Asha M.',   'Credit',     54200, 'credit',    '13:42'],
-  ['#TXN-2036', 'Walk-in',   'Cash',       12800, 'refunded',  '13:31'],
-  ['#TXN-2035', 'Walk-in',   'M-Pesa',     46500, 'completed', '13:18'],
-] as const;
-
-function TxnStatusPill({ s }: { s: string }) {
-  return s === 'completed' ? <span className="pill good" style={{ fontSize: 9.5 }}>{s}</span> :
-         s === 'credit'    ? <span className="pill warn" style={{ fontSize: 9.5 }}>{s}</span> :
-         s === 'refunded'  ? <span className="pill bad"  style={{ fontSize: 9.5 }}>{s}</span> :
-                             <span className="pill"      style={{ fontSize: 9.5 }}>{s}</span>;
-}
-
-// Card-list layout — shown on mobile only
-function RecentTxnMobile() {
-  return (
-    <div className="surface mobile-only" style={{ overflow: 'hidden' }}>
-      <div className="card-head">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="card-title">Recent transactions</span>
-          <span className="pill" style={{ background: 'var(--bg-3)', fontSize: 10 }}>last hour</span>
-        </div>
-      </div>
-      {TXN_ROWS.slice(0, 6).map(([id, who, method, amt, status, time], i, arr) => (
-        <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 0 }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-              <span style={{ fontSize: 13.5, fontWeight: 500 }}>{who}</span>
-              <TxnStatusPill s={status} />
-            </div>
-            <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 3 }}>
-              {id} · {method} · {time}
-            </div>
-          </div>
-          <span className="mono" style={{ fontSize: 13, color: 'var(--fg)', flexShrink: 0 }}>{fmt(amt)}</span>
-        </div>
-      ))}
-      <div style={{ padding: 12, borderTop: '1px solid var(--line)' }}>
-        <Link href="/transactions" className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 5 }}>
-          View all transactions {Icons.chevRight}
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function RecentTxn() {
-  const rows = TXN_ROWS;
-
-  const statusPill = (s: string) =>
-    s === 'completed' ? <span className="pill good">{s}</span> :
-    s === 'credit'    ? <span className="pill warn">{s}</span> :
-    s === 'refunded'  ? <span className="pill bad">{s}</span> :
-                        <span className="pill">{s}</span>;
-
-  return (
-    <div className="surface" style={{ overflow: 'hidden' }}>
-      <div className="card-head">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="card-title">Recent transactions</span>
-          <span className="pill" style={{ background: 'var(--bg-3)' }}>last hour</span>
-        </div>
+    <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 30px 80px -20px rgba(0,0,0,0.55)', background: '#0a0a0b', color: '#f5f5f7' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: '#0f0f12' }}>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.filter} Filter</button>
-          <Link href="/transactions" className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>View all {Icons.chevRight}</Link>
+          {['#3a3a3e','#3a3a3e','#3a3a3e'].map((c, i) => <span key={i} style={{ width: 10, height: 10, borderRadius: 999, background: c, display: 'block' }} />)}
         </div>
+        <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: 11, color: 'rgba(245,245,247,0.42)', marginLeft: 6 }}>{url}</span>
+        <span style={{ marginLeft: 'auto', fontFamily: 'var(--mono, monospace)', fontSize: 10.5, color: 'rgba(245,245,247,0.26)' }}>v2.4.1</span>
       </div>
-      <div className="table-scroll">
-        <div style={{ minWidth: 580 }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '120px 1fr 110px 130px 110px 60px',
-            padding: '10px 16px',
-            fontSize: 10, color: 'var(--fg-4)', fontFamily: 'var(--mono)', letterSpacing: '0.08em',
-            borderBottom: '1px solid var(--line)',
-          }}>
-            <span>TXN ID</span><span>CUSTOMER</span><span>METHOD</span>
-            <span style={{ textAlign: 'right' }}>AMOUNT</span><span>STATUS</span>
-            <span style={{ textAlign: 'right' }}>TIME</span>
-          </div>
-          {rows.map(([id, who, method, amt, status, time], i) => (
-            <div key={id} style={{
-              display: 'grid',
-              gridTemplateColumns: '120px 1fr 110px 130px 110px 60px',
-              padding: '11px 16px',
-              fontSize: 12.5,
-              alignItems: 'center',
-              borderBottom: i < rows.length - 1 ? '1px solid var(--line)' : 0,
-              cursor: 'pointer',
-            }}>
-              <Link href={`/transactions/${id.replace('#', '')}`} className="mono" style={{ color: 'var(--accent)' }}>{id}</Link>
-              <span style={{ color: 'var(--fg)' }}>{who}</span>
-              <span className="mono" style={{ color: 'var(--fg-2)' }}>{method}</span>
-              <span className="mono" style={{ color: 'var(--fg)', textAlign: 'right' }}>{fmt(amt)}</span>
-              <span>{statusPill(status)}</span>
-              <span className="mono" style={{ color: 'var(--fg-3)', textAlign: 'right' }}>{time}</span>
+      {children}
+    </div>
+  );
+}
+
+// ── Dashboard mockup ──────────────────────────────────────────────────────────
+function DashboardMockup({ accent }: { accent: string }) {
+  const stats = [
+    { label: "TODAY'S SALES", v: 'TZS 1,240,000', delta: '+18%', spark: [3,4,3,5,4,6,5,7,8,7,9,10,9,11,12] },
+    { label: "PROFIT",        v: 'TZS 272,000',   delta: '+12%', spark: [2,3,2,4,3,4,5,4,6,5,7,6,8,7,9] },
+    { label: 'STOCK VALUE',   v: 'TZS 4.82M',     delta: '+6%',  spark: [5,5,6,5,6,7,6,7,7,8,7,8,9,8,10] },
+    { label: 'LOW STOCK',     v: '3',             delta: 'alerts', deltaColor: '#fbbf24', spark: null },
+  ];
+  const bars = [42, 58, 70, 52, 88, 100, 74];
+  return (
+    <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16, background: '#0a0a0b', color: '#f5f5f7' }}>
+      <div style={{ borderRight: '1px solid rgba(255,255,255,0.07)', paddingRight: 14, display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <span style={{ width: 22, height: 22, borderRadius: 6, background: accent, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600 }}>Z</span>
+          <span style={{ fontWeight: 500, fontSize: 13 }}>Ziada</span>
+        </div>
+        {[['Dashboard',true],['Point of Sale',false],['Transactions',false],['Inventory',false],['Credits',false]].map(([l, a]) => (
+          <div key={l as string} style={{ padding: '5px 8px', borderRadius: 5, fontSize: 11.5, color: a ? '#f5f5f7' : 'rgba(245,245,247,0.42)', background: a ? `${accent}22` : 'transparent', borderLeft: `2px solid ${a ? accent : 'transparent'}` }}>{l}</div>
+        ))}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ fontSize: 14, fontWeight: 500 }}>Dashboard</span>
+          <span style={{ fontFamily: 'monospace', fontSize: 9.5, color: 'rgba(245,245,247,0.42)', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 5, height: 5, borderRadius: 999, background: '#34d399', display: 'inline-block' }} /> live
+          </span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 7, marginBottom: 10 }}>
+          {stats.map((s) => (
+            <div key={s.label} style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '8px 10px', background: '#0f0f12' }}>
+              <div style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'rgba(245,245,247,0.26)', letterSpacing: '0.06em' }}>{s.label}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 500, marginTop: 3 }}>{s.v}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 5 }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 9, color: s.deltaColor || '#34d399' }}>{s.delta}</span>
+                {s.spark && <div style={{ width: 44, height: 14 }}><Sparkline data={s.spark} color={accent} strokeWidth={1.2} height={14} /></div>}
+              </div>
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Top Products ──────────────────────────────────────────────────────────────
-function TopProducts() {
-  const rows = [
-    { name: 'Unga wa Sembe 10kg',   sold: 50, rev: 1425000, share: 100, trend: [3,4,5,4,6,5,7,8] },
-    { name: 'Mafuta ya Cooking 5L', sold: 34, rev: 1156000, share: 81,  trend: [4,3,5,4,5,6,7,8] },
-    { name: 'Mchele Pishori 5kg',   sold: 22, rev: 484000,  share: 34,  trend: [2,3,3,4,3,5,4,6] },
-    { name: 'Sabuni ya OMO 1kg',    sold: 42, rev: 260400,  share: 18,  trend: [5,4,6,5,7,6,8,9] },
-    { name: 'Sukari 2kg',           sold: 26, rev: 182000,  share: 13,  trend: [2,2,3,2,3,3,4,3] },
-    { name: 'Chai Bora 500g',       sold: 18, rev: 86400,   share: 6,   trend: [1,2,1,2,3,2,3,4] },
-  ];
-  return (
-    <div className="surface">
-      <div className="card-head">
-        <span className="card-title">Top products this week</span>
-        <button className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.download} Export</button>
-      </div>
-      <div className="table-scroll">
-      <div style={{ padding: '8px 0', minWidth: 460 }}>
-        {rows.map((r, i) => (
-          <div key={r.name} style={{
-            padding: '10px 16px',
-            display: 'grid',
-            gridTemplateColumns: '20px 1fr 60px 90px 110px',
-            gap: 12, alignItems: 'center',
-          }}>
-            <span className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>{String(i+1).padStart(2,'0')}</span>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
-              <div style={{ height: 3, marginTop: 6, background: 'var(--bg-3)', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ width: r.share + '%', height: '100%', background: 'var(--accent)' }}></div>
-              </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 8 }}>
+          <div style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '9px 11px', background: '#0f0f12' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 10.5, fontWeight: 500 }}>Sales this week</span>
+              <span style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'rgba(245,245,247,0.26)' }}>7D</span>
             </div>
-            <span className="mono" style={{ fontSize: 11.5, color: 'var(--fg-2)' }}>{r.sold} sold</span>
-            <span className="mono" style={{ fontSize: 11.5, color: 'var(--fg)', textAlign: 'right' }}>{fmtShort(r.rev)}</span>
-            <div style={{ height: 22 }}>
-              <KPISpark data={r.trend} color="var(--accent)" />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, alignItems: 'end', height: 52 }}>
+              {bars.map((h, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                  <div style={{ width: '100%', height: `${h}%`, background: i === 5 ? accent : `${accent}55`, borderRadius: 2 }} />
+                  <span style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'rgba(245,245,247,0.26)' }}>{'MTWTFSS'[i]}</span>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Low Stock ─────────────────────────────────────────────────────────────────
-function LowStock() {
-  const rows = [
-    ['Sabuni ya OMO 1kg',    3,  20, 'critical'],
-    ['Sukari 2kg',           8,  20, 'low'],
-    ['Mafuta ya Cooking 1L', 12, 30, 'low'],
-    ['Chai Bora 500g',       14, 30, 'low'],
-  ] as const;
-  return (
-    <div className="surface">
-      <div className="card-head">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="card-title">Low stock</span>
-          <span className="pill warn">4 alerts</span>
+          <div style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '9px 11px', background: '#0f0f12' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 500, marginBottom: 8 }}>Top products</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {[['Unga wa Sembe 10kg','1.42M'],['Mafuta Cooking 5L','1.15M'],['Sabuni OMO 1kg','260K'],['Sukari 2kg','182K']].map(([n,v],i) => (
+                <div key={n} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+                    <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.26)', width: 10 }}>{i+1}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n}</span>
+                  </span>
+                  <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.66)', flexShrink: 0 }}>{v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        <Link href="/inventory" className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>Manage {Icons.chevRight}</Link>
       </div>
-      <div>
-        {rows.map(([name, qty, reorder, s], i) => (
-          <div key={name} style={{ padding: '12px 16px', borderBottom: i < rows.length - 1 ? '1px solid var(--line)' : 0 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontSize: 12.5, color: 'var(--fg)' }}>{name}</span>
-              <span className={'pill ' + (s === 'critical' ? 'bad' : 'warn')}>{s}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-              <span className="mono" style={{ fontSize: 11, color: 'var(--fg)' }}>{qty}</span>
-              <div style={{ flex: 1, height: 4, background: 'var(--bg-3)', borderRadius: 2, overflow: 'hidden', position: 'relative' }}>
-                <div style={{ width: Math.min(100, qty/reorder*100) + '%', height: '100%', background: s === 'critical' ? 'var(--bad)' : 'var(--warn)' }}></div>
-              </div>
-              <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>reorder @ {reorder}</span>
-            </div>
-          </div>
+    </div>
+  );
+}
+
+// ── Feature mockups ───────────────────────────────────────────────────────────
+function POSMockup({ accent }: { accent: string }) {
+  const items = [['Mafuta ya Cooking 5L',5,170000],['Sabuni ya OMO 1kg',1,6200],['Chai Bora 500g',1,4800],['Mchele Pishori 5kg',1,22000]];
+  const sub = items.reduce((s,[,q,p]) => s + (q as number)*(p as number), 0);
+  const fmt = (n: number) => 'TZS ' + n.toLocaleString('en-US');
+  return (
+    <div style={{ padding: 14, background: '#0a0a0b', color: '#f5f5f7' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+        <span style={{ fontSize: 12, fontWeight: 500 }}>Current sale</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 9.5, color: 'rgba(245,245,247,0.42)' }}>SALE #TXN-2042</span>
+      </div>
+      {items.map(([n,q,p]) => (
+        <div key={n as string} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 10, fontSize: 11, padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n}</span>
+          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.42)' }}>×{q}</span>
+          <span style={{ fontFamily: 'monospace' }}>{fmt((q as number)*(p as number))}</span>
+        </div>
+      ))}
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0 2px', marginTop: 6, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+        <span style={{ fontSize: 12, fontWeight: 500 }}>Net total</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600, color: accent }}>{fmt(Math.round(sub*1.18))}</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, margin: '8px 0' }}>
+        {['Cash','M-Pesa','Bank','Credit'].map((m,i) => (
+          <div key={m} style={{ padding: '6px 4px', borderRadius: 5, fontSize: 10, textAlign: 'center', border: `1px solid ${i===0?accent:'rgba(255,255,255,0.07)'}`, background: i===0?`${accent}22`:'transparent', color: i===0?'#f5f5f7':'rgba(245,245,247,0.66)' }}>{m}</div>
         ))}
       </div>
-      <div style={{ padding: 12, borderTop: '1px solid var(--line)' }}>
-        <button className="btn btn-soft" style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {Icons.sparkles} Auto-draft restock for all
+      <div style={{ padding: '8px', borderRadius: 5, background: accent, color: '#fff', textAlign: 'center', fontSize: 11.5, fontWeight: 500 }}>Complete sale →</div>
+    </div>
+  );
+}
+
+function InventoryMini({ accent }: { accent: string }) {
+  const rows: [string, number, string][] = [['Unga wa Sembe 10kg',42,'ok'],['Sabuni ya OMO 1kg',3,'critical'],['Mafuta Cooking 5L',24,'ok'],['Sukari 2kg',8,'low']];
+  return (
+    <div style={{ padding: '12px 14px', background: '#0a0a0b', color: '#f5f5f7' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 44px 60px', gap: 8, fontSize: 9, fontFamily: 'monospace', color: 'rgba(245,245,247,0.26)', letterSpacing: '0.06em', paddingBottom: 4, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <span>PRODUCT</span><span>STOCK</span><span>STATUS</span>
+      </div>
+      {rows.map(([name, qty, s]) => (
+        <div key={name} style={{ display: 'grid', gridTemplateColumns: '1fr 44px 60px', gap: 8, fontSize: 11, padding: '5px 0', alignItems: 'center' }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.66)' }}>{qty}</span>
+          <span style={{ fontFamily: 'monospace', fontSize: 9, padding: '2px 6px', borderRadius: 999, color: s==='critical'?'#fb7185':s==='low'?'#fbbf24':'#34d399', border: `1px solid ${s==='critical'?'rgba(251,113,133,0.3)':s==='low'?'rgba(251,191,36,0.3)':'rgba(52,211,153,0.3)'}`, width: 'fit-content' }}>{s.toUpperCase()}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AnalyticsMini({ accent }: { accent: string }) {
+  return (
+    <div style={{ padding: '14px', background: '#0a0a0b', color: '#f5f5f7' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'rgba(245,245,247,0.26)', letterSpacing: '0.06em' }}>PROFIT · 30D</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#34d399' }}>+6.2%</span>
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 500, marginTop: 4 }}>TZS 4.82M</div>
+      <div style={{ height: 56, marginTop: 8 }}>
+        <Sparkline data={[3,4,3,5,4,5,6,5,7,6,7,8,7,9,8,10,9,11,10,12]} color={accent} fill strokeWidth={1.5} height={56} />
+      </div>
+    </div>
+  );
+}
+
+function CreditsMini({ accent }: { accent: string }) {
+  return (
+    <div style={{ padding: '12px 14px', background: '#0a0a0b', color: '#f5f5f7' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+        <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'rgba(245,245,247,0.26)', letterSpacing: '0.06em' }}>OUTSTANDING</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(245,245,247,0.42)' }}>14 customers</span>
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>TZS 184,500</div>
+      {[['Fatuma A.','TZS 38,500','Today'],['Juma K.','TZS 84,200','2d'],['Asha M.','TZS 54,200','5d']].map(([n,a,d]) => (
+        <div key={n} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, fontSize: 11, padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <span>{n}</span>
+          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.66)' }}>{a}</span>
+          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.26)' }}>{d}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AIChatMini({ accent }: { accent: string }) {
+  return (
+    <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 11.5, background: '#0a0a0b', color: '#f5f5f7' }}>
+      <div style={{ alignSelf: 'flex-end', maxWidth: '82%', padding: '6px 10px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8 }}>Niambie mauzo ya leo</div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <span style={{ width: 18, height: 18, borderRadius: 5, background: `${accent}22`, color: accent, display: 'grid', placeItems: 'center', fontSize: 10, flexShrink: 0 }}>✦</span>
+        <div style={{ color: 'rgba(245,245,247,0.66)', lineHeight: 1.5 }}>
+          Mauzo ya leo ni <strong style={{ color: '#f5f5f7' }}>TZS 1,240,000</strong> — juu kwa 18%.
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {['Tuma report','Linganisha wiki'].map((c,i) => (
+          <span key={c} style={{ fontFamily: 'monospace', fontSize: 10, padding: '3px 8px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)', color: i===0?accent:'rgba(245,245,247,0.66)', background: i===0?`${accent}22`:'transparent' }}>{c}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+function Header({ theme, onToggleTheme }: { theme: string; onToggleTheme: () => void }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <header style={{ position: 'sticky', top: 0, zIndex: 50, borderBottom: '1px solid var(--line)', backdropFilter: 'blur(16px) saturate(140%)', background: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', height: 56, gap: 24 }}>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', color: 'inherit' }}>
+          <span style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600 }}>Z</span>
+          <span style={{ fontSize: 14, fontWeight: 500, letterSpacing: '-0.005em' }}>ziada</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', padding: '2px 6px', border: '1px solid var(--line)', borderRadius: 4 }}>v2.4</span>
+        </a>
+        {/* Desktop nav */}
+        <nav style={{ display: 'flex', gap: 20, marginLeft: 8 }} className="landing-nav">
+          {[['Product','#features'],['Ziada AI','#ai'],['Pricing','#'],['Docs','#']].map(([l,h]) => (
+            <a key={l} href={h} style={{ fontSize: 13, color: 'var(--fg-2)', textDecoration: 'none' }}>{l}</a>
+          ))}
+        </nav>
+        <div style={{ flex: 1 }} />
+        <button onClick={onToggleTheme} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--line)', background: 'var(--bg-2)', cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-2)' }} className="landing-nav">
+          {theme === 'dark' ? '◐ dark' : '◑ light'}
+        </button>
+        <a href="#" style={{ fontSize: 13, color: 'var(--fg-2)', textDecoration: 'none' }} className="landing-nav">Sign in</a>
+        <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 13px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
+          Start trial <span style={{ opacity: 0.8 }}>→</span>
+        </Link>
+        {/* Mobile hamburger */}
+        <button onClick={() => setMenuOpen(!menuOpen)} className="landing-ham" style={{ display: 'none', width: 36, height: 36, border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg-2)', cursor: 'pointer', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+          <span style={{ width: 16, height: 1.5, background: 'var(--fg-2)', borderRadius: 2, display: 'block' }} />
+          <span style={{ width: 16, height: 1.5, background: 'var(--fg-2)', borderRadius: 2, display: 'block' }} />
+          <span style={{ width: 16, height: 1.5, background: 'var(--fg-2)', borderRadius: 2, display: 'block' }} />
         </button>
       </div>
-    </div>
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div style={{ borderTop: '1px solid var(--line)', background: 'var(--bg-2)', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }} className="landing-mobile-menu">
+          {[['Product','#features'],['Ziada AI','#ai'],['Pricing','#'],['Docs','#'],['Sign in','#']].map(([l,h]) => (
+            <a key={l} href={h} style={{ fontSize: 14, color: 'var(--fg-2)', textDecoration: 'none' }} onClick={() => setMenuOpen(false)}>{l}</a>
+          ))}
+          <button onClick={onToggleTheme} style={{ padding: '8px 0', border: 0, background: 'transparent', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--fg-3)', cursor: 'pointer', textAlign: 'left' }}>
+            {theme === 'dark' ? '◐ Switch to light mode' : '◑ Switch to dark mode'}
+          </button>
+        </div>
+      )}
+    </header>
   );
 }
 
-// ── Today Summary ─────────────────────────────────────────────────────────────
-function TodaySummary() {
-  const rows = [
-    ['Gross sales',   'TZS 1,240,000', null],
-    ['Refunds',       '− TZS 12,800',  null],
-    ['Net sales',     'TZS 1,227,200', 'var(--fg)'],
-    ['Cost of goods', '− TZS 968,000', null],
-    ['Gross profit',  'TZS 272,000',   'var(--good)'],
-  ] as const;
+// ── Hero ──────────────────────────────────────────────────────────────────────
+function Hero({ accent }: { accent: string }) {
   return (
-    <div className="surface">
-      <div className="card-head">
-        <span className="card-title">Today&apos;s summary</span>
-        <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>SAT · 24 MAY 2026</span>
+    <section style={{ position: 'relative', paddingTop: 56, paddingBottom: 72, overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px)', backgroundSize: '64px 64px', maskImage: 'radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 80%)' }} />
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', position: 'relative' }}>
+        <div style={{ maxWidth: 860 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px 4px 8px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.04em', color: 'var(--fg-2)', background: 'var(--bg-2)', marginBottom: 24 }}>
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--accent)', boxShadow: '0 0 0 3px var(--accent-soft)', display: 'inline-block' }} />
+            Ziada AI · now in every store
+            <span style={{ color: 'var(--fg-4)' }}>→</span>
+          </span>
+          <h1 style={{ margin: 0, fontSize: 'clamp(36px, 5.6vw, 68px)', lineHeight: 1.03, fontWeight: 500, letterSpacing: '-0.025em' }}>
+            The operating system<br />for your shop.
+          </h1>
+          <p style={{ margin: '22px 0 0', fontSize: 17, lineHeight: 1.55, color: 'var(--fg-2)', maxWidth: 580 }}>
+            POS, inventory, credit, analytics and an AI that actually knows your store — running on one calm, fast platform. Built in Tanzania, made for any counter.
+          </p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 30, flexWrap: 'wrap' }}>
+            <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+              Start free 7-day trial <span style={{ opacity: 0.8 }}>→</span>
+            </Link>
+            <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 6, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none', background: 'transparent' }}>
+              Try the live demo
+            </Link>
+          </div>
+          <div style={{ display: 'flex', gap: 20, marginTop: 18, flexWrap: 'wrap' }}>
+            {['no card required','works offline','EN + Swahili','M-Pesa, Tigo, Bank, Cash'].map((t) => (
+              <span key={t} style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.2L4.8 8.5L9.5 3.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginTop: 52 }}>
+          <WindowChrome url="app.ziada.co/dashboard">
+            <DashboardMockup accent={accent} />
+          </WindowChrome>
+        </div>
       </div>
-      <div style={{ padding: '4px 16px' }}>
-        {rows.map(([l, v, c], i, arr) => (
-          <div key={l} style={{
-            display: 'flex', justifyContent: 'space-between',
-            padding: '10px 0',
-            borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 0,
-            fontSize: 13,
-          }}>
-            <span style={{ color: 'var(--fg-2)' }}>{l}</span>
-            <span className="mono" style={{ color: c || 'var(--fg)' }}>{v}</span>
+    </section>
+  );
+}
+
+// ── Stats strip ───────────────────────────────────────────────────────────────
+function StatsStrip() {
+  const stats = [
+    { label: 'STORES RUNNING ZIADA', v: '1,247' },
+    { label: 'TXNS LAST 24H',        v: '89,412' },
+    { label: 'TZS PROCESSED · 30D',  v: '4.21B' },
+    { label: 'AI QUERIES · 24H',     v: '12,094' },
+    { label: 'UPTIME · 90D',         v: '99.98%' },
+  ];
+  return (
+    <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--bg-2)' }}>
+      <div className="stats-grid" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        {stats.map((s, i) => (
+          <div key={s.label} style={{ padding: '20px 20px', borderLeft: i === 0 ? 0 : '1px solid var(--line)' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 6 }}>{s.label}</div>
+            <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em' }}>{s.v}</div>
           </div>
         ))}
       </div>
-      <div style={{ padding: '14px 16px', borderTop: '1px solid var(--line)', display: 'flex', gap: 16, alignItems: 'center', background: 'var(--bg-3)', borderRadius: '0 0 10px 10px' }}>
-        {[['MARGIN','22.2%'],['TICKETS','87'],['AVG TICKET','14.1K']].map(([lbl, val]) => (
-          <div key={lbl} style={{ flex: 1 }}>
-            <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>{lbl}</div>
-            <div style={{ fontSize: 18, fontWeight: 500, marginTop: 2 }}>{val}</div>
+    </section>
+  );
+}
+
+// ── Feature grid ──────────────────────────────────────────────────────────────
+const FEATURES = [
+  { n: '01', id: 'pos',       title: 'Point of Sale',  tagline: 'Ring up a sale in three taps.',            desc: 'Search, scan, or pick from the grid. Take cash, M-Pesa, Tigo Pesa, bank or credit — split across any of them on one ticket.', bullets: ['Barcode + visual search','Split tender','Offline-first, syncs when back online'] },
+  { n: '02', id: 'inventory', title: 'Inventory',      tagline: 'Know what\'s on the shelf without counting.',   desc: 'Stock moves automatically as you sell, restock or transfer. Reorder points and supplier history live with each product.',    bullets: ['Auto reorder points','Supplier ledger','Variant + bulk pricing'] },
+  { n: '03', id: 'analytics', title: 'Analytics',      tagline: 'The shop\'s pulse, every minute.',           desc: 'Sales, profit, margins, payment mix and cash position — all visible at a glance, all filterable to a single SKU.',          bullets: ['Hour-by-hour revenue','Profit by product','Cohort & repeat-customer view'] },
+  { n: '04', id: 'credits',   title: 'Credits',        tagline: 'Track every kopo without a notebook.',       desc: 'Open tabs, payment reminders, statements over WhatsApp. Aging buckets so you always know who\'s overdue.',                 bullets: ['Aging buckets','WhatsApp reminders','Statement PDF in one tap'] },
+  { n: '05', id: 'ai',        title: 'Ziada AI',       tagline: 'An assistant that actually knows your store.', desc: 'Ask in English or Swahili. Pulls answers from your live data and drafts the next action.',                                  bullets: ['Grounded on your data','Bilingual EN/SW','Drafts orders, reports, messages'] },
+];
+
+function FeatureCard({ f, accent }: { f: typeof FEATURES[0]; accent: string }) {
+  const mockup =
+    f.id === 'pos'       ? <POSMockup accent={accent} /> :
+    f.id === 'inventory' ? <InventoryMini accent={accent} /> :
+    f.id === 'analytics' ? <AnalyticsMini accent={accent} /> :
+    f.id === 'credits'   ? <CreditsMini accent={accent} /> :
+                           <AIChatMini accent={accent} />;
+  return (
+    <article style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--bg-2)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>{f.n} · {f.id.toUpperCase()}</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-3)' }}>module</span>
+        </div>
+        <h3 style={{ margin: 0, fontSize: 19, fontWeight: 500, letterSpacing: '-0.01em' }}>{f.title}</h3>
+        <p style={{ margin: '5px 0 0', fontSize: 13, color: 'var(--fg-2)' }}>{f.tagline}</p>
+      </div>
+      <div style={{ flex: 1, borderBottom: '1px solid var(--line)' }}>{mockup}</div>
+      <div style={{ padding: '14px 20px 18px' }}>
+        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.55 }}>{f.desc}</p>
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {f.bullets.map((b) => (
+            <li key={b} style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', display: 'flex', gap: 8 }}>
+              <span style={{ color: accent }}>›</span>{b}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </article>
+  );
+}
+
+function FeatureGrid({ accent }: { accent: string }) {
+  return (
+    <section id="features" style={{ padding: '88px 0' }}>
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>§ 01 · MODULES</div>
+            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>One platform. Five surfaces. Every counter.</h2>
+          </div>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>5 / 5 included on every plan</span>
+        </div>
+        <div className="feat-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+          {FEATURES.slice(0, 3).map((f) => <FeatureCard key={f.id} f={f} accent={accent} />)}
+        </div>
+        <div className="feat-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+          {FEATURES.slice(3).map((f) => <FeatureCard key={f.id} f={f} accent={accent} />)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── AI section ────────────────────────────────────────────────────────────────
+function AISection({ accent }: { accent: string }) {
+  const prompts = [
+    'Top 3 fast movers this week, and which are running low?',
+    'Niambie wateja waliokuwa na deni kubwa zaidi mwezi huu.',
+    'Compare margins on cooking oil across all 3 stores.',
+    'Draft a restock order for everything below reorder point.',
+    'What was my busiest hour yesterday and who was on the till?',
+    'Send Fatuma her statement on WhatsApp.',
+  ];
+  return (
+    <section id="ai" style={{ padding: '88px 0', borderTop: '1px solid var(--line)', background: 'var(--bg-2)' }}>
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>§ 02 · ZIADA AI</div>
+            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>The first AI that actually knows your shop.</h2>
+          </div>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>grounded · bilingual · in every screen</span>
+        </div>
+        <div className="ai-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.15fr', gap: 32, alignItems: 'start' }}>
+          <div>
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--fg-2)', margin: '0 0 20px', maxWidth: 520 }}>
+              Most &ldquo;AI features&rdquo; are a chatbot bolted on. Ziada AI reads from your live sales, stock, suppliers and credits — and writes back. Ask in English or Swahili and get an answer with data and a next action.
+            </p>
+            <div style={{ border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden', marginTop: 24 }}>
+              <div style={{ fontFamily: 'var(--mono)', padding: '9px 14px', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', background: 'var(--bg)', borderBottom: '1px solid var(--line)' }}>THINGS PEOPLE ASK</div>
+              {prompts.map((p, i) => (
+                <div key={i} style={{ padding: '10px 14px', fontSize: 12.5, color: 'var(--fg-2)', borderBottom: i < prompts.length - 1 ? '1px solid var(--line)' : 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontFamily: 'var(--mono)', color: 'var(--fg-4)', fontSize: 11 }}>›</span>{p}
+                </div>
+              ))}
+            </div>
+            <div className="ai-props" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 22 }}>
+              {[['Grounded','Answers cite the exact rows from your store.'],['Bilingual','Speaks English and Swahili, by default.'],['Action-oriented','Drafts the restock, the message, the report.'],['Private','Your data never trains a foundation model.']].map(([t,d]) => (
+                <div key={t} style={{ paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{t}</div>
+                  <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 2 }}>{d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <WindowChrome url="app.ziada.co/ai">
+              <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14, minHeight: 340, background: '#0a0a0b', color: '#f5f5f7' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 22, height: 22, borderRadius: 6, background: `${accent}22`, color: accent, display: 'grid', placeItems: 'center', fontSize: 11 }}>✦</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 500 }}>Ziada AI</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(245,245,247,0.26)', marginLeft: 4 }}>· Duka Kuu</span>
+                  </div>
+                  <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(245,245,247,0.42)', display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span style={{ width: 5, height: 5, borderRadius: 999, background: accent, display: 'inline-block' }} /> 142 ms
+                  </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ maxWidth: '78%', padding: '8px 12px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, fontSize: 12.5 }}>What were my top 3 fast movers this week, and which are running low?</div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <span style={{ width: 22, height: 22, borderRadius: 6, background: `${accent}22`, color: accent, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 11 }}>✦</span>
+                  <div style={{ fontSize: 12.5, color: 'rgba(245,245,247,0.66)', lineHeight: 1.55 }}>
+                    This week your top movers were:
+                    <div style={{ marginTop: 8, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, overflow: 'hidden' }}>
+                      {[['1','Unga wa Sembe 10kg','50 sold','8 left','low'],['2','Mafuta ya Cooking 5L','34 sold','24 left','ok'],['3','Sabuni ya OMO 1kg','42 sold','3 left','critical']].map(([n,name,sold,left,s]) => (
+                        <div key={n} style={{ display: 'grid', gridTemplateColumns: '16px 1.4fr 1fr 1fr auto', gap: 8, alignItems: 'center', padding: '7px 10px', fontSize: 11, borderBottom: s==='critical'?0:'1px solid rgba(255,255,255,0.07)', background: s==='critical'?'rgba(251,113,133,0.05)':'transparent' }}>
+                          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.26)' }}>{n}</span>
+                          <span style={{ color: '#f5f5f7' }}>{name}</span>
+                          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.66)' }}>{sold}</span>
+                          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.42)' }}>{left}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: 9, padding: '2px 6px', borderRadius: 999, color: s==='critical'?'#fb7185':s==='low'?'#fbbf24':'#34d399', border: `1px solid ${s==='critical'?'rgba(251,113,133,0.3)':s==='low'?'rgba(251,191,36,0.3)':'rgba(52,211,153,0.3)'}` }}>{s.toUpperCase()}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: 10, fontSize: 12 }}>Sabuni ya OMO is below reorder point — want me to draft a restock order?</div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                      {['Draft restock','Show suppliers','Project next week'].map((c,i) => (
+                        <span key={c} style={{ fontFamily: 'monospace', fontSize: 10.5, padding: '4px 9px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)', color: i===0?accent:'rgba(245,245,247,0.66)', background: i===0?`${accent}22`:'transparent', cursor: 'pointer' }}>{c}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, background: '#0f0f12' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(245,245,247,0.26)' }}>›</span>
+                  <span style={{ fontSize: 12, color: 'rgba(245,245,247,0.42)' }}>Ask about your store…</span>
+                  <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontSize: 10, color: 'rgba(245,245,247,0.26)' }}>⌘ K</span>
+                </div>
+              </div>
+            </WindowChrome>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── CTA ───────────────────────────────────────────────────────────────────────
+function CTA() {
+  return (
+    <section style={{ padding: '100px 0 88px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px)', backgroundSize: '64px 64px', maskImage: 'radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 80%)' }} />
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', position: 'relative', textAlign: 'center' }}>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.08em' }}>§ 03 · GET ZIADA</div>
+        <h2 style={{ margin: '16px 0 18px', fontSize: 'clamp(32px, 4.5vw, 52px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Run your shop on calm software.</h2>
+        <p style={{ margin: '0 auto', maxWidth: 520, fontSize: 16, color: 'var(--fg-2)' }}>Seven days, every feature, no card. Most shops are live on Ziada in under an hour.</p>
+        <div style={{ display: 'inline-flex', gap: 10, marginTop: 28, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+            Start free trial <span style={{ opacity: 0.8 }}>→</span>
+          </Link>
+          <a href="#" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 6, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none' }}>Talk to the team</a>
+        </div>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', marginTop: 32, letterSpacing: '0.05em' }}>
+          DAR ES SALAAM · ARUSHA · MWANZA · DODOMA · MBEYA · ZANZIBAR
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Footer ────────────────────────────────────────────────────────────────────
+function Footer() {
+  return (
+    <footer style={{ borderTop: '1px solid var(--line)', background: 'var(--bg-2)' }}>
+      <div className="footer-grid" style={{ maxWidth: 1240, margin: '0 auto', padding: '44px 24px 28px', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1fr', gap: 28 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
+            <span style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600 }}>Z</span>
+            <span style={{ fontSize: 14, fontWeight: 500 }}>ziada</span>
+          </div>
+          <p style={{ fontSize: 12.5, color: 'var(--fg-3)', maxWidth: 240, margin: 0, lineHeight: 1.6 }}>The operating system for retail. Built in Dar es Salaam, made for any counter on the continent.</p>
+        </div>
+        {[
+          ['Product', ['Point of Sale','Inventory','Analytics','Credits','Ziada AI']],
+          ['Resources', ['Docs','Changelog','API','Status','Security']],
+          ['Company', ['About','Customers','Careers','Press','Contact']],
+          ['Legal', ['Terms','Privacy','DPA','Cookies']],
+        ].map(([title, links]) => (
+          <div key={title as string}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 14 }}>{(title as string).toUpperCase()}</div>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {(links as string[]).map((l) => <li key={l}><a href="#" style={{ fontSize: 13, color: 'var(--fg-2)', textDecoration: 'none' }}>{l}</a></li>)}
+            </ul>
           </div>
         ))}
       </div>
-    </div>
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '18px 24px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)' }}>© 2026 Ziada Technologies Ltd · Dar es Salaam, Tanzania</span>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)' }}>STATUS · <span style={{ color: 'var(--good)' }}>●</span> all systems normal</span>
+      </div>
+    </footer>
   );
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export default function DashboardPage() {
-  const [aiVisible, setAiVisible] = useState(true);
-  const [range, setRange] = useState(0);
+export default function LandingPage() {
+  const accent = '#6366f1';
+  const [theme, setTheme] = useState<string>('dark');
+
+  useEffect(() => {
+    try { const s = localStorage.getItem('ziada-theme'); if (s === 'light' || s === 'dark') setTheme(s); } catch {}
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('ziada-theme', theme); } catch {}
+  }, [theme]);
 
   return (
-    <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '#' }, { label: 'Dashboard' }]}>
-      {/* Page header */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>Good afternoon, Hamisi.</h1>
-            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--fg-3)' }}>
-              Here&apos;s how <strong style={{ color: 'var(--fg-2)', fontWeight: 500 }}>Duka Kuu — Kariakoo</strong> is doing today.
-              <span className="mono" style={{ marginLeft: 10, color: 'var(--fg-4)', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <span className="dot-s" style={{ background: 'var(--good)' }}></span> live · synced 6s ago
-              </span>
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <div className="date-seg-wrap">
-              {['Today', '7D', '30D', '90D', 'YTD'].map((l, i) => (
-                <button key={l} onClick={() => setRange(i)} className={range === i ? 'range-active' : ''} style={{
-                  padding: '6px 12px', fontSize: 12.5,
-                  background: range === i ? 'var(--bg-3)' : 'transparent',
-                  color: range === i ? 'var(--fg)' : 'var(--fg-3)',
-                  border: 0,
-                  borderRight: i < 4 ? '1px solid var(--line)' : 0,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                }}>{l}</button>
-              ))}
-            </div>
-            <button className="btn btn-ghost desktop-only" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{Icons.download} Export</button>
-          </div>
-        </div>
-      </div>
+    <>
+      <style>{`
+        /* Landing page layout overrides — scoped so they don't bleed into the app shell */
+        .landing-nav { display: flex !important; }
+        .landing-ham { display: none !important; }
 
-      {aiVisible && (
-        <div style={{ marginBottom: 16 }}>
-          <AINudge onDismiss={() => setAiVisible(false)} />
-        </div>
-      )}
+        /* Stats strip: scroll on mobile */
+        .stats-grid { overflow-x: auto; }
 
-      {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
-        <KPI label="TODAY'S SALES" value="TZS 1.24M" delta="+18.2%" deltaKind="good" subtitle="vs. yesterday TZS 1.05M" spark={[3,4,3,5,4,6,5,7,8,7,9,10,9,11,12,11,10,12,13,14]} />
-        <KPI label="GROSS PROFIT" value="TZS 272K" delta="+12.4%" deltaKind="good" subtitle="22.2% margin" spark={[2,3,2,4,3,4,5,4,6,5,7,6,8,7,9,8,9,10,9,11]} />
-        <KPI label="TICKETS" value="87" delta="+9" deltaKind="good" subtitle="avg TZS 14.1K · 87 today" spark={[5,6,5,7,6,7,8,7,9,8,9,10,9,11,10,11,12,11,12,13]} />
-        <KPI label="OUTSTANDING CREDIT" value="TZS 184K" delta="−4.1%" deltaKind="good" subtitle="14 customers · 3 overdue" spark={[9,9,8,9,8,8,7,8,7,7,8,7,6,7,6,6,7,6,6,5]} />
-      </div>
+        /* Feature grids */
+        .feat-grid-3 { grid-template-columns: repeat(3,1fr); }
+        .feat-grid-2 { grid-template-columns: repeat(2,1fr); }
 
-      {/* Sales chart + payment mix */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12, marginBottom: 16 }}>
-        <div className="surface">
-          <div className="card-head">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="card-title">Sales by hour</span>
-              <span className="pill" style={{ background: 'var(--bg-3)' }}>today</span>
-            </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {[['Revenue','TZS 1.24M',true],['Tickets','87',false],['Items','342',false]].map(([l,v,a]) => (
-                <button key={l as string} style={{
-                  padding: '5px 10px', fontSize: 12,
-                  background: a ? 'var(--bg-3)' : 'transparent',
-                  color: a ? 'var(--fg)' : 'var(--fg-3)',
-                  border: '1px solid ' + (a ? 'var(--line-2)' : 'transparent'),
-                  borderRadius: 5, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}>{l} <span className="mono" style={{ fontSize: 10, color: a ? 'var(--accent)' : 'var(--fg-4)' }}>{v}</span></button>
-              ))}
-            </div>
-          </div>
-          <SalesChart />
-        </div>
-        <div className="surface">
-          <div className="card-head">
-            <span className="card-title">Payment mix</span>
-            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>last 24h</span>
-          </div>
-          <PaymentMix />
-        </div>
-      </div>
+        /* AI section */
+        .ai-grid { grid-template-columns: 1fr 1.15fr; }
+        .ai-props { grid-template-columns: 1fr 1fr; }
 
-      {/* Recent txn + today summary */}
-      {/* Mobile: card-list; Desktop: table with scroll */}
-      <RecentTxnMobile />
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12, marginBottom: 16 }}>
-        <div className="desktop-only"><RecentTxn /></div>
-        <TodaySummary />
-      </div>
+        /* Footer */
+        .footer-grid { grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr; }
 
-      {/* Top products + low stock */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12 }}>
-        <TopProducts />
-        <LowStock />
+        @media (max-width: 768px) {
+          .landing-nav { display: none !important; }
+          .landing-ham { display: flex !important; }
+
+          .stats-grid {
+            grid-template-columns: repeat(3, minmax(140px, 1fr)) !important;
+          }
+          .stats-grid > div {
+            border-left: 0 !important;
+            border-bottom: 1px solid var(--line);
+          }
+
+          .feat-grid-3,
+          .feat-grid-2 { grid-template-columns: 1fr !important; }
+
+          .ai-grid { grid-template-columns: 1fr !important; }
+          .ai-props { grid-template-columns: 1fr 1fr !important; }
+
+          .footer-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+
+        @media (max-width: 480px) {
+          .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .ai-props { grid-template-columns: 1fr !important; }
+          .footer-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--fg)', fontFamily: 'var(--sans, system-ui, sans-serif)', fontSize: 15, lineHeight: 1.5, WebkitFontSmoothing: 'antialiased' }}>
+        <Header theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
+        <Hero accent={accent} />
+        <StatsStrip />
+        <FeatureGrid accent={accent} />
+        <AISection accent={accent} />
+        <CTA />
+        <Footer />
       </div>
-    </AppShell>
+    </>
   );
 }

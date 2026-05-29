@@ -153,12 +153,12 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
   }, [pathname, onClose]);
 
   const isActive = (path: string) => {
-    if (path === '/') return pathname === '/';
+    if (path === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(path);
   };
 
   const primary = [
-    { id: 'dashboard', label: 'Dashboard',     icon: Icons.dashboard,  href: '/' },
+    { id: 'dashboard', label: 'Dashboard',     icon: Icons.dashboard,  href: '/dashboard' },
     { id: 'pos',       label: 'Point of Sale',  icon: Icons.pos,        href: '/pos',          badge: '⌘N' },
     { id: 'txn',       label: 'Transactions',   icon: Icons.txn,        href: '/transactions' },
     { id: 'inventory', label: 'Inventory',      icon: Icons.inventory,  href: '/inventory',    badge: { color: 'var(--warn)' } },
