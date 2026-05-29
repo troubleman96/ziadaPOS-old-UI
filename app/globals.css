@@ -635,6 +635,23 @@ input, select, textarea { font-family: inherit; }
 /* Utility: only visible on mobile (hidden on desktop) */
 .pos-mobile-only { display: none; }
 
+/* Cart bottom sheet grip handle */
+.cart-grip {
+  width: 40px; height: 4px; border-radius: 999px;
+  background: var(--line-3); margin: 10px auto 2px;
+  flex-shrink: 0; align-self: center; display: none;
+}
+
+/* Mobile-only block utility (for dashboard card-list etc.) */
+.mobile-only { display: none !important; }
+.desktop-only { display: block; }
+
+/* Dashboard date-range control: scrollable pills on mobile */
+.date-seg-wrap {
+  display: flex; border: 1px solid var(--line);
+  border-radius: 6px; overflow: hidden; background: var(--bg-2);
+}
+
 /* ─── Credits customer-row responsive ───────────────────────────────────────── */
 @media (max-width: 640px) {
   .customer-row {
@@ -682,6 +699,25 @@ input, select, textarea { font-family: inherit; }
   }
 
   .pos { grid-template-columns: 1fr; }
+  .cart-grip { display: block; }
+  .mobile-only { display: block !important; }
+  .desktop-only { display: none !important; }
+  /* Date-range → scrollable pills on mobile */
+  .date-seg-wrap {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    border: none; background: transparent;
+    gap: 6px;
+  }
+  .date-seg-wrap button {
+    flex: none !important; white-space: nowrap;
+    border-radius: 999px !important; border: 1px solid var(--line) !important;
+    background: var(--bg-2) !important; color: var(--fg-3) !important;
+  }
+  .date-seg-wrap button.range-active {
+    border-color: var(--accent-line) !important;
+    background: var(--accent-soft) !important;
+    color: var(--fg) !important;
+  }
   .cart {
     position: fixed; inset-x: 0; bottom: 0; top: auto; z-index: 200;
     max-height: 90vh; border-radius: 16px 16px 0 0;

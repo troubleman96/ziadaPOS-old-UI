@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
-import { fmt } from '../../lib/utils';
+import { fmt, fmtShort } from '../../lib/utils';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -94,12 +94,13 @@ function TrialBanner({ onDismiss }: { onDismiss: () => void }) {
 }
 
 // ── Products sticky header ────────────────────────────────────────────────────
-function ProductsSticky({ query, setQuery, cat, setCat, resultCount, inputRef, cartCount, onOpenCart }: {
+function ProductsSticky({ query, setQuery, cat, setCat, resultCount, inputRef, cartCount, cartSubtotal, onOpenCart }: {
   query: string; setQuery: (q: string) => void;
   cat: string;   setCat:   (c: string) => void;
   resultCount: number;
   inputRef: React.RefObject<HTMLInputElement | null>;
   cartCount: number;
+  cartSubtotal: number;
   onOpenCart: () => void;
 }) {
   return (
@@ -144,26 +145,40 @@ function ProductsSticky({ query, setQuery, cat, setCat, resultCount, inputRef, c
         <button className="btn btn-soft pos-hide-mobile" style={{ height: 40, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
           {Icons.plus} Custom
         </button>
-        {/* Mobile-only cart trigger in the search row */}
+        {/* Mobile-only cart trigger — expands to show total + count when items in cart */}
         <button
           className="pos-mobile-only"
           onClick={onOpenCart}
           style={{
-            position: 'relative', width: 40, height: 40, flexShrink: 0,
-            background: 'var(--accent)', color: '#fff',
-            border: 'none', borderRadius: 8, cursor: 'pointer',
-            alignItems: 'center', justifyContent: 'center',
+            position: 'relative', height: 40, flexShrink: 0,
+            padding: cartCount > 0 ? '0 12px 0 10px' : '0',
+            width: cartCount > 0 ? 'auto' : 40, minWidth: 40,
+            background: cartCount > 0 ? 'var(--accent)' : 'var(--bg-2)',
+            color: cartCount > 0 ? '#fff' : 'var(--fg-2)',
+            border: cartCount > 0 ? 'none' : '1px solid var(--line)',
+            borderRadius: 8, cursor: 'pointer',
+            alignItems: 'center', gap: 8,
+            transition: 'all 150ms ease',
           }}
           title="View cart"
         >
           <CartIcon />
           {cartCount > 0 && (
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11.5, fontWeight: 600, lineHeight: 1, textAlign: 'left' }}>
+              {fmtShort(cartSubtotal)}
+              <div style={{ fontSize: 8.5, opacity: 0.85, fontWeight: 500, marginTop: 1 }}>
+                {cartCount} item{cartCount !== 1 ? 's' : ''}
+              </div>
+            </span>
+          )}
+          {cartCount > 0 && (
             <span style={{
               position: 'absolute', top: -5, right: -5,
               minWidth: 18, height: 18, padding: '0 4px',
-              borderRadius: 999, background: 'var(--warn)', color: '#fff',
+              borderRadius: 999, background: 'var(--bad)', color: '#fff',
               fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
               display: 'grid', placeItems: 'center',
+              border: '2px solid var(--bg)',
             }}>{cartCount}</span>
           )}
         </button>
@@ -271,6 +286,8 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
 
   return (
     <aside className={'cart' + (isOpen ? ' cart-open' : '')}>
+      {/* Grip handle — visible only on mobile as a drag affordance */}
+      <div className="cart-grip" />
       {/* Header */}
       <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -494,6 +511,7 @@ export default function POSPage() {
             resultCount={items.length}
             inputRef={searchRef}
             cartCount={cartCount}
+            cartSubtotal={cartSubtotal}
             onOpenCart={() => setCartOpen(true)}
           />
           <div className="products-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
