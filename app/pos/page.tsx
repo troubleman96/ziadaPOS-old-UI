@@ -78,7 +78,8 @@ function TrialBanner({ onDismiss }: { onDismiss: () => void }) {
     <div style={{
       padding: '9px 20px', borderBottom: '1px solid var(--line)',
       background: 'linear-gradient(90deg, rgba(251,191,36,0.08), transparent 60%)',
-      display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0,
+      display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
+      flexWrap: 'wrap',
     }}>
       <span className="pill warn" style={{ fontSize: 10 }}>TRIAL</span>
       <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>
@@ -93,11 +94,13 @@ function TrialBanner({ onDismiss }: { onDismiss: () => void }) {
 }
 
 // ── Products sticky header ────────────────────────────────────────────────────
-function ProductsSticky({ query, setQuery, cat, setCat, resultCount, inputRef }: {
+function ProductsSticky({ query, setQuery, cat, setCat, resultCount, inputRef, cartCount, onOpenCart }: {
   query: string; setQuery: (q: string) => void;
   cat: string;   setCat:   (c: string) => void;
   resultCount: number;
   inputRef: React.RefObject<HTMLInputElement | null>;
+  cartCount: number;
+  onOpenCart: () => void;
 }) {
   return (
     <div className="products-sticky">
@@ -138,8 +141,31 @@ function ProductsSticky({ query, setQuery, cat, setCat, resultCount, inputRef }:
         <button className="btn btn-soft" style={{ height: 40, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
           <BarcodeIcon /> Scan
         </button>
-        <button className="btn btn-soft" style={{ height: 40, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button className="btn btn-soft pos-hide-mobile" style={{ height: 40, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
           {Icons.plus} Custom
+        </button>
+        {/* Mobile-only cart trigger in the search row */}
+        <button
+          className="pos-mobile-only"
+          onClick={onOpenCart}
+          style={{
+            position: 'relative', width: 40, height: 40, flexShrink: 0,
+            background: 'var(--accent)', color: '#fff',
+            border: 'none', borderRadius: 8, cursor: 'pointer',
+            alignItems: 'center', justifyContent: 'center',
+          }}
+          title="View cart"
+        >
+          <CartIcon />
+          {cartCount > 0 && (
+            <span style={{
+              position: 'absolute', top: -5, right: -5,
+              minWidth: 18, height: 18, padding: '0 4px',
+              borderRadius: 999, background: 'var(--warn)', color: '#fff',
+              fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
+              display: 'grid', placeItems: 'center',
+            }}>{cartCount}</span>
+          )}
         </button>
       </div>
 
@@ -166,7 +192,7 @@ function ProductGrid({ items, cartMap, onAdd }: { items: Product[]; cartMap: Rec
     );
   }
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+    <div className="product-grid">
       {items.map((p) => {
         const qty = cartMap[p.id] || 0;
         const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
@@ -368,14 +394,46 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
   );
 }
 
+// ── Mobile cart preview (inline, below products) ──────────────────────────────
+function MobileCartPreview({ itemCount, subtotal, onOpen }: { itemCount: number; subtotal: number; onOpen: () => void }) {
+  return (
+    <div className="pos-mobile-only" style={{
+      flexDirection: 'column', gap: 10,
+      background: 'var(--bg-2)', border: '1px solid var(--line)',
+      borderRadius: 10, padding: '12px 16px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 13.5, fontWeight: 500 }}>
+          Current sale{itemCount > 0 && <span className="mono" style={{ fontSize: 11.5, color: 'var(--fg-3)', marginLeft: 6 }}>({itemCount} items)</span>}
+        </span>
+        <button
+          onClick={onOpen}
+          style={{ fontSize: 12, color: 'var(--accent)', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 }}
+        >
+          Open cart →
+        </button>
+      </div>
+      {itemCount === 0 ? (
+        <p style={{ margin: 0, fontSize: 12.5, color: 'var(--fg-3)' }}>Tap a product to add it to the sale.</p>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Subtotal</span>
+          <span className="mono" style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{fmt(subtotal)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function POSPage() {
   const [query,    setQuery]    = useState('');
   const [cat,      setCat]      = useState('all');
-  const [cart,     setCart]     = useState<Cart>({});
-  const [payment,  setPayment]  = useState('Cash');
-  const [discount, setDiscount] = useState(0);
-  const [trial,    setTrial]    = useState(true);
+  const [cart,      setCart]      = useState<Cart>({});
+  const [payment,   setPayment]   = useState('Cash');
+  const [discount,  setDiscount]  = useState(0);
+  const [trial,     setTrial]     = useState(true);
+  const [cartOpen,  setCartOpen]  = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // '/' focuses search, Escape blurs
@@ -405,6 +463,9 @@ export default function POSPage() {
     return m;
   }, [cart]);
 
+  const cartCount   = useMemo(() => Object.values(cart).reduce((s, l) => s + l.qty, 0), [cart]);
+  const cartSubtotal = useMemo(() => Object.values(cart).reduce((s, l) => s + l.qty * l.product.price, 0), [cart]);
+
   const addProduct = (p: Product) => {
     setCart((c) => ({ ...c, [p.id]: { product: p, qty: (c[p.id]?.qty || 0) + 1 } }));
   };
@@ -418,6 +479,12 @@ export default function POSPage() {
       {/* Trial banner sits in the flex column before the pos grid */}
       {trial && <TrialBanner onDismiss={() => setTrial(false)} />}
 
+      {/* Backdrop for mobile cart drawer */}
+      <div
+        className={'cart-mobile-overlay' + (cartOpen ? ' visible' : '')}
+        onClick={() => setCartOpen(false)}
+      />
+
       {/* The pos grid: products (left) + cart (right), fills all remaining height */}
       <div className="pos">
         <div className="products">
@@ -426,15 +493,23 @@ export default function POSPage() {
             cat={cat}     setCat={setCat}
             resultCount={items.length}
             inputRef={searchRef}
+            cartCount={cartCount}
+            onOpenCart={() => setCartOpen(true)}
           />
-          <div className="products-scroll">
+          <div className="products-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <ProductGrid items={items} cartMap={cartMap} onAdd={addProduct} />
+            <MobileCartPreview
+              itemCount={cartCount}
+              subtotal={cartSubtotal}
+              onOpen={() => setCartOpen(true)}
+            />
           </div>
         </div>
         <CartPanel
           cart={cart}     setCart={setCart}
           payment={payment} setPayment={setPayment}
           discount={discount} setDiscount={setDiscount}
+          isOpen={cartOpen} onClose={() => setCartOpen(false)}
         />
       </div>
     </AppShell>

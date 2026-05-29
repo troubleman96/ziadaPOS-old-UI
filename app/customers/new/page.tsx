@@ -97,7 +97,7 @@ export default function NewCustomerPage() {
       </div>
 
       <form onSubmit={handleSubmit} noValidate>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-detail)', gap: 16, alignItems: 'start' }}>
 
           {/* Left column — main fields */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

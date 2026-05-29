@@ -37,7 +37,7 @@ export default function NewProductPage() {
 
       <h1 style={{ margin: '0 0 24px', fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>New product</h1>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-detail)', gap: 16, alignItems: 'start' }}>
         {/* Left */}
         <div>
           {/* Basic info */}

@@ -100,7 +100,7 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
               {t.till}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}><PrintIcon /> Print receipt</button>
             <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}><WhatsAppIcon /> Send via WhatsApp</button>
             {t.status !== 'refunded' && <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }}><RefundIcon /> Refund sale</button>}
@@ -110,7 +110,7 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
       </div>
 
       {/* Body grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-detail)', gap: 16, alignItems: 'start' }}>
         {/* Left column */}
         <div>
           {/* Line items */}

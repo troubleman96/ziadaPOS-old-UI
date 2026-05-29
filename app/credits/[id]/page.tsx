@@ -79,7 +79,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
       </div>
 
       {tab === 'overview' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-detail)', gap: 16, alignItems: 'start' }}>
           <div>
             {/* Credit tabs table */}
             <div className="surface" style={{ marginBottom: 14 }}>

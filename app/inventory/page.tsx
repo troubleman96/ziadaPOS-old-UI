@@ -123,9 +123,9 @@ export default function InventoryPage() {
 
       {/* AI nudge */}
       {lowProducts.length > 0 && (
-        <div className="surface" style={{ padding: '14px 16px', borderColor: 'var(--accent-line)', background: 'linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-2) 100%)', marginBottom: 16, display: 'flex', gap: 14, alignItems: 'center' }}>
-          <span style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-2)', border: '1px solid var(--accent-line)', display: 'grid', placeItems: 'center', color: 'var(--accent)' }}>{Icons.sparkles}</span>
-          <div style={{ flex: 1 }}>
+        <div className="surface" style={{ padding: '14px 16px', borderColor: 'var(--accent-line)', background: 'linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-2) 100%)', marginBottom: 16, display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-2)', border: '1px solid var(--accent-line)', display: 'grid', placeItems: 'center', color: 'var(--accent)', flexShrink: 0 }}>{Icons.sparkles}</span>
+          <div style={{ flex: 1, minWidth: 180 }}>
             <div style={{ fontSize: 13, color: 'var(--fg)', marginBottom: 2 }}>
               <strong style={{ fontWeight: 500 }}>{lowProducts.length} product{lowProducts.length > 1 ? 's' : ''}</strong> below reorder point — projected stockout in 2–4 days.
             </div>
@@ -134,8 +134,10 @@ export default function InventoryPage() {
               {lowProducts.length > 3 ? ` · +${lowProducts.length - 3} more` : ''}
             </div>
           </div>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.sparkles} Auto-draft restock</button>
-          <button className="btn btn-ghost" style={{ padding: '6px 10px', fontSize: 12 }}>View all</button>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.sparkles} Auto-draft restock</button>
+            <button className="btn btn-ghost" style={{ padding: '6px 10px', fontSize: 12 }}>View all</button>
+          </div>
         </div>
       )}
 

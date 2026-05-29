@@ -120,7 +120,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, marginBottom: 18 }}>
         <div className="surface kpi-mini">
           <div className="label">ON HAND</div>
           <div className="value">{p.stock} <span style={{ fontSize: 12, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>{p.unit}</span></div>
@@ -167,7 +167,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {tab === 'overview' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-detail)', gap: 16, alignItems: 'start' }}>
           <div>
             <div className="surface" style={{ marginBottom: 14 }}>
               <div className="card-head">

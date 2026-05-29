@@ -75,11 +75,13 @@ export function Topbar({ crumbs, actions, search = true, onMenuToggle }: TopbarP
         <span style={{ color: 'var(--accent)' }}>{Icons.sparkles}</span> Ask Ziada AI
       </button>
 
-      {actions !== undefined ? actions : (
-        <Link href="/pos" className="btn btn-primary" style={{ padding: '7px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
-          {Icons.plus} New sale
-        </Link>
-      )}
+      <div className="topbar-actions">
+        {actions !== undefined ? actions : (
+          <Link href="/pos" className="btn btn-primary" style={{ padding: '7px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {Icons.plus} New sale
+          </Link>
+        )}
+      </div>
 
       <div style={{ display: 'flex', gap: 6, marginLeft: 4 }}>
         <button className="icon-btn" title="Notifications" style={{ position: 'relative' }}>
