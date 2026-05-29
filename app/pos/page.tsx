@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
-import { fmt } from '../../lib/utils';
+import { fmt, fmtShort } from '../../lib/utils';
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -76,36 +76,41 @@ const CartIcon = () => (
 function TrialBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
     <div style={{
-      padding: '9px 20px', borderBottom: '1px solid var(--line)',
+      padding: '8px 14px', borderBottom: '1px solid var(--line)',
       background: 'linear-gradient(90deg, rgba(251,191,36,0.08), transparent 60%)',
-      display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0,
-      flexWrap: 'wrap',
+      display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
     }}>
-      <span className="pill warn" style={{ fontSize: 10 }}>TRIAL</span>
-      <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>
+      {/* Desktop: full text */}
+      <span className="pill warn page-sec" style={{ fontSize: 10 }}>TRIAL</span>
+      <span className="page-sec" style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>
         Your free trial ends in <strong style={{ color: 'var(--fg)' }}>5 days</strong>. All Pro features included.
       </span>
+      {/* Mobile: compact label */}
+      <span className="mono pos-mobile-only" style={{ fontSize: 11.5, color: 'var(--fg-2)', fontWeight: 500 }}>
+        Trial: <strong style={{ color: 'var(--fg)' }}>5 days left.</strong>
+      </span>
       <div style={{ flex: 1 }} />
-      <a href="#" className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Compare plans</a>
+      <a href="#" className="mono page-sec" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Compare plans</a>
       <button className="btn btn-primary" style={{ padding: '5px 10px', fontSize: 12 }}>Upgrade</button>
-      <button onClick={onDismiss} className="icon-btn" style={{ width: 24, height: 24, fontSize: 16 }} title="Dismiss">×</button>
+      <button onClick={onDismiss} className="icon-btn page-sec" style={{ width: 24, height: 24, fontSize: 16 }} title="Dismiss">×</button>
     </div>
   );
 }
 
 // ── Products sticky header ────────────────────────────────────────────────────
-function ProductsSticky({ query, setQuery, cat, setCat, resultCount, inputRef, cartCount, onOpenCart }: {
+function ProductsSticky({ query, setQuery, cat, setCat, resultCount, inputRef, cartCount, cartSubtotal, onOpenCart }: {
   query: string; setQuery: (q: string) => void;
   cat: string;   setCat:   (c: string) => void;
   resultCount: number;
   inputRef: React.RefObject<HTMLInputElement | null>;
   cartCount: number;
+  cartSubtotal: number;
   onOpenCart: () => void;
 }) {
   return (
     <div className="products-sticky">
-      {/* Title row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+      {/* Title row — hidden on mobile (topbar already shows the page name) */}
+      <div className="products-sticky-title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 18, fontWeight: 500, letterSpacing: '-0.01em' }}>Point of sale</h1>
           <div className="mono" style={{ fontSize: 11, color: 'var(--fg-4)', marginTop: 2, letterSpacing: '0.04em' }}>
@@ -129,41 +134,53 @@ function ProductsSticky({ query, setQuery, cat, setCat, resultCount, inputRef, c
           <span style={{ color: 'var(--fg-4)' }}>{Icons.search}</span>
           <input
             ref={inputRef}
-            placeholder="Search products by name or scan barcode…"
+            placeholder="Search or scan…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-          <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)' }}>
+          <span className="mono page-sec" style={{ fontSize: 10.5, color: 'var(--fg-4)' }}>
             {resultCount} of {PRODUCTS.length}
           </span>
-          <span className="kbd">/</span>
+          <span className="kbd page-sec">/</span>
         </div>
-        <button className="btn btn-soft" style={{ height: 40, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <BarcodeIcon /> Scan
+        <button className="btn btn-soft" style={{ height: 40, padding: '0 11px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <BarcodeIcon /><span className="page-sec">Scan</span>
         </button>
         <button className="btn btn-soft pos-hide-mobile" style={{ height: 40, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
           {Icons.plus} Custom
         </button>
-        {/* Mobile-only cart trigger in the search row */}
+        {/* Mobile-only cart trigger — expands to show total + count when items in cart */}
         <button
           className="pos-mobile-only"
           onClick={onOpenCart}
           style={{
-            position: 'relative', width: 40, height: 40, flexShrink: 0,
+            position: 'relative', height: 40, flexShrink: 0,
+            padding: cartCount > 0 ? '0 12px 0 10px' : '0',
+            width: cartCount > 0 ? 'auto' : 40, minWidth: 40,
             background: 'var(--accent)', color: '#fff',
             border: 'none', borderRadius: 8, cursor: 'pointer',
-            alignItems: 'center', justifyContent: 'center',
+            alignItems: 'center', gap: 8,
+            transition: 'all 150ms ease',
           }}
           title="View cart"
         >
           <CartIcon />
           {cartCount > 0 && (
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11.5, fontWeight: 600, lineHeight: 1, textAlign: 'left' }}>
+              {fmtShort(cartSubtotal)}
+              <div style={{ fontSize: 8.5, opacity: 0.85, fontWeight: 500, marginTop: 1 }}>
+                {cartCount} item{cartCount !== 1 ? 's' : ''}
+              </div>
+            </span>
+          )}
+          {cartCount > 0 && (
             <span style={{
               position: 'absolute', top: -5, right: -5,
               minWidth: 18, height: 18, padding: '0 4px',
-              borderRadius: 999, background: 'var(--warn)', color: '#fff',
+              borderRadius: 999, background: 'var(--bad)', color: '#fff',
               fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
               display: 'grid', placeItems: 'center',
+              border: '2px solid var(--bg)',
             }}>{cartCount}</span>
           )}
         </button>
@@ -271,6 +288,8 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
 
   return (
     <aside className={'cart' + (isOpen ? ' cart-open' : '')}>
+      {/* Grip handle — visible only on mobile as a drag affordance */}
+      <div className="cart-grip" />
       {/* Header */}
       <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -474,7 +493,7 @@ export default function POSPage() {
     <AppShell
       full
       crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Point of sale' }]}
-      actions={<button className="btn btn-soft" style={{ padding: '7px 12px', fontSize: 13 }}>Recent sales</button>}
+      actions={<button className="btn btn-soft page-sec" style={{ padding: '7px 12px', fontSize: 13 }}>Recent sales</button>}
     >
       {/* Trial banner sits in the flex column before the pos grid */}
       {trial && <TrialBanner onDismiss={() => setTrial(false)} />}
@@ -494,6 +513,7 @@ export default function POSPage() {
             resultCount={items.length}
             inputRef={searchRef}
             cartCount={cartCount}
+            cartSubtotal={cartSubtotal}
             onOpenCart={() => setCartOpen(true)}
           />
           <div className="products-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

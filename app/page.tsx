@@ -190,17 +190,59 @@ function PaymentMix() {
 }
 
 // ── Recent Transactions ───────────────────────────────────────────────────────
+const TXN_ROWS = [
+  ['#TXN-2042', 'Walk-in',   'M-Pesa',    271400, 'completed', '14:32'],
+  ['#TXN-2041', 'Fatuma A.', 'Credit',     38500, 'credit',    '14:21'],
+  ['#TXN-2040', 'Walk-in',   'Cash',        6200, 'completed', '14:18'],
+  ['#TXN-2039', 'Juma K.',   'M-Pesa',     84200, 'completed', '14:04'],
+  ['#TXN-2038', 'Walk-in',   'Tigo Pesa',  22000, 'completed', '13:55'],
+  ['#TXN-2037', 'Asha M.',   'Credit',     54200, 'credit',    '13:42'],
+  ['#TXN-2036', 'Walk-in',   'Cash',       12800, 'refunded',  '13:31'],
+  ['#TXN-2035', 'Walk-in',   'M-Pesa',     46500, 'completed', '13:18'],
+] as const;
+
+function TxnStatusPill({ s }: { s: string }) {
+  return s === 'completed' ? <span className="pill good" style={{ fontSize: 9.5 }}>{s}</span> :
+         s === 'credit'    ? <span className="pill warn" style={{ fontSize: 9.5 }}>{s}</span> :
+         s === 'refunded'  ? <span className="pill bad"  style={{ fontSize: 9.5 }}>{s}</span> :
+                             <span className="pill"      style={{ fontSize: 9.5 }}>{s}</span>;
+}
+
+// Card-list layout — shown on mobile only
+function RecentTxnMobile() {
+  return (
+    <div className="surface mobile-only" style={{ overflow: 'hidden' }}>
+      <div className="card-head">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span className="card-title">Recent transactions</span>
+          <span className="pill" style={{ background: 'var(--bg-3)', fontSize: 10 }}>last hour</span>
+        </div>
+      </div>
+      {TXN_ROWS.slice(0, 6).map(([id, who, method, amt, status, time], i, arr) => (
+        <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 0 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span style={{ fontSize: 13.5, fontWeight: 500 }}>{who}</span>
+              <TxnStatusPill s={status} />
+            </div>
+            <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 3 }}>
+              {id} · {method} · {time}
+            </div>
+          </div>
+          <span className="mono" style={{ fontSize: 13, color: 'var(--fg)', flexShrink: 0 }}>{fmt(amt)}</span>
+        </div>
+      ))}
+      <div style={{ padding: 12, borderTop: '1px solid var(--line)' }}>
+        <Link href="/transactions" className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 5 }}>
+          View all transactions {Icons.chevRight}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function RecentTxn() {
-  const rows = [
-    ['#TXN-2042', 'Walk-in',   'M-Pesa',    271400, 'completed', '14:32'],
-    ['#TXN-2041', 'Fatuma A.', 'Credit',     38500, 'credit',    '14:21'],
-    ['#TXN-2040', 'Walk-in',   'Cash',        6200, 'completed', '14:18'],
-    ['#TXN-2039', 'Juma K.',   'M-Pesa',     84200, 'completed', '14:04'],
-    ['#TXN-2038', 'Walk-in',   'Tigo Pesa',  22000, 'completed', '13:55'],
-    ['#TXN-2037', 'Asha M.',   'Credit',     54200, 'credit',    '13:42'],
-    ['#TXN-2036', 'Walk-in',   'Cash',       12800, 'refunded',  '13:31'],
-    ['#TXN-2035', 'Walk-in',   'M-Pesa',     46500, 'completed', '13:18'],
-  ] as const;
+  const rows = TXN_ROWS;
 
   const statusPill = (s: string) =>
     s === 'completed' ? <span className="pill good">{s}</span> :
@@ -404,20 +446,20 @@ export default function DashboardPage() {
               </span>
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{ display: 'flex', border: '1px solid var(--line)', borderRadius: 6, overflow: 'hidden', background: 'var(--bg-2)' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="date-seg-wrap">
               {['Today', '7D', '30D', '90D', 'YTD'].map((l, i) => (
-                <button key={l} onClick={() => setRange(i)} style={{
+                <button key={l} onClick={() => setRange(i)} className={range === i ? 'range-active' : ''} style={{
                   padding: '6px 12px', fontSize: 12.5,
                   background: range === i ? 'var(--bg-3)' : 'transparent',
                   color: range === i ? 'var(--fg)' : 'var(--fg-3)',
                   border: 0,
                   borderRight: i < 4 ? '1px solid var(--line)' : 0,
-                  cursor: 'pointer',
+                  cursor: 'pointer', fontFamily: 'inherit',
                 }}>{l}</button>
               ))}
             </div>
-            <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{Icons.download} Export</button>
+            <button className="btn btn-ghost desktop-only" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{Icons.download} Export</button>
           </div>
         </div>
       </div>
@@ -469,8 +511,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent txn + today summary */}
+      {/* Mobile: card-list; Desktop: table with scroll */}
+      <RecentTxnMobile />
       <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12, marginBottom: 16 }}>
-        <RecentTxn />
+        <div className="desktop-only"><RecentTxn /></div>
         <TodaySummary />
       </div>
 

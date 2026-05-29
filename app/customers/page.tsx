@@ -164,10 +164,7 @@ export default function CustomersPage() {
       crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Customers' }]}
       actions={
         <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            className="btn btn-soft"
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
-          >
+          <button className="btn btn-soft page-sec">
             <GoogleG />
             <span>Import from Google Contacts</span>
           </button>
@@ -237,8 +234,8 @@ export default function CustomersPage() {
           {query && <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{filtered.length}</span>}
         </div>
 
-        {/* Segment pills */}
-        <div style={{ display: 'flex', gap: 5 }}>
+        {/* Segment pills — scrollable on mobile */}
+        <div className="filter-pills-scroll" style={{ display: 'flex', gap: 5 }}>
           {(['All', 'VIP', 'Regular', 'Occasional', 'New'] as Segment[]).map((s) => (
             <button
               key={s}
@@ -274,8 +271,36 @@ export default function CustomersPage() {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="surface" style={{ overflow: 'hidden' }}>
+      {/* Mobile card-list */}
+      <div className="cust-cards-wrap surface" style={{ overflow: 'hidden' }}>
+        {filtered.map((c) => {
+          const seg = SEGMENT_COLORS[c.segment];
+          return (
+            <Link key={c.id} href={`/customers/${c.id}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: '1px solid var(--line)', color: 'inherit' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 999, flexShrink: 0, background: `oklch(55% 0.18 ${c.avatarHue})`, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 600, color: '#fff' }}>
+                {initials(c.name)}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                  <span style={{ fontWeight: 500, fontSize: 13.5 }}>{c.name}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 999, fontSize: 10, background: seg.bg, color: seg.color, border: '1px solid ' + seg.border }}>{c.segment}</span>
+                </div>
+                <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 2 }}>{c.phone} · {daysAgoLabel(c.lastVisit)}</div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div className="mono" style={{ fontSize: 13, fontWeight: 600 }}>{fmtShort(c.totalSpent)}</div>
+                {c.openCredit > 0 && <div className="mono" style={{ fontSize: 10, color: 'var(--warn)', marginTop: 2 }}>{fmt(c.openCredit)} credit</div>}
+              </div>
+            </Link>
+          );
+        })}
+        <div style={{ padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'var(--bg-3)' }}>
+          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{filtered.length} customers</span>
+        </div>
+      </div>
+
+      {/* Desktop table */}
+      <div className="cust-table-wrap surface" style={{ overflow: 'hidden' }}>
         <div className="table-scroll">
         <table className="table" style={{ width: '100%' }}>
           <thead>
@@ -294,15 +319,9 @@ export default function CustomersPage() {
               const seg = SEGMENT_COLORS[c.segment];
               return (
                 <tr key={c.id}>
-                  {/* Avatar + name */}
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: 999, flexShrink: 0,
-                        background: `oklch(55% 0.18 ${c.avatarHue})`,
-                        display: 'grid', placeItems: 'center',
-                        fontSize: 12.5, fontWeight: 600, color: '#fff',
-                      }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 999, flexShrink: 0, background: `oklch(55% 0.18 ${c.avatarHue})`, display: 'grid', placeItems: 'center', fontSize: 12.5, fontWeight: 600, color: '#fff' }}>
                         {initials(c.name)}
                       </div>
                       <div>
@@ -311,58 +330,19 @@ export default function CustomersPage() {
                         </div>
                         <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
                           {c.phone}
-                          {'  '}
-                          <span
-                            style={{
-                              display: 'inline-flex', alignItems: 'center',
-                              padding: '1px 6px', borderRadius: 999,
-                              fontSize: 10, background: seg.bg, color: seg.color, border: '1px solid ' + seg.border,
-                              marginLeft: 4,
-                            }}
-                          >
-                            {c.segment}
-                          </span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 6px', borderRadius: 999, fontSize: 10, background: seg.bg, color: seg.color, border: '1px solid ' + seg.border, marginLeft: 6 }}>{c.segment}</span>
                         </div>
                       </div>
                     </div>
                   </td>
-                  <td className="mono" style={{ fontSize: 12, color: 'var(--fg-3)' }}>
-                    {c.since.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
-                  </td>
-                  <td className="num mono" style={{ fontSize: 13 }}>
-                    {fmtShort(c.totalSpent)}
-                  </td>
-                  <td className="mono" style={{ fontSize: 12, color: 'var(--fg-2)' }}>
-                    {daysAgoLabel(c.lastVisit)}
-                  </td>
-                  <td className="num">
-                    {c.openCredit > 0 ? (
-                      <span className="mono" style={{ fontSize: 13, color: 'var(--warn)' }}>{fmt(c.openCredit)}</span>
-                    ) : (
-                      <span className="mono" style={{ fontSize: 12, color: 'var(--fg-4)' }}>—</span>
-                    )}
-                  </td>
-                  <td className="num mono" style={{ fontSize: 12, color: 'var(--fg-2)' }}>
-                    {fmtShort(c.avgTicket)}
-                  </td>
+                  <td className="mono" style={{ fontSize: 12, color: 'var(--fg-3)' }}>{c.since.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</td>
+                  <td className="num mono" style={{ fontSize: 13 }}>{fmtShort(c.totalSpent)}</td>
+                  <td className="mono" style={{ fontSize: 12, color: 'var(--fg-2)' }}>{daysAgoLabel(c.lastVisit)}</td>
+                  <td className="num">{c.openCredit > 0 ? <span className="mono" style={{ fontSize: 13, color: 'var(--warn)' }}>{fmt(c.openCredit)}</span> : <span className="mono" style={{ fontSize: 12, color: 'var(--fg-4)' }}>—</span>}</td>
+                  <td className="num mono" style={{ fontSize: 12, color: 'var(--fg-2)' }}>{fmtShort(c.avgTicket)}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
-                      <Link href={`/customers/${c.id}`}>
-                        <button className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12 }}>View</button>
-                      </Link>
-                      <a href={`https://wa.me/${c.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
-                        <button
-                          className="icon-btn"
-                          title="WhatsApp"
-                          style={{ width: 28, height: 28, background: 'rgba(37,211,102,0.08)', borderColor: 'rgba(37,211,102,0.3)', color: '#25d366' }}
-                        >
-                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-                            <g stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M2 14l1-3a6 6 0 1 1 2.5 2.5L2 14z"/>
-                            </g>
-                          </svg>
-                        </button>
-                      </a>
+                      <Link href={`/customers/${c.id}`}><button className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12 }}>View</button></Link>
                     </div>
                   </td>
                 </tr>
@@ -371,20 +351,9 @@ export default function CustomersPage() {
           </tbody>
         </table>
         </div>
-
-        {/* Footer */}
-        <div style={{
-          padding: '11px 16px', borderTop: '1px solid var(--line)',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          background: 'var(--bg-3)',
-        }}>
-          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
-            Showing {filtered.length} of {CUSTOMERS.length} customers
-          </span>
-          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
-            Total lifetime value:{' '}
-            <span style={{ color: 'var(--fg-2)' }}>{fmtShort(totalSpent)}</span>
-          </span>
+        <div style={{ padding: '11px 16px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-3)' }}>
+          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Showing {filtered.length} of {CUSTOMERS.length} customers</span>
+          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Total lifetime value: <span style={{ color: 'var(--fg-2)' }}>{fmtShort(totalSpent)}</span></span>
         </div>
       </div>
     </AppShell>

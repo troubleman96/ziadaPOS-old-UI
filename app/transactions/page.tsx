@@ -99,14 +99,14 @@ export default function TransactionsPage() {
             </span>
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <div className="seg">
             {[['Today','today'],['7D','7d'],['30D','30d'],['90D','90d'],['Custom','custom']].map(([l,k]) => (
               <button key={k} className={range === k ? 'active' : ''} onClick={() => setRange(k)}>{l}</button>
             ))}
           </div>
-          <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.download} Export CSV</button>
-          <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.filter} More filters</button>
+          <button className="btn btn-ghost page-sec">{Icons.download} Export CSV</button>
+          <button className="btn btn-soft page-sec">{Icons.filter} More filters</button>
         </div>
       </div>
 
@@ -141,33 +141,66 @@ export default function TransactionsPage() {
           />
           {query && <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{filtered.length} hits</span>}
         </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div className="filter-pills-scroll" style={{ display: 'flex', gap: 6 }}>
           {['all','Cash','M-Pesa','Tigo Pesa','Bank','Credit'].map((m) => (
             <button key={m} onClick={() => setMethod(m)} style={{
-              padding: '5px 11px', borderRadius: 999,
+              padding: '5px 11px', borderRadius: 999, flexShrink: 0,
               border: '1px solid ' + (method === m ? 'var(--accent-line)' : 'var(--line)'),
               background: method === m ? 'var(--accent-soft)' : 'var(--bg)',
               color: method === m ? 'var(--fg)' : 'var(--fg-2)',
-              fontSize: 12, cursor: 'pointer',
+              fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
             }}>{m === 'all' ? 'All methods' : m}</button>
           ))}
-        </div>
-        <span style={{ width: 1, height: 22, background: 'var(--line)', margin: '0 4px' }}></span>
-        <div style={{ display: 'flex', gap: 6 }}>
+          <span style={{ width: 1, background: 'var(--line)', alignSelf: 'stretch', flexShrink: 0 }}></span>
           {['all','paid','credit','refunded'].map((s) => (
             <button key={s} onClick={() => setStatus(s)} style={{
-              padding: '5px 10px', borderRadius: 6,
+              padding: '5px 10px', borderRadius: 6, flexShrink: 0,
               border: '1px solid ' + (status === s ? 'var(--line-2)' : 'var(--line)'),
               background: status === s ? 'var(--bg-3)' : 'var(--bg)',
               color: status === s ? 'var(--fg)' : 'var(--fg-3)',
-              fontSize: 12, cursor: 'pointer', textTransform: 'capitalize',
+              fontSize: 12, cursor: 'pointer', textTransform: 'capitalize', fontFamily: 'inherit',
             }}>{s === 'all' ? 'All status' : s}</button>
           ))}
         </div>
       </div>
 
-      {/* Table */}
-      <div className="surface" style={{ overflow: 'hidden' }}>
+      {/* Mobile card-list */}
+      <div className="txn-cards-wrap surface" style={{ overflow: 'hidden', marginBottom: 0 }}>
+        {filtered.length === 0 ? (
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
+            <div className="mono" style={{ fontSize: 11 }}>NO RESULTS</div>
+          </div>
+        ) : groups.map(([dayKey, txns]) => {
+          const dayTotal = txns.reduce((s, t) => s + (t.status === 'refunded' ? -t.total : t.total), 0);
+          return (
+            <div key={dayKey}>
+              <div className="day-divider" style={{ fontSize: 11 }}>
+                <span>{relativeDayLabel(new Date(dayKey))}</span>
+                <span className="mono" style={{ color: 'var(--fg-3)' }}>{fmtShort(dayTotal)}</span>
+              </div>
+              {txns.map((t) => (
+                <Link key={t.id} href={`/transactions/${t.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid var(--line)', color: 'inherit' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 500, fontSize: 13.5 }}>{t.customer.name}</span>
+                      <StatusPill status={t.status} />
+                    </div>
+                    <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 3 }}>
+                      {t.id} · {t.method} · {fmtTime(t.ts)}
+                    </div>
+                  </div>
+                  <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: t.status === 'refunded' ? 'var(--bad)' : 'var(--fg)', flexShrink: 0 }}>
+                    {t.status === 'refunded' ? '−' : ''}{fmt(t.total)}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop table */}
+      <div className="txn-table-wrap surface" style={{ overflow: 'hidden' }}>
         {filtered.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
             <div className="mono" style={{ fontSize: 11, letterSpacing: '0.06em' }}>NO RESULTS</div>

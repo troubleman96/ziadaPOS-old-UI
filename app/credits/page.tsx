@@ -137,8 +137,8 @@ export default function CreditsPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.download} Statement PDF</button>
-          <button className="btn btn-soft">Send all reminders</button>
+          <button className="btn btn-ghost page-sec">{Icons.download} Statement PDF</button>
+          <button className="btn btn-soft page-sec">Send all reminders</button>
         </div>
       </div>
 
@@ -199,7 +199,7 @@ export default function CreditsPage() {
           />
           {query && <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{filtered.length} hits</span>}
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="filter-pills-scroll" style={{ display: 'flex', gap: 6 }}>
           {[
             ['all', 'All', CREDIT_CUSTOMERS.length],
             ['overdue', 'Overdue', CREDIT_CUSTOMERS.filter(c => c.status === 'overdue').length],
@@ -207,6 +207,7 @@ export default function CreditsPage() {
             ['current', 'Current', CREDIT_CUSTOMERS.filter(c => c.status === 'current').length],
           ].map(([k, l, n]) => (
             <button key={k as string} onClick={() => setFilter(k as string)} style={{
+              flexShrink: 0,
               padding: '5px 11px', borderRadius: 999,
               border: '1px solid ' + (filter === k ? 'var(--accent-line)' : 'var(--line)'),
               background: filter === k ? 'var(--accent-soft)' : 'var(--bg)',
