@@ -743,7 +743,16 @@ input, select, textarea { font-family: inherit; }
   .cart-close-btn { display: grid !important; }
   .pos-hide-mobile { display: none !important; }
   .pos-mobile-only { display: flex; }
-  .product-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .product-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .product-card { padding: 7px; gap: 5px; border-radius: 8px; }
+  .product-thumb { font-size: 18px; }
+  /* POS sticky header: tighter padding, hide the title block */
+  .products-sticky { padding: 12px 14px 10px !important; }
+  .products-sticky-title { display: none !important; }
+  .products-scroll { padding: 12px 14px 80px !important; }
+  /* cat pills: tighter, hide counts */
+  .cat-pill { padding: 5px 10px; font-size: 12px; }
+  .cat-pill .count { display: none; }
 
   /* ── Secondary page-header actions (Export, Import, etc.) ── */
   .page-sec { display: none !important; }
