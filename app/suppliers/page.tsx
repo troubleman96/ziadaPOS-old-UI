@@ -191,8 +191,7 @@ function AddSupplierDrawer({
             {errors.phone && <span style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 3 }}>{errors.phone}</span>}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            {/* Payment terms */}
+          <div className="form-grid-2">
             <div className="form-group">
               <label className="form-label">Payment terms</label>
               <select className="form-input" value={form.paymentTerms} onChange={set('paymentTerms')}>
@@ -201,8 +200,6 @@ function AddSupplierDrawer({
                 <option value="90">90 days</option>
               </select>
             </div>
-
-            {/* Status */}
             <div className="form-group">
               <label className="form-label">Initial status</label>
               <select className="form-input" value={form.status} onChange={set('status')}>
@@ -274,7 +271,7 @@ function SupplierDrawer({ supplier, onClose }: { supplier: Supplier; onClose: ()
           </div>
 
           {/* Key figures */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="form-grid-2" style={{ gap: 8 }}>
             <div style={{ padding: '12px 14px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8 }}>
               <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 4 }}>OUTSTANDING</div>
               <div style={{ fontSize: 18, fontWeight: 500, color: supplier.outstanding > 0 ? 'var(--bad)' : 'var(--good)', letterSpacing: '-0.01em' }}>
@@ -400,12 +397,8 @@ export default function SuppliersPage() {
           <p className="page-sub">Track vendors, deliveries, payment terms and outstanding balances.</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            {Icons.download} Export
-          </button>
-          <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            {Icons.filter} Filter
-          </button>
+          <button className="btn btn-ghost page-sec">{Icons.download} Export</button>
+          <button className="btn btn-soft page-sec">{Icons.filter} Filter</button>
         </div>
       </div>
 

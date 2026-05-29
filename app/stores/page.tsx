@@ -136,7 +136,7 @@ export default function StoresPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.download} Export</button>
+          <button className="btn btn-ghost page-sec">{Icons.download} Export</button>
         </div>
       </div>
 

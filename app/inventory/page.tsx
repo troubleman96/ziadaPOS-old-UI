@@ -90,10 +90,10 @@ export default function InventoryPage() {
             </span>
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.download} Export CSV</button>
-          <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.filter} Import</button>
-          <button className="btn btn-soft">Stock adjustment</button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-ghost page-sec">{Icons.download} Export CSV</button>
+          <button className="btn btn-ghost page-sec">{Icons.filter} Import</button>
+          <button className="btn btn-soft page-sec">Stock adjustment</button>
         </div>
       </div>
 
@@ -186,9 +186,29 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Table / grid */}
+      {/* Mobile always gets the grid view regardless of toggle */}
+      {view === 'table' && (
+        <div className="inv-grid-wrap" style={{ marginBottom: 0 }}>
+          {filtered.map((p) => {
+            const status = statusFor(p);
+            const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
+            return (
+              <Link key={p.id} href={`/inventory/${p.id}`} className="surface" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ aspectRatio: '1.4', background: scheme.bg, color: scheme.fg, borderRadius: 7, display: 'grid', placeItems: 'center', fontSize: 30, fontWeight: 500 }}>{p.name[0]}</div>
+                <div><div style={{ fontSize: 12.5, fontWeight: 500 }}>{p.name}</div><div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 1 }}>{p.sku}</div></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'auto' }}>
+                  <span className="mono" style={{ color: 'var(--accent)', fontSize: 12.5, fontWeight: 500 }}>{fmt(p.price)}</span>
+                  <span className={'pill ' + status.kind} style={{ fontSize: 10 }}>{p.stock} {status.label.toLowerCase()}</span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Table / grid — on mobile always shows grid; on desktop respects view toggle */}
       {view === 'table' ? (
-        <div className="surface" style={{ overflow: 'hidden' }}>
+        <div className="inv-table-wrap surface" style={{ overflow: 'hidden' }}>
           <div className="table-scroll">
           <table className="table">
             <thead>
@@ -253,7 +273,7 @@ export default function InventoryPage() {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+        <div className="inv-grid-wrap">
           {filtered.map((p) => {
             const status = statusFor(p);
             const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;

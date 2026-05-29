@@ -646,6 +646,19 @@ input, select, textarea { font-family: inherit; }
 .mobile-only { display: none !important; }
 .desktop-only { display: block; }
 
+/* Page secondary actions — hidden on mobile, inline-flex on desktop */
+.page-sec { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Transaction/Customer table/card switching defaults (desktop = table) */
+.txn-table-wrap { display: block; }
+.txn-cards-wrap { display: none; }
+.cust-table-wrap { display: block; }
+.cust-cards-wrap { display: none; }
+
+/* Inventory: table shown, grid auto by user toggle (desktop) */
+.inv-table-wrap { display: block; }
+.inv-grid-wrap  { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+
 /* Dashboard date-range control: scrollable pills on mobile */
 .date-seg-wrap {
   display: flex; border: 1px solid var(--line);
@@ -731,4 +744,59 @@ input, select, textarea { font-family: inherit; }
   .pos-hide-mobile { display: none !important; }
   .pos-mobile-only { display: flex; }
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+  /* ── Secondary page-header actions (Export, Import, etc.) ── */
+  .page-sec { display: none !important; }
+
+  /* ── .seg (segmented control) → scrollable pills on mobile ── */
+  .seg {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    border: none !important; background: transparent !important;
+    border-radius: 0 !important;
+    gap: 6px; padding: 0 !important;
+  }
+  .seg button {
+    flex-shrink: 0; white-space: nowrap;
+    border-radius: 999px !important;
+    border: 1px solid var(--line) !important;
+    background: var(--bg-2) !important;
+    color: var(--fg-3) !important;
+    border-right: 1px solid var(--line) !important;
+  }
+  .seg button.active {
+    border-color: var(--accent-line) !important;
+    background: var(--accent-soft) !important;
+    color: var(--fg) !important;
+  }
+
+  /* ── Scrollable filter pill rows ── */
+  .filter-pills-scroll {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+  }
+  .filter-pills-scroll button { flex-shrink: 0; }
+
+  /* ── Inventory: always show grid on mobile, hide table ── */
+  .inv-table-wrap { display: none !important; }
+  .inv-grid-wrap {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  /* ── Transactions mobile card-list ── */
+  .txn-table-wrap { display: none !important; }
+  .txn-cards-wrap { display: block !important; }
+
+  /* ── Customers mobile card-list ── */
+  .cust-table-wrap { display: none !important; }
+  .cust-cards-wrap { display: block !important; }
+
+  /* ── Page headers: compact on mobile ── */
+  .page-header-row { flex-direction: column; align-items: flex-start !important; }
+  .page-header-row h1 { font-size: 20px !important; }
+
+  /* ── Filter bars: search takes full width ── */
+  .filter-bar { flex-wrap: wrap; }
+  .filter-bar .filter-search { width: 100% !important; flex: none !important; min-width: 0 !important; }
 }

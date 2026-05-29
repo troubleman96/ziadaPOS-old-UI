@@ -362,12 +362,8 @@ export default function ReportsPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            {Icons.filter} Filter
-          </button>
-          <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            {Icons.settings} Configure
-          </button>
+          <button className="btn btn-ghost page-sec">{Icons.filter} Filter</button>
+          <button className="btn btn-soft page-sec">{Icons.settings} Configure</button>
         </div>
       </div>
 
