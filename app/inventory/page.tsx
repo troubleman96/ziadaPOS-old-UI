@@ -188,7 +188,7 @@ export default function InventoryPage() {
 
       {/* Mobile always gets the grid view regardless of toggle */}
       {view === 'table' && (
-        <div className="inv-grid-wrap" style={{ marginBottom: 0 }}>
+        <div className="inv-grid-wrap mobile-only" style={{ marginBottom: 0 }}>
           {filtered.map((p) => {
             const status = statusFor(p);
             const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
