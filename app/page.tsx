@@ -263,30 +263,31 @@ function Header({ theme, onToggleTheme }: { theme: string; onToggleTheme: () => 
 // ── Hero ──────────────────────────────────────────────────────────────────────
 function Hero({ accent }: { accent: string }) {
   return (
-    <section style={{ position: 'relative', paddingTop: 56, paddingBottom: 72, overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px)', backgroundSize: '64px 64px', maskImage: 'radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 80%)' }} />
+    <section style={{ position: 'relative', paddingTop: 80, paddingBottom: 88, overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px)', backgroundSize: '64px 64px', maskImage: 'radial-gradient(ellipse 80% 65% at 50% 30%, #000 30%, transparent 80%)' }} />
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', position: 'relative' }}>
-        <div style={{ maxWidth: 860 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px 4px 8px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.04em', color: 'var(--fg-2)', background: 'var(--bg-2)', marginBottom: 24 }}>
+        {/* Centered headline block */}
+        <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px 4px 8px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.04em', color: 'var(--fg-2)', background: 'var(--bg-2)', marginBottom: 28 }}>
             <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--accent)', boxShadow: '0 0 0 3px var(--accent-soft)', display: 'inline-block' }} />
             Ziada AI · now in every store
             <span style={{ color: 'var(--fg-4)' }}>→</span>
           </span>
-          <h1 style={{ margin: 0, fontSize: 'clamp(36px, 5.6vw, 68px)', lineHeight: 1.03, fontWeight: 500, letterSpacing: '-0.025em' }}>
+          <h1 style={{ margin: 0, fontSize: 'clamp(38px, 5.6vw, 72px)', lineHeight: 1.03, fontWeight: 500, letterSpacing: '-0.03em' }}>
             The operating system<br />for your shop.
           </h1>
-          <p style={{ margin: '22px 0 0', fontSize: 17, lineHeight: 1.55, color: 'var(--fg-2)', maxWidth: 580 }}>
+          <p style={{ margin: '24px auto 0', fontSize: 17, lineHeight: 1.6, color: 'var(--fg-2)', maxWidth: 540 }}>
             POS, inventory, credit, analytics and an AI that actually knows your store — running on one calm, fast platform. Built in Tanzania, made for any counter.
           </p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 30, flexWrap: 'wrap' }}>
-            <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+          <div style={{ display: 'flex', gap: 10, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 20px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
               Start free 7-day trial <span style={{ opacity: 0.8 }}>→</span>
             </Link>
-            <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 6, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none', background: 'transparent' }}>
+            <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 20px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none', background: 'transparent' }}>
               Try the live demo
             </Link>
           </div>
-          <div style={{ display: 'flex', gap: 20, marginTop: 18, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 20, marginTop: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
             {['no card required','works offline','EN + Swahili','M-Pesa, Tigo, Bank, Cash'].map((t) => (
               <span key={t} style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.2L4.8 8.5L9.5 3.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -295,7 +296,8 @@ function Hero({ accent }: { accent: string }) {
             ))}
           </div>
         </div>
-        <div style={{ marginTop: 52 }}>
+        {/* Mockup — constrained so internal proportions stay balanced */}
+        <div style={{ maxWidth: 1000, margin: '56px auto 0' }}>
           <WindowChrome url="app.ziada.co/dashboard">
             <DashboardMockup accent={accent} />
           </WindowChrome>
