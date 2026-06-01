@@ -288,10 +288,9 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
 
   return (
     <aside className={'cart' + (isOpen ? ' cart-open' : '')}>
-      {/* Grip handle — visible only on mobile as a drag affordance */}
       <div className="cart-grip" />
       {/* Header */}
-      <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="cart-hd" style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {onClose && (
             <button className="icon-btn cart-close-btn" onClick={onClose} style={{ width: 28, height: 28, fontSize: 18 }} title="Back">←</button>
@@ -312,7 +311,7 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
       </div>
 
       {/* Customer chip */}
-      <div style={{ padding: '10px 18px', borderBottom: '1px solid var(--line)' }}>
+      <div className="cart-customer" style={{ padding: '10px 18px', borderBottom: '1px solid var(--line)' }}>
         <button style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', border: '1px dashed var(--line-2)', borderRadius: 6, background: 'transparent', color: 'var(--fg-2)', fontSize: 12.5, cursor: 'pointer' }}>
           <span style={{ width: 22, height: 22, borderRadius: 999, background: 'var(--bg-3)', color: 'var(--fg-3)', display: 'grid', placeItems: 'center', fontSize: 12 }}>+</span>
           <span>Add customer</span>
@@ -348,7 +347,7 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
       {/* Totals */}
       {lines.length > 0 && (
         <>
-          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="cart-totals-section" style={{ padding: '12px 18px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--fg-2)' }}>
               <span>Subtotal</span>
               <span className="mono" style={{ color: 'var(--fg)' }}>{fmt(subtotal)}</span>
@@ -367,7 +366,7 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
               <span className="mono" style={{ color: 'var(--fg-3)' }}>{fmt(tax)}</span>
             </div>
           </div>
-          <div style={{ padding: '14px 18px', borderTop: '1px solid var(--line-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', background: 'var(--bg-3)' }}>
+          <div className="cart-net-section" style={{ padding: '14px 18px', borderTop: '1px solid var(--line-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', background: 'var(--bg-3)' }}>
             <span style={{ fontSize: 13, fontWeight: 500 }}>Net total</span>
             <span className="mono" style={{ fontSize: 22, fontWeight: 600, color: 'var(--accent)', letterSpacing: '-0.02em' }}>{fmt(total)}</span>
           </div>
@@ -375,7 +374,7 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
       )}
 
       {/* Payment + CTA */}
-      <div style={{ padding: '14px 18px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="cart-payment-section" style={{ padding: '14px 18px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
           <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 8 }}>PAYMENT METHOD</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
@@ -403,44 +402,13 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
         >
           Complete sale <span className="mono" style={{ marginLeft: 6, opacity: 0.9 }}>→</span>
         </button>
-        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--fg-4)' }}>
+        <div className="cart-shortcuts" style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--fg-4)' }}>
           <span className="mono" style={{ fontSize: 10 }}>F2 hold</span>
           <span className="mono" style={{ fontSize: 10 }}>F3 discount</span>
           <span className="mono" style={{ fontSize: 10 }}>⏎ pay</span>
         </div>
       </div>
     </aside>
-  );
-}
-
-// ── Mobile cart preview (inline, below products) ──────────────────────────────
-function MobileCartPreview({ itemCount, subtotal, onOpen }: { itemCount: number; subtotal: number; onOpen: () => void }) {
-  return (
-    <div className="pos-mobile-only" style={{
-      flexDirection: 'column', gap: 10,
-      background: 'var(--bg-2)', border: '1px solid var(--line)',
-      borderRadius: 10, padding: '12px 16px',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 13.5, fontWeight: 500 }}>
-          Current sale{itemCount > 0 && <span className="mono" style={{ fontSize: 11.5, color: 'var(--fg-3)', marginLeft: 6 }}>({itemCount} items)</span>}
-        </span>
-        <button
-          onClick={onOpen}
-          style={{ fontSize: 12, color: 'var(--accent)', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 }}
-        >
-          Open cart →
-        </button>
-      </div>
-      {itemCount === 0 ? (
-        <p style={{ margin: 0, fontSize: 12.5, color: 'var(--fg-3)' }}>Tap a product to add it to the sale.</p>
-      ) : (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Subtotal</span>
-          <span className="mono" style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>{fmt(subtotal)}</span>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -498,13 +466,7 @@ export default function POSPage() {
       {/* Trial banner sits in the flex column before the pos grid */}
       {trial && <TrialBanner onDismiss={() => setTrial(false)} />}
 
-      {/* Backdrop for mobile cart drawer */}
-      <div
-        className={'cart-mobile-overlay' + (cartOpen ? ' visible' : '')}
-        onClick={() => setCartOpen(false)}
-      />
-
-      {/* The pos grid: products (left) + cart (right), fills all remaining height */}
+      {/* The pos layout: products (top/left) + cart (bottom/right), fills remaining height */}
       <div className="pos">
         <div className="products">
           <ProductsSticky
@@ -518,11 +480,6 @@ export default function POSPage() {
           />
           <div className="products-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <ProductGrid items={items} cartMap={cartMap} onAdd={addProduct} />
-            <MobileCartPreview
-              itemCount={cartCount}
-              subtotal={cartSubtotal}
-              onOpen={() => setCartOpen(true)}
-            />
           </div>
         </div>
         <CartPanel
