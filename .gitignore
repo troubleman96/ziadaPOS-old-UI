@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# reference / sample apps (local only, not part of the project)
+/public/ziada-clarity-main/
