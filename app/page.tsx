@@ -23,13 +23,13 @@ function Sparkline({ data, color = 'currentColor', height = 28, fill = false, st
 // ── Window chrome ─────────────────────────────────────────────────────────────
 function WindowChrome({ url, children }: { url: string; children: React.ReactNode }) {
   return (
-    <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', boxShadow: '0 30px 80px -20px rgba(0,0,0,0.55)', background: '#0a0a0b', color: '#f5f5f7' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)', background: '#0f0f12' }}>
+    <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--line-2)', boxShadow: '0 30px 80px -20px rgba(0,0,0,0.4)', background: 'var(--bg)', color: 'var(--fg)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid var(--line)', background: 'var(--bg-2)' }}>
         <div style={{ display: 'flex', gap: 6 }}>
-          {['#3a3a3e','#3a3a3e','#3a3a3e'].map((c, i) => <span key={i} style={{ width: 10, height: 10, borderRadius: 999, background: c, display: 'block' }} />)}
+          {['var(--bad)','var(--warn)','var(--good)'].map((c, i) => <span key={i} style={{ width: 10, height: 10, borderRadius: 999, background: c, opacity: 0.6, display: 'block' }} />)}
         </div>
-        <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: 11, color: 'rgba(245,245,247,0.42)', marginLeft: 6 }}>{url}</span>
-        <span style={{ marginLeft: 'auto', fontFamily: 'var(--mono, monospace)', fontSize: 10.5, color: 'rgba(245,245,247,0.26)' }}>v2.4.1</span>
+        <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: 11, color: 'var(--fg-4)', marginLeft: 6 }}>{url}</span>
+        <span style={{ marginLeft: 'auto', fontFamily: 'var(--mono, monospace)', fontSize: 10.5, color: 'var(--fg-4)' }}>v2.4.1</span>
       </div>
       {children}
     </div>
@@ -42,64 +42,64 @@ function DashboardMockup({ accent }: { accent: string }) {
     { label: "TODAY'S SALES", v: 'TZS 1,240,000', delta: '+18%', spark: [3,4,3,5,4,6,5,7,8,7,9,10,9,11,12] },
     { label: "PROFIT",        v: 'TZS 272,000',   delta: '+12%', spark: [2,3,2,4,3,4,5,4,6,5,7,6,8,7,9] },
     { label: 'STOCK VALUE',   v: 'TZS 4.82M',     delta: '+6%',  spark: [5,5,6,5,6,7,6,7,7,8,7,8,9,8,10] },
-    { label: 'LOW STOCK',     v: '3',             delta: 'alerts', deltaColor: '#fbbf24', spark: null },
+    { label: 'LOW STOCK',     v: '3',             delta: 'alerts', deltaColor: 'var(--warn)', spark: null },
   ];
   const bars = [42, 58, 70, 52, 88, 100, 74];
   return (
-    <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16, background: '#0a0a0b', color: '#f5f5f7' }}>
-      <div style={{ borderRight: '1px solid rgba(255,255,255,0.07)', paddingRight: 14, display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16, background: 'var(--bg)', color: 'var(--fg)' }}>
+      <div style={{ borderRight: '1px solid var(--line)', paddingRight: 14, display: 'flex', flexDirection: 'column', gap: 3 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <span style={{ width: 22, height: 22, borderRadius: 6, background: accent, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600 }}>Z</span>
           <span style={{ fontWeight: 500, fontSize: 13 }}>Ziada</span>
         </div>
         {[['Dashboard',true],['Point of Sale',false],['Transactions',false],['Inventory',false],['Credits',false]].map(([l, a]) => (
-          <div key={l as string} style={{ padding: '5px 8px', borderRadius: 5, fontSize: 11.5, color: a ? '#f5f5f7' : 'rgba(245,245,247,0.42)', background: a ? `${accent}22` : 'transparent', borderLeft: `2px solid ${a ? accent : 'transparent'}` }}>{l}</div>
+          <div key={l as string} style={{ padding: '5px 8px', borderRadius: 5, fontSize: 11.5, color: a ? 'var(--fg)' : 'var(--fg-3)', background: a ? `${accent}22` : 'transparent', borderLeft: `2px solid ${a ? accent : 'transparent'}` }}>{l}</div>
         ))}
       </div>
       <div style={{ minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontSize: 14, fontWeight: 500 }}>Dashboard</span>
-          <span style={{ fontFamily: 'monospace', fontSize: 9.5, color: 'rgba(245,245,247,0.42)', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 5, height: 5, borderRadius: 999, background: '#34d399', display: 'inline-block' }} /> live
+          <span style={{ fontFamily: 'monospace', fontSize: 9.5, color: 'var(--fg-4)', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--good)', display: 'inline-block' }} /> live
           </span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 7, marginBottom: 10 }}>
           {stats.map((s) => (
-            <div key={s.label} style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '8px 10px', background: '#0f0f12' }}>
-              <div style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'rgba(245,245,247,0.26)', letterSpacing: '0.06em' }}>{s.label}</div>
+            <div key={s.label} style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '8px 10px', background: 'var(--bg-2)' }}>
+              <div style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>{s.label}</div>
               <div style={{ fontSize: 12.5, fontWeight: 500, marginTop: 3 }}>{s.v}</div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 5 }}>
-                <span style={{ fontFamily: 'monospace', fontSize: 9, color: s.deltaColor || '#34d399' }}>{s.delta}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: 9, color: s.deltaColor || 'var(--good)' }}>{s.delta}</span>
                 {s.spark && <div style={{ width: 44, height: 14 }}><Sparkline data={s.spark} color={accent} strokeWidth={1.2} height={14} /></div>}
               </div>
             </div>
           ))}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 8 }}>
-          <div style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '9px 11px', background: '#0f0f12' }}>
+          <div style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '9px 11px', background: 'var(--bg-2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontSize: 10.5, fontWeight: 500 }}>Sales this week</span>
-              <span style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'rgba(245,245,247,0.26)' }}>7D</span>
+              <span style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'var(--fg-4)' }}>7D</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, alignItems: 'end', height: 52 }}>
               {bars.map((h, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                   <div style={{ width: '100%', height: `${h}%`, background: i === 5 ? accent : `${accent}55`, borderRadius: 2 }} />
-                  <span style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'rgba(245,245,247,0.26)' }}>{'MTWTFSS'[i]}</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)' }}>{'MTWTFSS'[i]}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div style={{ border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, padding: '9px 11px', background: '#0f0f12' }}>
+          <div style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '9px 11px', background: 'var(--bg-2)' }}>
             <div style={{ fontSize: 10.5, fontWeight: 500, marginBottom: 8 }}>Top products</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {[['Unga wa Sembe 10kg','1.42M'],['Mafuta Cooking 5L','1.15M'],['Sabuni OMO 1kg','260K'],['Sukari 2kg','182K']].map(([n,v],i) => (
                 <div key={n} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
-                    <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.26)', width: 10 }}>{i+1}</span>
+                    <span style={{ fontFamily: 'monospace', color: 'var(--fg-4)', width: 10 }}>{i+1}</span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n}</span>
                   </span>
-                  <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.66)', flexShrink: 0 }}>{v}</span>
+                  <span style={{ fontFamily: 'monospace', color: 'var(--fg-2)', flexShrink: 0 }}>{v}</span>
                 </div>
               ))}
             </div>
@@ -116,25 +116,25 @@ function POSMockup({ accent }: { accent: string }) {
   const sub = items.reduce((s,[,q,p]) => s + (q as number)*(p as number), 0);
   const fmt = (n: number) => 'TZS ' + n.toLocaleString('en-US');
   return (
-    <div style={{ padding: 14, background: '#0a0a0b', color: '#f5f5f7' }}>
+    <div style={{ padding: 14, background: 'var(--bg)', color: 'var(--fg)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
         <span style={{ fontSize: 12, fontWeight: 500 }}>Current sale</span>
-        <span style={{ fontFamily: 'monospace', fontSize: 9.5, color: 'rgba(245,245,247,0.42)' }}>SALE #TXN-2042</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 9.5, color: 'var(--fg-3)' }}>SALE #TXN-2042</span>
       </div>
       {items.map(([n,q,p]) => (
-        <div key={n as string} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 10, fontSize: 11, padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div key={n as string} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 10, fontSize: 11, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n}</span>
-          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.42)' }}>×{q}</span>
+          <span style={{ fontFamily: 'monospace', color: 'var(--fg-3)' }}>×{q}</span>
           <span style={{ fontFamily: 'monospace' }}>{fmt((q as number)*(p as number))}</span>
         </div>
       ))}
-      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0 2px', marginTop: 6, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0 2px', marginTop: 6, borderTop: '1px solid var(--line-2)' }}>
         <span style={{ fontSize: 12, fontWeight: 500 }}>Net total</span>
         <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600, color: accent }}>{fmt(Math.round(sub*1.18))}</span>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, margin: '8px 0' }}>
         {['Cash','M-Pesa','Bank','Credit'].map((m,i) => (
-          <div key={m} style={{ padding: '6px 4px', borderRadius: 5, fontSize: 10, textAlign: 'center', border: `1px solid ${i===0?accent:'rgba(255,255,255,0.07)'}`, background: i===0?`${accent}22`:'transparent', color: i===0?'#f5f5f7':'rgba(245,245,247,0.66)' }}>{m}</div>
+          <div key={m} style={{ padding: '6px 4px', borderRadius: 5, fontSize: 10, textAlign: 'center', border: `1px solid ${i===0?accent:'var(--line)'}`, background: i===0?`${accent}22`:'transparent', color: i===0?'var(--fg)':'var(--fg-2)' }}>{m}</div>
         ))}
       </div>
       <div style={{ padding: '8px', borderRadius: 5, background: accent, color: '#fff', textAlign: 'center', fontSize: 11.5, fontWeight: 500 }}>Complete sale →</div>
@@ -142,18 +142,20 @@ function POSMockup({ accent }: { accent: string }) {
   );
 }
 
-function InventoryMini({ accent }: { accent: string }) {
+function InventoryMini({ accent: _accent }: { accent: string }) {
   const rows: [string, number, string][] = [['Unga wa Sembe 10kg',42,'ok'],['Sabuni ya OMO 1kg',3,'critical'],['Mafuta Cooking 5L',24,'ok'],['Sukari 2kg',8,'low']];
+  const sc = (s: string) => s === 'critical' ? 'var(--bad)' : s === 'low' ? 'var(--warn)' : 'var(--good)';
+  const sb = (s: string) => s === 'critical' ? 'var(--bad-soft)' : s === 'low' ? 'var(--warn-soft)' : 'var(--good-soft)';
   return (
-    <div style={{ padding: '12px 14px', background: '#0a0a0b', color: '#f5f5f7' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 44px 60px', gap: 8, fontSize: 9, fontFamily: 'monospace', color: 'rgba(245,245,247,0.26)', letterSpacing: '0.06em', paddingBottom: 4, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+    <div style={{ padding: '12px 14px', background: 'var(--bg)', color: 'var(--fg)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 44px 60px', gap: 8, fontSize: 9, fontFamily: 'monospace', color: 'var(--fg-4)', letterSpacing: '0.06em', paddingBottom: 4, borderBottom: '1px solid var(--line)' }}>
         <span>PRODUCT</span><span>STOCK</span><span>STATUS</span>
       </div>
       {rows.map(([name, qty, s]) => (
         <div key={name} style={{ display: 'grid', gridTemplateColumns: '1fr 44px 60px', gap: 8, fontSize: 11, padding: '5px 0', alignItems: 'center' }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.66)' }}>{qty}</span>
-          <span style={{ fontFamily: 'monospace', fontSize: 9, padding: '2px 6px', borderRadius: 999, color: s==='critical'?'#fb7185':s==='low'?'#fbbf24':'#34d399', border: `1px solid ${s==='critical'?'rgba(251,113,133,0.3)':s==='low'?'rgba(251,191,36,0.3)':'rgba(52,211,153,0.3)'}`, width: 'fit-content' }}>{s.toUpperCase()}</span>
+          <span style={{ fontFamily: 'monospace', color: 'var(--fg-2)' }}>{qty}</span>
+          <span style={{ fontFamily: 'monospace', fontSize: 9, padding: '2px 6px', borderRadius: 999, color: sc(s), background: sb(s), width: 'fit-content' }}>{s.toUpperCase()}</span>
         </div>
       ))}
     </div>
@@ -162,10 +164,10 @@ function InventoryMini({ accent }: { accent: string }) {
 
 function AnalyticsMini({ accent }: { accent: string }) {
   return (
-    <div style={{ padding: '14px', background: '#0a0a0b', color: '#f5f5f7' }}>
+    <div style={{ padding: '14px', background: 'var(--bg)', color: 'var(--fg)' }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'rgba(245,245,247,0.26)', letterSpacing: '0.06em' }}>PROFIT · 30D</span>
-        <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#34d399' }}>+6.2%</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>PROFIT · 30D</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--good)' }}>+6.2%</span>
       </div>
       <div style={{ fontSize: 16, fontWeight: 500, marginTop: 4 }}>TZS 4.82M</div>
       <div style={{ height: 56, marginTop: 8 }}>
@@ -175,19 +177,19 @@ function AnalyticsMini({ accent }: { accent: string }) {
   );
 }
 
-function CreditsMini({ accent }: { accent: string }) {
+function CreditsMini({ accent: _accent }: { accent: string }) {
   return (
-    <div style={{ padding: '12px 14px', background: '#0a0a0b', color: '#f5f5f7' }}>
+    <div style={{ padding: '12px 14px', background: 'var(--bg)', color: 'var(--fg)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-        <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'rgba(245,245,247,0.26)', letterSpacing: '0.06em' }}>OUTSTANDING</span>
-        <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(245,245,247,0.42)' }}>14 customers</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>OUTSTANDING</span>
+        <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-3)' }}>14 customers</span>
       </div>
       <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>TZS 184,500</div>
       {[['Fatuma A.','TZS 38,500','Today'],['Juma K.','TZS 84,200','2d'],['Asha M.','TZS 54,200','5d']].map(([n,a,d]) => (
-        <div key={n} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, fontSize: 11, padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div key={n} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, fontSize: 11, padding: '4px 0', borderBottom: '1px solid var(--line)' }}>
           <span>{n}</span>
-          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.66)' }}>{a}</span>
-          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.26)' }}>{d}</span>
+          <span style={{ fontFamily: 'monospace', color: 'var(--fg-2)' }}>{a}</span>
+          <span style={{ fontFamily: 'monospace', color: 'var(--fg-4)' }}>{d}</span>
         </div>
       ))}
     </div>
@@ -196,17 +198,17 @@ function CreditsMini({ accent }: { accent: string }) {
 
 function AIChatMini({ accent }: { accent: string }) {
   return (
-    <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 11.5, background: '#0a0a0b', color: '#f5f5f7' }}>
-      <div style={{ alignSelf: 'flex-end', maxWidth: '82%', padding: '6px 10px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8 }}>Niambie mauzo ya leo</div>
+    <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 11.5, background: 'var(--bg)', color: 'var(--fg)' }}>
+      <div style={{ alignSelf: 'flex-end', maxWidth: '82%', padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 8 }}>Niambie mauzo ya leo</div>
       <div style={{ display: 'flex', gap: 6 }}>
         <span style={{ width: 18, height: 18, borderRadius: 5, background: `${accent}22`, color: accent, display: 'grid', placeItems: 'center', fontSize: 10, flexShrink: 0 }}>✦</span>
-        <div style={{ color: 'rgba(245,245,247,0.66)', lineHeight: 1.5 }}>
-          Mauzo ya leo ni <strong style={{ color: '#f5f5f7' }}>TZS 1,240,000</strong> — juu kwa 18%.
+        <div style={{ color: 'var(--fg-2)', lineHeight: 1.5 }}>
+          Mauzo ya leo ni <strong style={{ color: 'var(--fg)' }}>TZS 1,240,000</strong> — juu kwa 18%.
         </div>
       </div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {['Tuma report','Linganisha wiki'].map((c,i) => (
-          <span key={c} style={{ fontFamily: 'monospace', fontSize: 10, padding: '3px 8px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)', color: i===0?accent:'rgba(245,245,247,0.66)', background: i===0?`${accent}22`:'transparent' }}>{c}</span>
+          <span key={c} style={{ fontFamily: 'monospace', fontSize: 10, padding: '3px 8px', borderRadius: 999, border: '1px solid var(--line-2)', color: i===0?accent:'var(--fg-3)', background: i===0?`${accent}22`:'transparent' }}>{c}</span>
         ))}
       </div>
     </div>
@@ -437,47 +439,47 @@ function AISection({ accent }: { accent: string }) {
           </div>
           <div>
             <WindowChrome url="app.ziada.co/ai">
-              <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14, minHeight: 340, background: '#0a0a0b', color: '#f5f5f7' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              <div style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14, minHeight: 340, background: 'var(--bg)', color: 'var(--fg)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--line)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 22, height: 22, borderRadius: 6, background: `${accent}22`, color: accent, display: 'grid', placeItems: 'center', fontSize: 11 }}>✦</span>
                     <span style={{ fontSize: 12.5, fontWeight: 500 }}>Ziada AI</span>
-                    <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(245,245,247,0.26)', marginLeft: 4 }}>· Duka Kuu</span>
+                    <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-4)', marginLeft: 4 }}>· Duka Kuu</span>
                   </div>
-                  <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'rgba(245,245,247,0.42)', display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-3)', display: 'flex', gap: 6, alignItems: 'center' }}>
                     <span style={{ width: 5, height: 5, borderRadius: 999, background: accent, display: 'inline-block' }} /> 142 ms
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <div style={{ maxWidth: '78%', padding: '8px 12px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, fontSize: 12.5 }}>What were my top 3 fast movers this week, and which are running low?</div>
+                  <div style={{ maxWidth: '78%', padding: '8px 12px', border: '1px solid var(--line-2)', borderRadius: 10, fontSize: 12.5 }}>What were my top 3 fast movers this week, and which are running low?</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <span style={{ width: 22, height: 22, borderRadius: 6, background: `${accent}22`, color: accent, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 11 }}>✦</span>
-                  <div style={{ fontSize: 12.5, color: 'rgba(245,245,247,0.66)', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.55 }}>
                     This week your top movers were:
-                    <div style={{ marginTop: 8, border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, overflow: 'hidden' }}>
+                    <div style={{ marginTop: 8, border: '1px solid var(--line)', borderRadius: 6, overflow: 'hidden' }}>
                       {[['1','Unga wa Sembe 10kg','50 sold','8 left','low'],['2','Mafuta ya Cooking 5L','34 sold','24 left','ok'],['3','Sabuni ya OMO 1kg','42 sold','3 left','critical']].map(([n,name,sold,left,s]) => (
-                        <div key={n} style={{ display: 'grid', gridTemplateColumns: '16px 1.4fr 1fr 1fr auto', gap: 8, alignItems: 'center', padding: '7px 10px', fontSize: 11, borderBottom: s==='critical'?0:'1px solid rgba(255,255,255,0.07)', background: s==='critical'?'rgba(251,113,133,0.05)':'transparent' }}>
-                          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.26)' }}>{n}</span>
-                          <span style={{ color: '#f5f5f7' }}>{name}</span>
-                          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.66)' }}>{sold}</span>
-                          <span style={{ fontFamily: 'monospace', color: 'rgba(245,245,247,0.42)' }}>{left}</span>
-                          <span style={{ fontFamily: 'monospace', fontSize: 9, padding: '2px 6px', borderRadius: 999, color: s==='critical'?'#fb7185':s==='low'?'#fbbf24':'#34d399', border: `1px solid ${s==='critical'?'rgba(251,113,133,0.3)':s==='low'?'rgba(251,191,36,0.3)':'rgba(52,211,153,0.3)'}` }}>{s.toUpperCase()}</span>
+                        <div key={n} style={{ display: 'grid', gridTemplateColumns: '16px 1.4fr 1fr 1fr auto', gap: 8, alignItems: 'center', padding: '7px 10px', fontSize: 11, borderBottom: s==='critical'?'none':'1px solid var(--line)', background: s==='critical'?'var(--bad-soft)':'transparent' }}>
+                          <span style={{ fontFamily: 'monospace', color: 'var(--fg-4)' }}>{n}</span>
+                          <span style={{ color: 'var(--fg)' }}>{name}</span>
+                          <span style={{ fontFamily: 'monospace', color: 'var(--fg-2)' }}>{sold}</span>
+                          <span style={{ fontFamily: 'monospace', color: 'var(--fg-3)' }}>{left}</span>
+                          <span style={{ fontFamily: 'monospace', fontSize: 9, padding: '2px 6px', borderRadius: 999, color: s==='critical'?'var(--bad)':s==='low'?'var(--warn)':'var(--good)', background: s==='critical'?'var(--bad-soft)':s==='low'?'var(--warn-soft)':'var(--good-soft)' }}>{s.toUpperCase()}</span>
                         </div>
                       ))}
                     </div>
                     <div style={{ marginTop: 10, fontSize: 12 }}>Sabuni ya OMO is below reorder point — want me to draft a restock order?</div>
                     <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                       {['Draft restock','Show suppliers','Project next week'].map((c,i) => (
-                        <span key={c} style={{ fontFamily: 'monospace', fontSize: 10.5, padding: '4px 9px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.12)', color: i===0?accent:'rgba(245,245,247,0.66)', background: i===0?`${accent}22`:'transparent', cursor: 'pointer' }}>{c}</span>
+                        <span key={c} style={{ fontFamily: 'monospace', fontSize: 10.5, padding: '4px 9px', borderRadius: 999, border: '1px solid var(--line-2)', color: i===0?accent:'var(--fg-2)', background: i===0?`${accent}22`:'transparent', cursor: 'pointer' }}>{c}</span>
                       ))}
                     </div>
                   </div>
                 </div>
-                <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, background: '#0f0f12' }}>
-                  <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'rgba(245,245,247,0.26)' }}>›</span>
-                  <span style={{ fontSize: 12, color: 'rgba(245,245,247,0.42)' }}>Ask about your store…</span>
-                  <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontSize: 10, color: 'rgba(245,245,247,0.26)' }}>⌘ K</span>
+                <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--bg-2)' }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--fg-4)' }}>›</span>
+                  <span style={{ fontSize: 12, color: 'var(--fg-3)' }}>Ask about your store…</span>
+                  <span style={{ marginLeft: 'auto', fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-4)' }}>⌘ K</span>
                 </div>
               </div>
             </WindowChrome>
