@@ -277,6 +277,134 @@ export const CREDIT_TOTALS = (function () {
   return { outstanding, overdue, dueSoon, current, recovered };
 })();
 
+// ─── Notebook ─────────────────────────────────────────────────────────────────
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  tags: string[];
+}
+
+export const NOTES: Note[] = [
+  {
+    id: 'note-1',
+    title: 'Supplier price review — Bakhresa',
+    content: 'Unga wa Sembe supplier raised prices by 8% starting November. Need to renegotiate by end of month. Check alternatives: Azam Mills, Pembe Flour. Current rate TZS 42,000/bag vs new TZS 45,360/bag. Margins will drop from 22% to ~18% if unresolved.',
+    date: 'Today',
+    tags: ['Suppliers'],
+  },
+  {
+    id: 'note-2',
+    title: 'Staff schedule — November',
+    content: 'Neema: Mon–Sat morning shift 7am–2pm. Baraka: Tue–Sun evening 2pm–9pm. Hamisi: Manager coverage weekend afternoons. Need to hire one more cashier before festive season rush in December.',
+    date: 'Yesterday',
+    tags: ['Staff'],
+  },
+  {
+    id: 'note-3',
+    title: 'Marketing ideas Q4',
+    content: 'Run loyalty promo for top 20 customers — offer 5% discount on next purchase over TZS 50,000. SMS blast for new Basmati Rice arrival. Decorate store for festive season. Consider WhatsApp group for VIP customers.',
+    date: '2d ago',
+    tags: ['Marketing', 'Ideas'],
+  },
+  {
+    id: 'note-4',
+    title: 'Mwanza branch — opening checklist',
+    content: 'New branch opening planned for January 2026. Initial stock order estimated TZS 8.5M. Priority: flour, sugar, cooking oil, soap, rice. Register with TRA for new location. Contact Emmanuel at Mwanza office for site confirmation by end of month.',
+    date: '5d ago',
+    tags: ['Ideas', 'Suppliers'],
+  },
+  {
+    id: 'note-5',
+    title: 'Customer complaint — stale bread',
+    content: 'Mrs. Amina complained about stale bread on Saturday. Checked batch — expired lot from Friday delivery. Issued refund TZS 4,500. Spoke to Aziz Bakery rep — they will replace stale batches free of charge going forward. Updated morning checklist to include bread freshness check at opening.',
+    date: '1w ago',
+    tags: ['Staff'],
+  },
+];
+
+// ─── Stores ───────────────────────────────────────────────────────────────────
+export interface Store {
+  id: string;
+  name: string;
+  shortName: string;
+  badge: string | null;
+  active: boolean;
+  status: 'open' | 'closed';
+  statusLabel: string;
+  statusNote: string;
+  todayRevenue: number;
+  todayTxns: number;
+  staffOnDuty: number;
+  period: string;
+  address: string;
+  manager: string;
+  phone: string;
+  color: string;
+  weekData: number[];
+}
+
+export const STORES: Store[] = [
+  {
+    id: 'kariakoo',
+    name: 'Duka Kuu — Kariakoo',
+    shortName: 'Kariakoo',
+    badge: 'HQ',
+    active: true,
+    status: 'open',
+    statusLabel: 'Open',
+    statusNote: '3 tills active',
+    todayRevenue: 1842000,
+    todayTxns: 87,
+    staffOnDuty: 4,
+    period: 'Today',
+    address: 'Msimbazi St, Kariakoo, Dar es Salaam',
+    manager: 'Hamisi Mwakapaga',
+    phone: '+255 712 345 678',
+    color: '#6366f1',
+    weekData: [1640000, 1720000, 1580000, 1890000, 1842000, 0, 0],
+  },
+  {
+    id: 'kinondoni',
+    name: 'Kinondoni Branch',
+    shortName: 'Kinondoni',
+    badge: null,
+    active: false,
+    status: 'open',
+    statusLabel: 'Open',
+    statusNote: '2 tills',
+    todayRevenue: 980000,
+    todayTxns: 46,
+    staffOnDuty: 3,
+    period: 'Today',
+    address: 'Kinondoni, Dar es Salaam',
+    manager: 'Amani Msongo',
+    phone: '+255 713 456 789',
+    color: '#34d399',
+    weekData: [910000, 960000, 880000, 1020000, 980000, 0, 0],
+  },
+  {
+    id: 'ilala',
+    name: 'Ilala Outlet',
+    shortName: 'Ilala',
+    badge: null,
+    active: false,
+    status: 'closed',
+    statusLabel: 'Closed',
+    statusNote: 'opens 8:00 AM',
+    todayRevenue: 620000,
+    todayTxns: 31,
+    staffOnDuty: 2,
+    period: 'Yesterday',
+    address: 'Ilala, Dar es Salaam',
+    manager: 'Pendo Kilimba',
+    phone: '+255 714 567 890',
+    color: '#fbbf24',
+    weekData: [580000, 610000, 640000, 595000, 620000, 0, 0],
+  },
+];
+
 export const AGING_BUCKETS = (function () {
   const buckets = [
     { label: 'Current',    range: '0 days',  amount: 0, color: 'var(--good)' },

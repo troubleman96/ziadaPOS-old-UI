@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Sidenav } from './sidenav';
 import { Topbar } from './topbar';
+import { STORES } from '../lib/data';
 
 type Theme = 'dark' | 'light';
 
@@ -18,6 +19,20 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 export function useTheme() {
   return useContext(ThemeContext);
+}
+
+interface StoreContextValue {
+  activeStoreId: string;
+  setActiveStoreId: (id: string) => void;
+}
+
+const StoreContext = createContext<StoreContextValue>({
+  activeStoreId: 'kariakoo',
+  setActiveStoreId: () => {},
+});
+
+export function useStore() {
+  return useContext(StoreContext);
 }
 
 interface AppShellProps {
@@ -36,12 +51,17 @@ interface AppShellProps {
 export function AppShell({ children, crumbs, actions, search, full = false }: AppShellProps) {
   const [theme, setTheme] = useState<Theme>('dark');
   const [navOpen, setNavOpen] = useState(false);
+  const [activeStoreId, setActiveStoreIdState] = useState('kariakoo');
 
   useEffect(() => {
-    // Sync with whatever the inline script set before React hydrated
     const stored = localStorage.getItem('ziada-theme') as Theme | null;
     const current = document.documentElement.getAttribute('data-theme') as Theme | null;
     setTheme(current || stored || 'dark');
+
+    const storedStore = localStorage.getItem('ziada-store');
+    if (storedStore && STORES.some(s => s.id === storedStore)) {
+      setActiveStoreIdState(storedStore);
+    }
   }, []);
 
   const toggleTheme = () => {
@@ -51,36 +71,42 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
     localStorage.setItem('ziada-theme', next);
   };
 
+  const setActiveStoreId = (id: string) => {
+    setActiveStoreIdState(id);
+    localStorage.setItem('ziada-store', id);
+  };
+
   const openNav  = () => setNavOpen(true);
   const closeNav = () => setNavOpen(false);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {/* Mobile overlay behind sidenav */}
-      <div
-        className={`mobile-nav-overlay${navOpen ? ' visible' : ''}`}
-        onClick={closeNav}
-        aria-hidden="true"
-      />
-      <div className="app">
-        <Sidenav navOpen={navOpen} onClose={closeNav} />
-        <div className="main">
-          <Topbar
-            crumbs={crumbs}
-            actions={actions}
-            search={search}
-            onMenuToggle={openNav}
-          />
-          {full ? (
-            // Full-height mode: children own all remaining space (POS, etc.)
-            children
-          ) : (
-            <div className="body">
-              {children}
-            </div>
-          )}
+    <StoreContext.Provider value={{ activeStoreId, setActiveStoreId }}>
+      <ThemeContext.Provider value={{ theme, toggleTheme }}>
+        {/* Mobile overlay behind sidenav */}
+        <div
+          className={`mobile-nav-overlay${navOpen ? ' visible' : ''}`}
+          onClick={closeNav}
+          aria-hidden="true"
+        />
+        <div className="app">
+          <Sidenav navOpen={navOpen} onClose={closeNav} />
+          <div className="main">
+            <Topbar
+              crumbs={crumbs}
+              actions={actions}
+              search={search}
+              onMenuToggle={openNav}
+            />
+            {full ? (
+              children
+            ) : (
+              <div className="body">
+                {children}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </ThemeContext.Provider>
+      </ThemeContext.Provider>
+    </StoreContext.Provider>
   );
 }

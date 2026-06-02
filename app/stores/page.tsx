@@ -5,68 +5,7 @@ import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
-
-// ── Data ─────────────────────────────────────────────────────────────────────
-
-const STORES = [
-  {
-    id: 'kariakoo',
-    name: 'Duka Kuu — Kariakoo',
-    shortName: 'Kariakoo',
-    badge: 'HQ',
-    active: true,
-    status: 'open',
-    statusLabel: 'Open',
-    statusNote: '3 tills active',
-    todayRevenue: 1842000,
-    todayTxns: 87,
-    staffOnDuty: 4,
-    period: 'Today',
-    address: 'Msimbazi St, Kariakoo, Dar es Salaam',
-    manager: 'Hamisi Mwakapaga',
-    phone: '+255 712 345 678',
-    color: '#6366f1',
-    weekData: [1640000, 1720000, 1580000, 1890000, 1842000, 0, 0],
-  },
-  {
-    id: 'kinondoni',
-    name: 'Kinondoni Branch',
-    shortName: 'Kinondoni',
-    badge: null,
-    active: false,
-    status: 'open',
-    statusLabel: 'Open',
-    statusNote: '2 tills',
-    todayRevenue: 980000,
-    todayTxns: 46,
-    staffOnDuty: 3,
-    period: 'Today',
-    address: 'Kinondoni, Dar es Salaam',
-    manager: 'Amani Msongo',
-    phone: '+255 713 456 789',
-    color: '#34d399',
-    weekData: [910000, 960000, 880000, 1020000, 980000, 0, 0],
-  },
-  {
-    id: 'ilala',
-    name: 'Ilala Outlet',
-    shortName: 'Ilala',
-    badge: null,
-    active: false,
-    status: 'closed',
-    statusLabel: 'Closed',
-    statusNote: 'opens 8:00 AM',
-    todayRevenue: 620000,
-    todayTxns: 31,
-    staffOnDuty: 2,
-    period: 'Yesterday',
-    address: 'Ilala, Dar es Salaam',
-    manager: 'Pendo Kilimba',
-    phone: '+255 714 567 890',
-    color: '#fbbf24',
-    weekData: [580000, 610000, 640000, 595000, 620000, 0, 0],
-  },
-];
+import { STORES } from '../../lib/data';
 
 const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
