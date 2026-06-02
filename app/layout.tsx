@@ -23,7 +23,6 @@ export const metadata: Metadata = {
     capable: true,
     title: 'Ziada POS',
     statusBarStyle: 'black-translucent',
-    startupImage: '/icons/icon-512x512.png',
   },
   icons: {
     icon: [
@@ -43,13 +42,13 @@ export const metadata: Metadata = {
     title: 'Ziada POS',
     description: 'Retail operating system for East African traders.',
     siteName: 'Ziada POS',
-    images: [{ url: '/ziada.PNG', width: 1200, height: 1200, alt: 'Ziada POS' }],
+    images: [{ url: '/icons/icon-512x512.png', width: 512, height: 512, alt: 'Ziada POS' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Ziada POS',
     description: 'Retail operating system for East African traders.',
-    images: ['/ziada.PNG'],
+    images: ['/icons/icon-512x512.png'],
   },
 };
 
