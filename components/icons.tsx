@@ -204,6 +204,46 @@ export const Icons = {
       <path d="M5 5.8l6-2.5" />
     </>} />
   ),
+  notebook: (
+    <Icon d={<>
+      <rect x="3.5" y="2" width="9" height="12" rx="1" />
+      <path d="M3.5 5.5h9" />
+      <path d="M6 2v12" />
+      <path d="M8 8.5h3" />
+      <path d="M8 11h3" />
+    </>} />
+  ),
+  staff: (
+    <Icon d={<>
+      <circle cx="5.5" cy="5" r="2.5" />
+      <path d="M2 12c.4-1.8 1.8-3 3.5-3s3.1 1.2 3.5 3" />
+      <circle cx="11.5" cy="5" r="2" />
+      <path d="M9.5 12c.3-1.5 1.5-2.5 2.8-2.7" />
+    </>} />
+  ),
+  dotsVertical: (
+    <Icon d={<>
+      <circle cx="8" cy="3.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="8" cy="8"   r="1" fill="currentColor" stroke="none" />
+      <circle cx="8" cy="12.5" r="1" fill="currentColor" stroke="none" />
+    </>} />
+  ),
+  sun: (
+    <Icon d={<>
+      <circle cx="8" cy="8" r="2.5" />
+      <path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.5 3.5l1.1 1.1M11.4 11.4l1.1 1.1M11.4 3.5l1.1 1.1M3.5 11.4l1.1 1.1" />
+    </>} />
+  ),
+  moon: (
+    <Icon d={<path d="M13 9.5A5.5 5.5 0 1 1 6.5 3a4 4 0 0 0 6.5 6.5z" />} />
+  ),
+  logout: (
+    <Icon d={<>
+      <path d="M6 13.5H3a.5.5 0 0 1-.5-.5V3a.5.5 0 0 1 .5-.5h3" />
+      <path d="M10.5 11l3-3-3-3" />
+      <path d="M6 8h7.5" />
+    </>} />
+  ),
 };
 
 export type IconName = keyof typeof Icons;

@@ -197,7 +197,6 @@ function NavFooter() {
     <div style={{
       borderTop: '1px solid var(--line)',
       padding: 12,
-      display: 'flex', flexDirection: 'column', gap: 10,
     }}>
       <div style={{
         padding: '10px 12px',
@@ -216,27 +215,6 @@ function NavFooter() {
           <a href="#" className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>View usage</a>
           <a href="#" className="mono" style={{ fontSize: 10.5, color: 'var(--accent)' }}>Upgrade</a>
         </div>
-      </div>
-
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '6px 6px',
-        borderRadius: 6,
-        cursor: 'pointer',
-      }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: 999,
-          background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-          color: '#fff',
-          display: 'grid', placeItems: 'center',
-          fontSize: 11, fontWeight: 600,
-          flexShrink: 0,
-        }}>HM</div>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Hamisi Mwakapaga</div>
-          <div className="mono" style={{ fontSize: 10, color: 'var(--fg-3)' }}>Owner · admin</div>
-        </div>
-        <span style={{ color: 'var(--fg-4)' }}>{Icons.chevDown}</span>
       </div>
     </div>
   );
