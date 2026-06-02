@@ -152,6 +152,8 @@ function MobileCartSheet({ cart, setCart, payment, setPayment, onClose }: {
 
   return (
     <>
+      {/* Drag handle */}
+      <div className="cart-sheet-handle" />
 
       {/* Header */}
       <div style={{
