@@ -188,27 +188,31 @@ function ThreeDotMenu() {
 
           {/* ── Profile ── */}
           {sectionLabel('PROFILE')}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 14px',
-          }}>
+          <Link
+            href="/profile"
+            onClick={() => setOpen(false)}
+            style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+          >
             <div style={{
-              width: 34, height: 34, borderRadius: 999, flexShrink: 0,
-              background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-              color: '#fff', display: 'grid', placeItems: 'center',
-              fontSize: 11, fontWeight: 600,
-            }}>HM</div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 500 }}>Hamisi Mwakapaga</div>
-              <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>Owner · admin</div>
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 14px',
+              borderRadius: 6, margin: '0 4px',
+              cursor: 'pointer',
+            }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 999, flexShrink: 0,
+                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                color: '#fff', display: 'grid', placeItems: 'center',
+                fontSize: 11, fontWeight: 600,
+              }}>HM</div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 500 }}>Hamisi Mwakapaga</div>
+                <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>Owner · admin</div>
+              </div>
+              <span style={{ color: 'var(--fg-4)', display: 'flex', flexShrink: 0 }}>{Icons.chevRight}</span>
             </div>
-          </div>
+          </Link>
 
-          {menuRow(
-            Icons.settings,
-            'Account settings',
-            () => setOpen(false),
-          )}
           {menuRow(
             Icons.logout,
             'Log out',
