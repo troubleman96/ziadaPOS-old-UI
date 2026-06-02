@@ -222,9 +222,8 @@ function Header({ theme, onToggleTheme }: { theme: string; onToggleTheme: () => 
     <header style={{ position: 'sticky', top: 0, zIndex: 50, borderBottom: '1px solid var(--line)', backdropFilter: 'blur(16px) saturate(140%)', background: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', height: 56, gap: 24 }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', color: 'inherit' }}>
-          <span style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600 }}>Z</span>
-          <span style={{ fontSize: 14, fontWeight: 500, letterSpacing: '-0.005em' }}>ziada</span>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', padding: '2px 6px', border: '1px solid var(--line)', borderRadius: 4 }}>v2.4</span>
+          <img src="/ziada.PNG" alt="Ziada" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
+          <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.005em' }}>Ziada POS</span>
         </a>
         {/* Desktop nav */}
         <nav style={{ display: 'flex', gap: 20, marginLeft: 8 }} className="landing-nav">
@@ -520,8 +519,8 @@ function Footer() {
       <div className="footer-grid" style={{ maxWidth: 1240, margin: '0 auto', padding: '44px 24px 28px', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1fr', gap: 28 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
-            <span style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--accent)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600 }}>Z</span>
-            <span style={{ fontSize: 14, fontWeight: 500 }}>ziada</span>
+            <img src="/ziada.PNG" alt="Ziada" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
+            <span style={{ fontSize: 14, fontWeight: 600 }}>Ziada POS</span>
           </div>
           <p style={{ fontSize: 12.5, color: 'var(--fg-3)', maxWidth: 240, margin: 0, lineHeight: 1.6 }}>The operating system for retail. Built in Dar es Salaam, made for any counter on the continent.</p>
         </div>
