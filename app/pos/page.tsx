@@ -129,6 +129,123 @@ function CartBottomBar({ lines, count, subtotal, onOpen }: {
   );
 }
 
+// ── Mobile cart sheet (clean, reference-style) ───────────────────────────────
+function MobileCartSheet({ cart, setCart, payment, setPayment, onClose }: {
+  cart: Cart; setCart: React.Dispatch<React.SetStateAction<Cart>>;
+  payment: string; setPayment: (p: string) => void;
+  onClose: () => void;
+}) {
+  const lines = Object.values(cart);
+  const subtotal = lines.reduce((s, l) => s + l.qty * l.product.price, 0);
+  const tax      = Math.round(subtotal * 0.18);
+  const total    = subtotal + tax;
+
+  const updateQty = (id: string, d: number) =>
+    setCart((c) => {
+      const n = { ...c };
+      if (!n[id]) return c;
+      const next = n[id].qty + d;
+      if (next <= 0) { delete n[id]; } else { n[id] = { ...n[id], qty: next }; }
+      return n;
+    });
+  const removeLine = (id: string) => setCart((c) => { const n = { ...c }; delete n[id]; return n; });
+
+  return (
+    <>
+      {/* Handle */}
+      <div className="cart-sheet-handle" />
+
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '10px 18px 14px', borderBottom: '1px solid var(--line)', flexShrink: 0,
+      }}>
+        <span style={{ fontSize: 15, fontWeight: 600 }}>
+          Current Sale ({lines.reduce((s, l) => s + l.qty, 0)})
+        </span>
+        <button
+          onClick={onClose}
+          style={{
+            width: 28, height: 28, borderRadius: 999, border: 'none',
+            background: 'var(--bg-3)', color: 'var(--fg-2)',
+            cursor: 'pointer', display: 'grid', placeItems: 'center', fontSize: 16,
+          }}
+        >×</button>
+      </div>
+
+      {/* Item list */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {lines.length === 0 ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--fg-3)' }}>
+            <div style={{ width: 52, height: 52, margin: '0 auto 14px', borderRadius: 14, background: 'var(--bg-3)', display: 'grid', placeItems: 'center', color: 'var(--fg-4)' }}>
+              <CartIcon />
+            </div>
+            <div style={{ fontSize: 14, color: 'var(--fg-2)', fontWeight: 500 }}>No items yet</div>
+            <div style={{ fontSize: 12.5, marginTop: 4 }}>Tap a product to add.</div>
+          </div>
+        ) : lines.map((l, i) => (
+          <div key={l.product.id} style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '12px 18px',
+            borderBottom: i < lines.length - 1 ? '1px solid var(--line)' : 'none',
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.product.name}</div>
+              <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 2 }}>{fmt(l.product.price)} ea</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--line-2)', borderRadius: 7, overflow: 'hidden' }}>
+              <button onClick={() => updateQty(l.product.id, -1)} style={{ width: 28, height: 28, background: 'transparent', border: 0, color: 'var(--fg-2)', cursor: 'pointer', fontSize: 14 }}>−</button>
+              <span className="mono" style={{ width: 28, textAlign: 'center', fontSize: 13 }}>{l.qty}</span>
+              <button onClick={() => updateQty(l.product.id, +1)} style={{ width: 28, height: 28, background: 'transparent', border: 0, color: 'var(--fg-2)', cursor: 'pointer', fontSize: 14 }}>+</button>
+            </div>
+            <span className="mono" style={{ minWidth: 72, textAlign: 'right', fontSize: 13, color: 'var(--fg)' }}>{fmt(l.qty * l.product.price)}</span>
+            <button onClick={() => removeLine(l.product.id)} style={{ background: 'transparent', border: 0, color: 'var(--fg-4)', cursor: 'pointer', padding: 0, fontSize: 18, lineHeight: 1 }}>×</button>
+          </div>
+        ))}
+      </div>
+
+      {/* Totals + payment + CTA */}
+      <div style={{ borderTop: '1px solid var(--line)', flexShrink: 0, padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {[
+          ['Subtotal', fmt(subtotal)],
+          ['Discount', '—'],
+          ['Tax (18%)', fmt(tax)],
+        ].map(([l, v]) => (
+          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--fg-3)' }}>
+            <span>{l}</span>
+            <span className="mono" style={{ color: 'var(--fg-2)' }}>{v}</span>
+          </div>
+        ))}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 6, borderTop: '1px solid var(--line)' }}>
+          <span style={{ fontSize: 13, color: 'var(--fg-2)' }}>Net Total</span>
+          <span className="mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.02em' }}>{fmt(total)}</span>
+        </div>
+
+        {/* Payment method */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginTop: 4 }}>
+          {['Cash', 'M-Pesa', 'Bank', 'Credit'].map((m) => (
+            <button key={m} onClick={() => setPayment(m)} style={{
+              padding: '8px 4px', borderRadius: 7, fontSize: 12, fontWeight: 500,
+              border: '1px solid ' + (payment === m ? 'var(--accent-line)' : 'var(--line)'),
+              background: payment === m ? 'var(--accent-soft)' : 'var(--bg)',
+              color: payment === m ? 'var(--fg)' : 'var(--fg-2)',
+              cursor: 'pointer', transition: 'all 120ms',
+            }}>{m}</button>
+          ))}
+        </div>
+
+        <button
+          disabled={lines.length === 0}
+          className="btn btn-primary"
+          style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', padding: '12px', fontSize: 14, opacity: lines.length === 0 ? 0.4 : 1 }}
+        >
+          Complete sale →
+        </button>
+      </div>
+    </>
+  );
+}
+
 // ── Trial banner ──────────────────────────────────────────────────────────────
 function TrialBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -206,33 +323,22 @@ function ProductsSticky({ query, setQuery, cat, setCat, resultCount, inputRef, c
         <button className="btn btn-soft pos-hide-mobile" style={{ height: 40, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
           {Icons.plus} Custom
         </button>
-        {/* Mobile-only cart trigger — expands to show total + count when items in cart */}
+        {/* Mobile-only cart button — icon + count badge only */}
         <button
           className="pos-mobile-only"
           onClick={onOpenCart}
           style={{
-            position: 'relative', height: 40, flexShrink: 0,
-            padding: cartCount > 0 ? '0 12px 0 10px' : '0',
-            width: cartCount > 0 ? 'auto' : 40, minWidth: 40,
+            position: 'relative', width: 40, height: 40, flexShrink: 0,
             background: 'var(--accent)', color: '#fff',
             border: 'none', borderRadius: 8, cursor: 'pointer',
-            alignItems: 'center', gap: 8,
-            transition: 'all 150ms ease',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
           title="View cart"
         >
           <CartIcon />
           {cartCount > 0 && (
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11.5, fontWeight: 600, lineHeight: 1, textAlign: 'left' }}>
-              {fmtShort(cartSubtotal)}
-              <div style={{ fontSize: 8.5, opacity: 0.85, fontWeight: 500, marginTop: 1 }}>
-                {cartCount} item{cartCount !== 1 ? 's' : ''}
-              </div>
-            </span>
-          )}
-          {cartCount > 0 && (
             <span style={{
-              position: 'absolute', top: -5, right: -5,
+              position: 'absolute', top: -6, right: -6,
               minWidth: 18, height: 18, padding: '0 4px',
               borderRadius: 999, background: 'var(--bad)', color: '#fff',
               fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
@@ -565,13 +671,11 @@ export default function POSPage() {
         onClick={() => setCartOpen(false)}
       />
 
-      {/* ── Mobile-only: bottom sheet with full cart ── */}
+      {/* ── Mobile-only: bottom sheet with clean cart ── */}
       <div className={'cart-sheet' + (cartOpen ? ' open' : '')}>
-        <div className="cart-sheet-handle" />
-        <CartPanel
-          cart={cart}     setCart={setCart}
+        <MobileCartSheet
+          cart={cart}       setCart={setCart}
           payment={payment} setPayment={setPayment}
-          discount={discount} setDiscount={setDiscount}
           onClose={() => setCartOpen(false)}
         />
       </div>
