@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { AppShell } from '../../components/app-shell';
+import { AppShell, useNotifications } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
 
@@ -63,20 +63,77 @@ function KPI({ label, value, delta, deltaKind = 'good', subtitle, spark, accent 
 }
 
 // ── AI Nudge ──────────────────────────────────────────────────────────────────
+const NUDGE_DURATION = 5000; // ms before auto-dismiss
+
 function AINudge({ onDismiss }: { onDismiss: () => void }) {
+  const { addNotification } = useNotifications();
+  const [progress, setProgress] = useState(100);
+  const frameRef = useRef<number | null>(null);
+  const startRef = useRef(Date.now());
+  const dismissedRef = useRef(false);
+
+  const handleDismiss = () => {
+    if (dismissedRef.current) return;
+    dismissedRef.current = true;
+    if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    addNotification({
+      id: 'ai-insight-' + Date.now(),
+      icon: '✦',
+      color: 'var(--accent)',
+      title: 'AI Insight: Restock alert',
+      sub: 'Sabuni ya OMO 1kg · 3 units left · runs out Monday',
+      time: 'Just now',
+      unread: true,
+    });
+    onDismiss();
+  };
+
+  useEffect(() => {
+    startRef.current = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - startRef.current;
+      const remaining = Math.max(0, 100 - (elapsed / NUDGE_DURATION) * 100);
+      setProgress(remaining);
+      if (remaining <= 0) {
+        handleDismiss();
+        return;
+      }
+      frameRef.current = requestAnimationFrame(tick);
+    };
+    frameRef.current = requestAnimationFrame(tick);
+    return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="surface" style={{
       padding: '16px 18px',
       display: 'flex', gap: 14, alignItems: 'flex-start',
       borderColor: 'var(--accent-line)',
       background: 'linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-2) 100%)',
+      position: 'relative',
     }}>
+      {/* Mobile-only × close button */}
+      <button
+        className="mobile-only"
+        onClick={handleDismiss}
+        aria-label="Dismiss"
+        style={{
+          position: 'absolute', top: 10, right: 10,
+          width: 24, height: 24, borderRadius: 999,
+          border: 'none', background: 'var(--bg-3)',
+          color: 'var(--fg-3)', cursor: 'pointer',
+          display: 'grid', placeItems: 'center', fontSize: 14, lineHeight: 1,
+        }}
+      >×</button>
+
       <span style={{
         width: 32, height: 32, borderRadius: 8,
         background: 'var(--bg-2)', border: '1px solid var(--accent-line)',
         display: 'grid', placeItems: 'center', color: 'var(--accent)',
         flexShrink: 0,
       }}>{Icons.sparkles}</span>
+
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <span style={{ fontSize: 13, fontWeight: 500 }}>Ziada AI noticed something.</span>
@@ -85,12 +142,21 @@ function AINudge({ onDismiss }: { onDismiss: () => void }) {
         <div style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.55 }}>
           <strong style={{ color: 'var(--fg)' }}>Sabuni ya OMO 1kg</strong> is down to <strong style={{ color: 'var(--fg)' }}>3 units</strong> and selling 42/week. You&apos;ll run out by <strong style={{ color: 'var(--fg)' }}>Monday morning</strong>. Draft a restock?
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 6 }}>
             {Icons.sparkles} Draft restock for 200 units
           </button>
           <button className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: 12.5 }}>See projection</button>
-          <button className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: 12.5, marginLeft: 'auto' }} onClick={onDismiss}>Dismiss</button>
+          {/* Desktop-only Dismiss text button */}
+          <button className="btn btn-ghost desktop-only" style={{ padding: '6px 12px', fontSize: 12.5, marginLeft: 'auto' }} onClick={handleDismiss}>Dismiss</button>
+        </div>
+
+        {/* Countdown progress bar */}
+        <div style={{ height: 2, background: 'var(--bg-3)', borderRadius: 1, overflow: 'hidden', marginTop: 12 }}>
+          <div style={{
+            width: progress + '%', height: '100%',
+            background: 'var(--accent)', opacity: 0.6,
+          }} />
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Icons } from './icons';
-import { useTheme } from './app-shell';
+import { useTheme, useNotifications } from './app-shell';
 
 interface Crumb {
   label: string;
@@ -27,20 +27,14 @@ function HamburgerIcon() {
   );
 }
 
-const NOTIFICATIONS = [
-  { id: 'n1', icon: '⚠', color: 'var(--warn)', title: 'Low stock: Sabuni ya OMO', sub: '3 units left — below minimum of 15', time: '5m ago', unread: true },
-  { id: 'n2', icon: '✓', color: 'var(--good)', title: 'Payment received', sub: 'Juma Kifupi paid TZS 20,000', time: '2h ago', unread: true },
-  { id: 'n3', icon: '!', color: 'var(--bad)',  title: 'Credit overdue: Asha Mwinyi', sub: 'TZS 28,800 · 14 days overdue', time: '1d ago', unread: true },
-  { id: 'n4', icon: '✓', color: 'var(--good)', title: 'Sale completed', sub: 'TXN-2043 · TZS 84,200 via M-Pesa', time: '2d ago', unread: false },
-];
-
 function ThreeDotMenu() {
   const [open, setOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { notifications } = useNotifications();
   const ref = useRef<HTMLDivElement>(null);
 
-  const unread = NOTIFICATIONS.filter(n => n.unread).length;
+  const unread = notifications.filter(n => n.unread).length;
 
   useEffect(() => {
     if (!open) return;
@@ -149,7 +143,7 @@ function ThreeDotMenu() {
 
           {notifOpen && (
             <div style={{ borderTop: '1px solid var(--line-2)' }}>
-              {NOTIFICATIONS.map((n) => (
+              {notifications.map((n) => (
                 <div
                   key={n.id}
                   style={{
