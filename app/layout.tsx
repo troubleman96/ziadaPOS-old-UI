@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: 'Ziada POS',
   description: 'Retail operating system for East African traders. Manage sales, inventory, customers and credits from one place.',
   applicationName: 'Ziada POS',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.ziadapos.com'),
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
@@ -42,13 +42,13 @@ export const metadata: Metadata = {
     title: 'Ziada POS',
     description: 'Retail operating system for East African traders.',
     siteName: 'Ziada POS',
-    images: [{ url: '/icons/icon-512x512.png', width: 512, height: 512, alt: 'Ziada POS' }],
+    images: [{ url: '/ziada.PNG', width: 1200, height: 1200, alt: 'Ziada POS' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Ziada POS',
     description: 'Retail operating system for East African traders.',
-    images: ['/icons/icon-512x512.png'],
+    images: ['/ziada.PNG'],
   },
 };
 
