@@ -605,6 +605,98 @@ input, select, textarea { font-family: inherit; }
   .topbar-actions-hide { display: none !important; }
 }
 
+/* ─── Notebook layout ────────────────────────────────────────────────────────── */
+.notebook-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.notebook-sidebar { position: sticky; top: 16px; }
+.note-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.note-card { transition: border-color 120ms, background 120ms; }
+.note-card:hover { border-color: var(--accent-line) !important; }
+.note-folder-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 7px 10px; border-radius: 6px;
+  border: none; cursor: pointer; font-size: 13px; text-align: left;
+  transition: background 100ms, color 100ms; background: transparent; color: var(--fg-2);
+}
+.note-folder-btn:hover { background: var(--bg-3); color: var(--fg); }
+.note-folder-btn.active { background: var(--accent-soft); color: var(--fg); }
+.note-folder-btn.active .note-folder-count { color: var(--accent); }
+.note-folder-count { font-family: var(--mono); font-size: 10.5px; color: var(--fg-4); }
+.note-modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.note-modal {
+  width: 100%; max-width: 560px; border-radius: 12px !important;
+  padding: 0; max-height: calc(100dvh - 80px); overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.note-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px; border-bottom: 1px solid var(--line); flex-shrink: 0;
+}
+.note-modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+.note-modal-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 14px 20px; border-top: 1px solid var(--line); flex-shrink: 0;
+}
+.note-field-label {
+  display: block; font-family: var(--mono); font-size: 10.5px;
+  color: var(--fg-4); letter-spacing: 0.08em; text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.note-input {
+  width: 100%; padding: 8px 12px; border-radius: 7px;
+  border: 1px solid var(--line-2);
+  background: var(--bg); color: var(--fg); font-size: 13.5px;
+  outline: none; font-family: inherit; transition: border-color 120ms;
+}
+.note-input:focus { border-color: var(--accent-line); }
+.note-textarea {
+  width: 100%; padding: 10px 12px; border-radius: 7px;
+  border: 1px solid var(--line-2);
+  background: var(--bg); color: var(--fg); font-size: 13.5px;
+  outline: none; resize: vertical; line-height: 1.6;
+  font-family: inherit; transition: border-color 120ms; min-height: 160px;
+}
+.note-textarea:focus { border-color: var(--accent-line); }
+.btn-danger {
+  background: var(--bad-soft) !important; color: var(--bad) !important;
+  border-color: rgba(251,113,133,0.25) !important;
+}
+.btn-danger:hover { background: rgba(251,113,133,0.18) !important; }
+.note-menu-popup {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 50;
+  background: var(--bg-3); border: 1px solid var(--line-2);
+  border-radius: 8px; padding: 4px; min-width: 130px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.note-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 7px 10px; border-radius: 5px;
+  border: none; background: transparent; font-size: 13px;
+  cursor: pointer; text-align: left; color: var(--fg-2);
+  transition: background 80ms;
+}
+.note-menu-item:hover { background: var(--bg-4); }
+.note-menu-item.danger { color: var(--bad); }
+.note-menu-item.danger:hover { background: var(--bad-soft); }
+@media (max-width: 768px) {
+  .notebook-layout { grid-template-columns: 1fr; }
+  .notebook-sidebar { position: static; }
+  .note-modal { max-height: calc(100dvh - 40px); border-radius: 10px !important; }
+}
+
 /* ─── Aging bar responsive grid ──────────────────────────────────────────────── */
 .aging-grid {
   display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
@@ -624,17 +716,54 @@ input, select, textarea { font-family: inherit; }
 }
 .settings-nav-btn.active { border-left-color: var(--accent); }
 
-/* ─── POS mobile cart overlay ────────────────────────────────────────────────── */
+/* ─── POS mobile cart ─────────────────────────────────────────────────────── */
 .cart-fab { display: none; }
 .cart-close-btn { display: none !important; }
 
-/* Backdrop behind the bottom-drawer cart on mobile */
+/* Legacy overlay (kept for compat) */
 .cart-mobile-overlay {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
   z-index: 150;
 }
 .cart-mobile-overlay.visible { display: block; }
+
+/* Floating bottom bar — hidden on desktop, shown on mobile when cart has items */
+.cart-bottom-bar {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
+  background: var(--bg-2); border-top: 1px solid var(--line-2);
+  padding: 10px 14px 14px;
+  align-items: center; gap: 12px;
+  box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
+  cursor: pointer; transition: background 100ms;
+}
+.cart-bottom-bar:active { background: var(--bg-3); }
+
+/* Bottom-sheet backdrop */
+.cart-sheet-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.52); z-index: 95;
+  opacity: 0; pointer-events: none;
+  transition: opacity 260ms ease;
+}
+.cart-sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+
+/* Bottom sheet */
+.cart-sheet {
+  display: none;
+  position: fixed; inset-x: 0; bottom: 0; z-index: 96;
+  background: var(--bg-2); border-radius: 16px 16px 0 0;
+  border-top: 1px solid var(--line);
+  max-height: 92dvh; flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cart-sheet.open { transform: translateY(0); }
+.cart-sheet-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--line-2); margin: 10px auto 4px; flex-shrink: 0;
+}
 
 /* Product grid: auto-fill on desktop, fixed 2-col on mobile */
 .product-grid {
@@ -660,11 +789,13 @@ input, select, textarea { font-family: inherit; }
 /* Page secondary actions — hidden on mobile, inline-flex on desktop */
 .page-sec { display: inline-flex; align-items: center; gap: 6px; }
 
-/* Transaction/Customer table/card switching defaults (desktop = table) */
-.txn-table-wrap { display: block; }
-.txn-cards-wrap { display: none; }
-.cust-table-wrap { display: block; }
-.cust-cards-wrap { display: none; }
+/* Transaction/Customer/Staff table/card switching defaults (desktop = table) */
+.txn-table-wrap   { display: block; }
+.txn-cards-wrap   { display: none; }
+.cust-table-wrap  { display: block; }
+.cust-cards-wrap  { display: none; }
+.staff-table-wrap { display: block; }
+.staff-cards-wrap { display: none; }
 
 /* Inventory: table shown, grid auto by user toggle (desktop) */
 .inv-table-wrap { display: block; }
@@ -722,28 +853,33 @@ input, select, textarea { font-family: inherit; }
     border-bottom-color: var(--accent);
   }
 
-  /* POS: vertical split — products scrollable top, cart always-visible bottom */
+  /* POS: products fill full height; cart hidden inline, shown as bottom sheet */
   .pos { display: flex; flex-direction: column; overflow: hidden; }
-  .products { border-right: none; border-bottom: 1px solid var(--line); flex: 1; min-height: 0; }
-  .cart {
-    position: static !important; inset: unset !important;
-    z-index: auto !important; transform: none !important;
-    transition: none !important; max-height: unset !important;
-    flex: 0 0 46vh; border-radius: 0 !important;
-    border-top: 2px solid var(--line-2); overflow: hidden;
-  }
-  .cart.cart-open { transform: none !important; }
+  .products { border-right: none; flex: 1; min-height: 0; }
+  /* Hide the desktop inline cart (inside .pos) — replaced by bottom sheet */
+  .pos > .cart { display: none !important; }
   .cart-grip { display: none !important; }
-  .cart-close-btn { display: none !important; }
+  .cart-close-btn { display: flex !important; }
   .cart-mobile-overlay { display: none !important; }
   .pos-hide-mobile { display: none !important; }
-  .pos-mobile-only { display: none !important; }
-  /* Compact cart sections on mobile to fit in 46vh */
-  .cart-hd { padding: 10px 14px !important; }
+  .pos-mobile-only { display: flex !important; }
+  /* Enable bottom bar + sheet */
+  .cart-bottom-bar { display: flex !important; }
+  .cart-sheet { display: flex !important; }
+  .cart-sheet-backdrop { display: block !important; }
+  /* Re-enable CartPanel when rendered inside the bottom sheet */
+  .cart-sheet .cart {
+    display: flex !important; flex-direction: column !important;
+    flex: 1 !important; min-height: 0 !important;
+    overflow: hidden !important;
+    background: transparent !important; border-radius: 0 !important;
+  }
+  /* Cart sections inside the sheet */
+  .cart-hd { padding: 12px 16px !important; }
   .cart-customer { display: none !important; }
-  .cart-totals-section { padding: 8px 14px !important; }
-  .cart-net-section { padding: 10px 14px !important; }
-  .cart-payment-section { padding: 10px 14px !important; }
+  .cart-totals-section { padding: 10px 16px !important; }
+  .cart-net-section { padding: 12px 16px !important; }
+  .cart-payment-section { padding: 12px 16px !important; }
   .cart-shortcuts { display: none !important; }
   /* Product grid: 2-col on mobile (more card space) */
   .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -753,7 +889,7 @@ input, select, textarea { font-family: inherit; }
   /* POS sticky header: tighter padding, hide title block */
   .products-sticky { padding: 10px 12px 8px !important; }
   .products-sticky-title { display: none !important; }
-  .products-scroll { padding: 10px 12px 12px !important; }
+  .products-scroll { padding: 10px 12px 80px !important; }
   /* cat pills: tighter, hide counts */
   .cat-pill { padding: 5px 10px; font-size: 12px; }
   .cat-pill .count { display: none; }
@@ -821,6 +957,10 @@ input, select, textarea { font-family: inherit; }
   /* ── Customers mobile card-list ── */
   .cust-table-wrap { display: none !important; }
   .cust-cards-wrap { display: block !important; }
+
+  /* ── Staff mobile card-list ── */
+  .staff-table-wrap { display: none !important; }
+  .staff-cards-wrap { display: block !important; }
 
   /* ── Page headers: compact on mobile ── */
   .page-header-row { flex-direction: column; align-items: flex-start !important; }

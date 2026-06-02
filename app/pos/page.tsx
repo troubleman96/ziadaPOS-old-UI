@@ -72,6 +72,63 @@ const CartIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 5h2l2.5 10h11L21 8H6" /><circle cx="9" cy="19" r="1.3" /><circle cx="17" cy="19" r="1.3" /></g></svg>
 );
 
+// ── Mobile cart bottom bar ────────────────────────────────────────────────────
+function CartBottomBar({ lines, count, subtotal, onOpen }: {
+  lines: CartItem[]; count: number; subtotal: number; onOpen: () => void;
+}) {
+  if (count === 0) return null;
+  const first = lines[0]?.product.name ?? '';
+  const preview = lines.length === 1 ? first
+    : lines.length === 2 ? `${first} + ${lines[1].product.name}`
+    : `${first} + ${lines.length - 1} more`;
+
+  return (
+    <div className="cart-bottom-bar" onClick={onOpen}>
+      {/* Cart icon badge */}
+      <div style={{
+        width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+        background: 'var(--accent)', color: '#fff',
+        display: 'grid', placeItems: 'center', position: 'relative',
+      }}>
+        <CartIcon />
+        <span style={{
+          position: 'absolute', top: -6, right: -6,
+          minWidth: 18, height: 18, padding: '0 4px', borderRadius: 999,
+          background: 'var(--bad)', color: '#fff',
+          fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 700,
+          display: 'grid', placeItems: 'center',
+          border: '2px solid var(--bg-2)',
+        }}>{count}</span>
+      </div>
+
+      {/* Item preview */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 500 }}>
+          {count} item{count !== 1 ? 's' : ''}
+        </div>
+        <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {preview}
+        </div>
+      </div>
+
+      {/* Total + arrow */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+        <span className="mono" style={{ fontSize: 16, fontWeight: 600, color: 'var(--accent)', letterSpacing: '-0.02em' }}>
+          {fmtShort(subtotal)}
+        </span>
+        <div style={{
+          height: 32, padding: '0 12px', borderRadius: 8,
+          background: 'var(--accent)', color: '#fff',
+          display: 'flex', alignItems: 'center', gap: 5,
+          fontSize: 12.5, fontWeight: 500,
+        }}>
+          View <span style={{ fontFamily: 'var(--mono)' }}>→</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Trial banner ──────────────────────────────────────────────────────────────
 function TrialBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -457,16 +514,18 @@ export default function POSPage() {
     setCart((c) => ({ ...c, [p.id]: { product: p, qty: (c[p.id]?.qty || 0) + 1 } }));
   };
 
+  const cartLines = Object.values(cart);
+
   return (
     <AppShell
       full
       crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Point of sale' }]}
       actions={<button className="btn btn-soft page-sec" style={{ padding: '7px 12px', fontSize: 13 }}>Recent sales</button>}
     >
-      {/* Trial banner sits in the flex column before the pos grid */}
+      {/* Trial banner */}
       {trial && <TrialBanner onDismiss={() => setTrial(false)} />}
 
-      {/* The pos layout: products (top/left) + cart (bottom/right), fills remaining height */}
+      {/* POS layout: products left/top, desktop cart right */}
       <div className="pos">
         <div className="products">
           <ProductsSticky
@@ -482,11 +541,38 @@ export default function POSPage() {
             <ProductGrid items={items} cartMap={cartMap} onAdd={addProduct} />
           </div>
         </div>
+
+        {/* Desktop cart panel (hidden on mobile via CSS) */}
         <CartPanel
           cart={cart}     setCart={setCart}
           payment={payment} setPayment={setPayment}
           discount={discount} setDiscount={setDiscount}
           isOpen={cartOpen} onClose={() => setCartOpen(false)}
+        />
+      </div>
+
+      {/* ── Mobile-only: floating bottom bar ── */}
+      <CartBottomBar
+        lines={cartLines}
+        count={cartCount}
+        subtotal={cartSubtotal}
+        onOpen={() => setCartOpen(true)}
+      />
+
+      {/* ── Mobile-only: bottom sheet backdrop ── */}
+      <div
+        className={'cart-sheet-backdrop' + (cartOpen ? ' open' : '')}
+        onClick={() => setCartOpen(false)}
+      />
+
+      {/* ── Mobile-only: bottom sheet with full cart ── */}
+      <div className={'cart-sheet' + (cartOpen ? ' open' : '')}>
+        <div className="cart-sheet-handle" />
+        <CartPanel
+          cart={cart}     setCart={setCart}
+          payment={payment} setPayment={setPayment}
+          discount={discount} setDiscount={setDiscount}
+          onClose={() => setCartOpen(false)}
         />
       </div>
     </AppShell>
