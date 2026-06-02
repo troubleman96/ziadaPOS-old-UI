@@ -186,19 +186,75 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Mobile always gets the grid view regardless of toggle */}
+      {/* ── Mobile list view (table mode) ── */}
       {view === 'table' && (
-        <div className="inv-grid-wrap mobile-only" style={{ marginBottom: 0 }}>
+        <div className="surface mobile-only" style={{ overflow: 'hidden', marginBottom: 14 }}>
+          {filtered.length === 0 ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>No matches</div>
+          ) : filtered.map((p, i) => {
+            const status = statusFor(p);
+            const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
+            const margin = (((p.price - p.cost) / p.price) * 100).toFixed(0);
+            return (
+              <Link
+                key={p.id} href={`/inventory/${p.id}`}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '11px 14px', textDecoration: 'none', color: 'inherit',
+                  borderBottom: i < filtered.length - 1 ? '1px solid var(--line)' : 'none',
+                }}
+              >
+                {/* Thumbnail */}
+                <div style={{
+                  width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+                  background: scheme.bg, color: scheme.fg,
+                  display: 'grid', placeItems: 'center',
+                  fontSize: 18, fontWeight: 600,
+                }}>{p.name[0]}</div>
+
+                {/* Name + meta */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                  <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 2 }}>
+                    {p.sku} · {p.cat}
+                  </div>
+                </div>
+
+                {/* Price + stock badge */}
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div className="mono" style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>{fmt(p.price)}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4, marginTop: 3 }}>
+                    <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{margin}%</span>
+                    <span className={'pill ' + status.kind} style={{ fontSize: 9.5 }}>
+                      <span className="dot-s" style={{ background: status.kind === 'good' ? 'var(--good)' : status.kind === 'warn' ? 'var(--warn)' : 'var(--bad)' }} />
+                      {p.stock} {status.label}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+          <div style={{ padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'var(--bg-3)', display: 'flex', justifyContent: 'space-between' }}>
+            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>{filtered.length} of {INVENTORY.length} products</span>
+            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>{fmt(filtered.reduce((s, p) => s + p.stock * p.cost, 0))}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Mobile grid view (compact 2-col) ── */}
+      {view === 'grid' && (
+        <div className="inv-grid-wrap mobile-only" style={{ marginBottom: 14 }}>
           {filtered.map((p) => {
             const status = statusFor(p);
             const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
             return (
-              <Link key={p.id} href={`/inventory/${p.id}`} className="surface" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ aspectRatio: '1.4', background: scheme.bg, color: scheme.fg, borderRadius: 7, display: 'grid', placeItems: 'center', fontSize: 30, fontWeight: 500 }}>{p.name[0]}</div>
-                <div><div style={{ fontSize: 12.5, fontWeight: 500 }}>{p.name}</div><div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 1 }}>{p.sku}</div></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'auto' }}>
-                  <span className="mono" style={{ color: 'var(--accent)', fontSize: 12.5, fontWeight: 500 }}>{fmt(p.price)}</span>
-                  <span className={'pill ' + status.kind} style={{ fontSize: 10 }}>{p.stock} {status.label.toLowerCase()}</span>
+              <Link key={p.id} href={`/inventory/${p.id}`} className="surface" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8, textDecoration: 'none', color: 'inherit' }}>
+                <div style={{ height: 72, background: scheme.bg, color: scheme.fg, borderRadius: 8, display: 'grid', placeItems: 'center', fontSize: 26, fontWeight: 600 }}>{p.name[0]}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{p.sku}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+                  <span className="mono" style={{ color: 'var(--accent)', fontSize: 12, fontWeight: 600 }}>{fmt(p.price)}</span>
+                  <span className={'pill ' + status.kind} style={{ fontSize: 9.5 }}>{p.stock}</span>
                 </div>
               </Link>
             );
@@ -206,9 +262,9 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Table / grid — on mobile always shows grid; on desktop respects view toggle */}
+      {/* ── Desktop table / grid ── */}
       {view === 'table' ? (
-        <div className="inv-table-wrap surface" style={{ overflow: 'hidden' }}>
+        <div className="inv-table-wrap surface desktop-only" style={{ overflow: 'hidden' }}>
           <div className="table-scroll">
           <table className="table">
             <thead>
@@ -273,12 +329,12 @@ export default function InventoryPage() {
           </div>
         </div>
       ) : (
-        <div className="inv-grid-wrap">
+        <div className="inv-grid-wrap desktop-only">
           {filtered.map((p) => {
             const status = statusFor(p);
             const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
             return (
-              <Link key={p.id} href={`/inventory/${p.id}`} className="surface" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Link key={p.id} href={`/inventory/${p.id}`} className="surface" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none', color: 'inherit' }}>
                 <div style={{ aspectRatio: '1.4', background: scheme.bg, color: scheme.fg, borderRadius: 8, display: 'grid', placeItems: 'center', fontSize: 36, fontWeight: 500 }}>
                   {p.name[0]}
                 </div>
