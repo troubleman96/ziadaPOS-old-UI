@@ -16,17 +16,11 @@ export function AnalyticsNav() {
     ['cashflow',  'Cashflow',   '/analytics/cashflow'],
   ];
   return (
-    <div style={{ borderBottom: '1px solid var(--line)', marginBottom: 20, display: 'flex', gap: 4 }}>
+    <div className="analytics-nav">
       {tabs.map(([k, l, href]) => {
         const active = href === '/analytics' ? pathname === href : pathname.startsWith(href);
         return (
-          <Link key={k} href={href} style={{
-            padding: '10px 14px', fontSize: 13.5,
-            color: active ? 'var(--fg)' : 'var(--fg-3)',
-            borderBottom: '2px solid ' + (active ? 'var(--accent)' : 'transparent'),
-            marginBottom: -1,
-            fontWeight: active ? 500 : 400,
-          }}>{l}</Link>
+          <Link key={k} href={href} className={active ? 'active' : ''}>{l}</Link>
         );
       })}
     </div>
@@ -115,22 +109,20 @@ export function Donut({ slices, total, centerLabel, centerValue }: { slices: Arr
 // ── Header bar ────────────────────────────────────────────────────────────────
 export function AnalyticsHeader({ range, setRange }: { range: string; setRange: (r: string) => void }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, gap: 16 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
       <div>
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>Analytics</h1>
         <p style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--fg-3)' }}>Performance across all metrics, powered by Ziada AI.</p>
       </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <div style={{ display: 'inline-flex', border: '1px solid var(--line)', borderRadius: 7, overflow: 'hidden', background: 'var(--bg-2)' }}>
-          {[['7d','7D'],['30d','30D'],['90d','90D'],['ytd','YTD']].map(([k,l]) => (
-            <button key={k} onClick={() => setRange(k)} style={{
-              padding: '7px 14px', fontSize: 12.5, border: 0,
-              borderRight: '1px solid var(--line)',
-              background: range === k ? 'var(--bg-3)' : 'transparent',
-              color: range === k ? 'var(--fg)' : 'var(--fg-3)', cursor: 'pointer',
-            }}>{l}</button>
-          ))}
-        </div>
+      <div style={{ display: 'inline-flex', border: '1px solid var(--line)', borderRadius: 7, overflow: 'hidden', background: 'var(--bg-2)', flexShrink: 0 }}>
+        {[['7d','7D'],['30d','30D'],['90d','90D'],['ytd','YTD']].map(([k,l]) => (
+          <button key={k} onClick={() => setRange(k)} style={{
+            padding: '7px 14px', fontSize: 12.5, border: 0,
+            borderRight: '1px solid var(--line)',
+            background: range === k ? 'var(--bg-3)' : 'transparent',
+            color: range === k ? 'var(--fg)' : 'var(--fg-3)', cursor: 'pointer',
+          }}>{l}</button>
+        ))}
       </div>
     </div>
   );

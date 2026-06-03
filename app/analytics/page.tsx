@@ -146,12 +146,12 @@ export default function AnalyticsPage() {
   return (
     <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Analytics' }]}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>Analytics</h1>
           <p style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--fg-3)' }}>Performance across all metrics, powered by Ziada AI.</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
           <div style={{ display: 'inline-flex', border: '1px solid var(--line)', borderRadius: 7, overflow: 'hidden', background: 'var(--bg-2)' }}>
             {[['7d','7D'],['30d','30D'],['90d','90D'],['ytd','YTD']].map(([k,l]) => (
               <button key={k} onClick={() => setRange(k)} style={{
@@ -171,36 +171,36 @@ export default function AnalyticsPage() {
       {/* KPI strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>REVENUE</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>REVENUE</span>
             <span className="pill good">↗ +{revDelta}%</span>
           </div>
           <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>{fmtShort(totalRevenue)}</div>
           <div style={{ height: 36 }}><MiniSpark data={chartData.map(d => d.v)} /></div>
         </div>
         <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>GROSS PROFIT</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>GROSS PROFIT</span>
             <span className="pill good">↗ +12%</span>
           </div>
           <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>{fmtShort(totalProfit)}</div>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 2 }}>22.2% margin</div>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>22.2% margin</div>
         </div>
         <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>TRANSACTIONS</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>TRANSACTIONS</span>
             <span className="pill good">↗ +9%</span>
           </div>
           <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>{totalTickets.toLocaleString()}</div>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 2 }}>avg {fmtShort(Math.round(totalRevenue / totalTickets))} / ticket</div>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>avg {fmtShort(Math.round(totalRevenue / totalTickets))} / ticket</div>
         </div>
         <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>CUSTOMERS</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>CUSTOMERS</span>
             <span className="pill good">↗ +22%</span>
           </div>
           <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>1,284</div>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 2 }}>142 new this month</div>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>142 new this month</div>
         </div>
       </div>
 
@@ -220,12 +220,12 @@ export default function AnalyticsPage() {
             <span className="card-title">Payment mix</span>
             <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>by revenue share</span>
           </div>
-          <div style={{ padding: '16px 18px', display: 'flex', gap: 18, alignItems: 'center' }}>
+          <div className="payment-mix-layout">
             <Donut slices={PAYMENT_MIX} total={100} centerLabel="SHARE" centerValue="100%" />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
+            <div style={{ flex: 1, minWidth: 120, display: 'flex', flexDirection: 'column', gap: 7 }}>
               {PAYMENT_MIX.map((s) => (
                 <div key={s.label} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, alignItems: 'center', fontSize: 12 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, display: 'inline-block' }}></span>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, display: 'inline-block', flexShrink: 0 }}></span>
                   <span style={{ color: 'var(--fg-2)' }}>{s.label}</span>
                   <span className="mono" style={{ color: 'var(--fg)' }}>{s.v}%</span>
                 </div>
@@ -248,15 +248,15 @@ export default function AnalyticsPage() {
             const color = ins.kind === 'win' ? 'var(--good)' : ins.kind === 'warn' ? 'var(--warn)' : ins.kind === 'risk' ? 'var(--bad)' : 'var(--accent)';
             const bg = ins.kind === 'win' ? 'rgba(52,211,153,0.08)' : ins.kind === 'warn' ? 'rgba(251,191,36,0.08)' : ins.kind === 'risk' ? 'rgba(251,113,133,0.08)' : 'var(--accent-soft)';
             return (
-              <div key={i} className="surface" style={{ padding: '14px 16px', borderColor: color, background: bg, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div key={i} className="surface" style={{ padding: '14px 16px', borderColor: color, background: bg, display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 <span style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--bg-2)', border: '1px solid ' + color, color, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                   {Icons.sparkles}
                 </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ flex: 1, minWidth: 180 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 2 }}>{ins.title}</div>
                   <div style={{ fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.5 }}>{ins.body}</div>
                 </div>
-                <button className="btn btn-soft" style={{ padding: '5px 10px', fontSize: 12, flexShrink: 0 }}>{ins.action}</button>
+                <button className="btn btn-soft" style={{ padding: '5px 10px', fontSize: 12, flexShrink: 0, marginLeft: 'auto' }}>{ins.action}</button>
               </div>
             );
           })}
