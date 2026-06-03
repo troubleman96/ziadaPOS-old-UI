@@ -1,260 +1,24 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-type Role   = 'Owner' | 'Manager' | 'Cashier';
-type Status = 'Active' | 'On leave' | 'Inactive';
-type Shift  = 'Morning' | 'Evening' | 'Full day' | 'Weekend';
-
-interface StaffMember {
-  id: string;
-  name: string;
-  role: Role;
-  phone: string;
-  email: string;
-  status: Status;
-  shift: Shift;
-  joined: Date;
-  avatarHue: number;
-  salesToday: number;
-  totalSales: number;
-  avgTicket: number;
-  txnsToday: number;
-  txnsTotal: number;
-  canRefund: boolean;
-  canDiscount: boolean;
-  canViewReports: boolean;
-  pin: string;
-}
-
-// ── Seed data ─────────────────────────────────────────────────────────────────
-const TODAY  = new Date(2026, 4, 25);
-const dAgo   = (n: number) => new Date(TODAY.getTime() - n * 86400000);
-const mAgo   = (n: number) => new Date(TODAY.getTime() - n * 30 * 86400000);
-
-const STAFF_DATA: StaffMember[] = [
-  {
-    id: 's001', name: 'Hamisi Mwakapaga', role: 'Owner',
-    phone: '+255 784 100 001', email: 'hamisi@dukakuu.co.tz',
-    status: 'Active', shift: 'Full day', joined: mAgo(36),
-    avatarHue: 260, pin: '••••',
-    salesToday: 0, totalSales: 12_480_000, avgTicket: 42_000,
-    txnsToday: 0, txnsTotal: 297,
-    canRefund: true, canDiscount: true, canViewReports: true,
-  },
-  {
-    id: 's002', name: 'Neema Kiongo', role: 'Manager',
-    phone: '+255 767 200 002', email: 'neema@dukakuu.co.tz',
-    status: 'Active', shift: 'Morning', joined: mAgo(18),
-    avatarHue: 160, pin: '••••',
-    salesToday: 348_500, totalSales: 6_240_000, avgTicket: 28_400,
-    txnsToday: 12, txnsTotal: 220,
-    canRefund: true, canDiscount: true, canViewReports: true,
-  },
-  {
-    id: 's003', name: 'Baraka Mwenda', role: 'Cashier',
-    phone: '+255 712 300 003', email: 'baraka@dukakuu.co.tz',
-    status: 'Active', shift: 'Evening', joined: mAgo(12),
-    avatarHue: 200, pin: '••••',
-    salesToday: 214_000, totalSales: 3_820_000, avgTicket: 19_600,
-    txnsToday: 11, txnsTotal: 195,
-    canRefund: false, canDiscount: true, canViewReports: false,
-  },
-  {
-    id: 's004', name: 'Amina Hassan', role: 'Cashier',
-    phone: '+255 756 400 004', email: 'amina@dukakuu.co.tz',
-    status: 'Active', shift: 'Morning', joined: mAgo(8),
-    avatarHue: 340, pin: '••••',
-    salesToday: 196_000, totalSales: 1_580_000, avgTicket: 17_800,
-    txnsToday: 11, txnsTotal: 89,
-    canRefund: false, canDiscount: false, canViewReports: false,
-  },
-  {
-    id: 's005', name: 'Joseph Kilosa', role: 'Cashier',
-    phone: '+255 622 500 005', email: 'joseph@dukakuu.co.tz',
-    status: 'On leave', shift: 'Weekend', joined: mAgo(14),
-    avatarHue: 40, pin: '••••',
-    salesToday: 0, totalSales: 2_140_000, avgTicket: 22_300,
-    txnsToday: 0, txnsTotal: 96,
-    canRefund: false, canDiscount: true, canViewReports: false,
-  },
-  {
-    id: 's006', name: 'Zawadi Omary', role: 'Manager',
-    phone: '+255 769 600 006', email: 'zawadi@dukakuu.co.tz',
-    status: 'Active', shift: 'Full day', joined: mAgo(22),
-    avatarHue: 120, pin: '••••',
-    salesToday: 284_500, totalSales: 5_640_000, avgTicket: 31_200,
-    txnsToday: 9, txnsTotal: 181,
-    canRefund: true, canDiscount: true, canViewReports: true,
-  },
-];
-
-export { STAFF_DATA };
+import { staffApi, StaffMember, StaffKPIs } from '../../lib/api';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function initials(name: string) {
   return name.split(' ').map((s) => s[0]).slice(0, 2).join('').toUpperCase();
 }
 
-const ROLE_STYLE: Record<Role, { pill: string }> = {
-  Owner:   { pill: 'pill accent' },
-  Manager: { pill: 'pill info'   },
-  Cashier: { pill: 'pill'        },
-};
-
-const STATUS_STYLE: Record<Status, { pill: string }> = {
-  Active:     { pill: 'pill good' },
-  'On leave': { pill: 'pill warn' },
-  Inactive:   { pill: 'pill'      },
-};
-
-const SHIFT_LABEL: Record<Shift, string> = {
-  Morning:  '7am – 2pm',
-  Evening:  '2pm – 9pm',
-  'Full day': '7am – 7pm',
-  Weekend:  'Sat – Sun',
-};
-
-function ShiftDot({ shift }: { shift: Shift }) {
-  const color = shift === 'Morning' ? 'var(--warn)' : shift === 'Evening' ? 'var(--accent)' : shift === 'Full day' ? 'var(--good)' : 'var(--fg-3)';
-  return <span className="dot-s" style={{ background: color, flexShrink: 0 }} />;
-}
-
-// ── Add staff drawer ──────────────────────────────────────────────────────────
-interface AddForm {
-  name: string; role: Role; phone: string; email: string;
-  shift: Shift; status: Status; pin: string;
-}
-const EMPTY_FORM: AddForm = {
-  name: '', role: 'Cashier', phone: '', email: '', shift: 'Morning', status: 'Active', pin: '',
-};
-
-function AddStaffDrawer({ onClose, onSave }: { onClose: () => void; onSave: (m: StaffMember) => void }) {
-  const [form, setForm] = useState<AddForm>(EMPTY_FORM);
-  const [errors, setErrors] = useState<Partial<Record<keyof AddForm, string>>>({});
-  const [saving, setSaving] = useState(false);
-
-  const set = (k: keyof AddForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  function validate() {
-    const errs: typeof errors = {};
-    if (!form.name.trim())  errs.name  = 'Required';
-    if (!form.phone.trim()) errs.phone = 'Required';
-    if (form.pin && !/^\d{4}$/.test(form.pin)) errs.pin = 'Must be 4 digits';
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validate()) return;
-    setSaving(true);
-    setTimeout(() => {
-      onSave({
-        id: `s${String(Math.floor(Math.random() * 900) + 100)}`,
-        name: form.name.trim(),
-        role: form.role,
-        phone: form.phone.trim(),
-        email: form.email.trim(),
-        status: form.status,
-        shift: form.shift,
-        joined: TODAY,
-        avatarHue: Math.floor(Math.random() * 360),
-        pin: form.pin ? '••••' : '',
-        salesToday: 0, totalSales: 0, avgTicket: 0,
-        txnsToday: 0, txnsTotal: 0,
-        canRefund: form.role !== 'Cashier',
-        canDiscount: form.role !== 'Cashier',
-        canViewReports: form.role !== 'Cashier',
-      });
-      setSaving(false);
-    }, 500);
-  }
-
+// ── Spinner ───────────────────────────────────────────────────────────────────
+function Spinner() {
   return (
-    <div className="drawer-overlay" onClick={onClose}>
-      <div className="drawer" onClick={(e) => e.stopPropagation()}>
-        <div className="drawer-head">
-          <div>
-            <div style={{ fontWeight: 600, fontSize: 15 }}>Add staff member</div>
-            <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 2 }}>Fill in the details to create a new team account.</div>
-          </div>
-          <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={onClose}>{Icons.close}</button>
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14, flex: 1, overflowY: 'auto' }}>
-          <div className="form-group">
-            <label className="form-label">Full name <span style={{ color: 'var(--bad)' }}>*</span></label>
-            <input className="form-input" placeholder="e.g. Neema Kiongo" value={form.name} onChange={set('name')} style={{ borderColor: errors.name ? 'var(--bad)' : undefined }} />
-            {errors.name && <span style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 3 }}>{errors.name}</span>}
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Phone <span style={{ color: 'var(--bad)' }}>*</span></label>
-            <input className="form-input" placeholder="+255 7XX XXX XXX" value={form.phone} onChange={set('phone')} style={{ borderColor: errors.phone ? 'var(--bad)' : undefined }} />
-            {errors.phone && <span style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 3 }}>{errors.phone}</span>}
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Email (optional)</label>
-            <input className="form-input" type="email" placeholder="name@dukakuu.co.tz" value={form.email} onChange={set('email')} />
-          </div>
-
-          <div className="form-grid-2">
-            <div className="form-group">
-              <label className="form-label">Role</label>
-              <select className="form-input" value={form.role} onChange={set('role')}>
-                <option>Cashier</option>
-                <option>Manager</option>
-                <option>Owner</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Shift</label>
-              <select className="form-input" value={form.shift} onChange={set('shift')}>
-                <option>Morning</option>
-                <option>Evening</option>
-                <option value="Full day">Full day</option>
-                <option>Weekend</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-grid-2">
-            <div className="form-group">
-              <label className="form-label">Status</label>
-              <select className="form-input" value={form.status} onChange={set('status')}>
-                <option>Active</option>
-                <option value="On leave">On leave</option>
-                <option>Inactive</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">PIN (4 digits)</label>
-              <input className="form-input" placeholder="e.g. 1234" maxLength={4} value={form.pin} onChange={set('pin')} style={{ borderColor: errors.pin ? 'var(--bad)' : undefined }} />
-              {errors.pin && <span style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 3 }}>{errors.pin}</span>}
-            </div>
-          </div>
-
-          <div style={{ padding: '11px 14px', borderRadius: 8, background: 'var(--accent-soft)', border: '1px solid var(--accent-line)', fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.6 }}>
-            <strong style={{ color: 'var(--accent)' }}>Note:</strong> Default permissions are set by role. You can customise them from the staff member's detail page.
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, marginTop: 'auto', paddingTop: 8 }}>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} disabled={saving}>
-              {saving ? 'Saving…' : 'Add staff member'}
-            </button>
-            <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{width:20,height:20,borderRadius:'50%',border:'2px solid var(--line-2)',borderTopColor:'var(--accent)',animation:'spin 0.7s linear infinite',margin:'0 auto'}} />
+    </>
   );
 }
 
@@ -269,42 +33,101 @@ function Toast({ message, onDismiss }: { message: string; onDismiss: () => void 
   );
 }
 
+// ── Role / status style helpers ───────────────────────────────────────────────
+function getRolePill(role: string) {
+  const r = role.toLowerCase();
+  if (r === 'owner')   return 'pill accent';
+  if (r === 'manager') return 'pill info';
+  return 'pill';
+}
+
+function getStatusPill(status: string) {
+  const s = status.toLowerCase();
+  if (s === 'active')    return 'pill good';
+  if (s === 'on_leave' || s === 'on leave') return 'pill warn';
+  return 'pill';
+}
+
+function ShiftDot({ shift }: { shift: string }) {
+  const lower = shift.toLowerCase();
+  const color = lower === 'morning' ? 'var(--warn)' : lower === 'evening' ? 'var(--accent)' : lower === 'full_day' || lower === 'full day' ? 'var(--good)' : 'var(--fg-3)';
+  return <span className="dot-s" style={{ background: color, flexShrink: 0 }} />;
+}
+
+// ── Permission toggle row ─────────────────────────────────────────────────────
+function PermToggle({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
+      <span style={{ fontSize: 13 }}>{label}</span>
+      <button
+        onClick={() => onChange(!value)}
+        style={{
+          width: 36, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer',
+          background: value ? 'var(--good)' : 'var(--bg-3)',
+          position: 'relative', transition: 'background 200ms',
+        }}
+      >
+        <span style={{
+          position: 'absolute', top: 3, left: value ? 18 : 3,
+          width: 14, height: 14, borderRadius: 7, background: '#fff',
+          transition: 'left 200ms',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        }} />
+      </button>
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function StaffPage() {
-  const [staff, setStaff] = useState<StaffMember[]>(STAFF_DATA);
-  const [roleFilter, setRoleFilter]     = useState<'All' | Role>('All');
-  const [statusFilter, setStatusFilter] = useState<'All' | Status>('All');
-  const [query, setQuery]               = useState('');
-  const [addOpen, setAddOpen]           = useState(false);
-  const [toast, setToast]               = useState<string | null>(null);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [kpis, setKpis] = useState<StaffKPIs | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [roleFilter, setRoleFilter] = useState<string>('All');
+  const [statusFilter, setStatusFilter] = useState<string>('All');
+  const [query, setQuery] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
+  const [permSaving, setPermSaving] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([staffApi.getList(), staffApi.getKPIs()]).then(([listRes, kpiRes]) => {
+      if (listRes.success) setStaff(listRes.data);
+      if (kpiRes.success) setKpis(kpiRes.data);
+      setLoading(false);
+    });
+  }, []);
 
   const filtered = useMemo(() => staff.filter((m) => {
-    if (roleFilter   !== 'All' && m.role   !== roleFilter)   return false;
-    if (statusFilter !== 'All' && m.status !== statusFilter) return false;
+    if (roleFilter !== 'All' && m.role.toLowerCase() !== roleFilter.toLowerCase()) return false;
+    if (statusFilter !== 'All') {
+      const st = m.employment_status.toLowerCase().replace('_', ' ');
+      if (st !== statusFilter.toLowerCase()) return false;
+    }
     if (query) {
       const q = query.toLowerCase();
-      if (!m.name.toLowerCase().includes(q) && !m.phone.includes(q) && !m.email.toLowerCase().includes(q)) return false;
+      if (!m.full_name.toLowerCase().includes(q) && !m.phone.includes(q)) return false;
     }
     return true;
   }), [staff, roleFilter, statusFilter, query]);
 
-  const activeCount    = staff.filter((m) => m.status === 'Active').length;
-  const onShiftToday   = staff.filter((m) => m.status === 'Active' && m.shift !== 'Weekend').length;
-  const totalSalesToday = staff.reduce((s, m) => s + m.salesToday, 0);
-  const totalTxnsToday  = staff.reduce((s, m) => s + m.txnsToday, 0);
-
-  function handleAdd(m: StaffMember) {
-    setStaff((prev) => [m, ...prev]);
-    setAddOpen(false);
-    setToast(`${m.name} added to the team`);
-    setTimeout(() => setToast(null), 4000);
+  async function togglePerm(m: StaffMember, perm: 'can_refund' | 'can_discount' | 'can_view_reports') {
+    setPermSaving(m.id + perm);
+    const payload = { [perm]: !m[perm] };
+    const res = await staffApi.updatePermissions(m.id, payload);
+    if (res.success) {
+      setStaff((prev) => prev.map((s) => s.id === m.id ? { ...s, [perm]: !m[perm] } : s));
+      setToast('Permissions updated');
+      setTimeout(() => setToast(null), 3000);
+    }
+    setPermSaving(null);
   }
 
   return (
     <AppShell
       crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Staff' }]}
       actions={
-        <button className="btn btn-primary" style={{ gap: 6 }} onClick={() => setAddOpen(true)}>
+        <button className="btn btn-primary" style={{ gap: 6 }}>
           {Icons.plus} Add staff
         </button>
       }
@@ -327,35 +150,36 @@ export default function StaffPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         <div className="surface stat-card">
           <span className="label">TOTAL STAFF</span>
-          <span className="value">{staff.length}</span>
-          <span className="sub">{activeCount} active · {staff.length - activeCount} on leave/inactive</span>
+          <span className="value">{kpis ? kpis.total_staff : '—'}</span>
+          <span className="sub">registered team members</span>
         </div>
         <div className="surface stat-card">
-          <span className="label">ACTIVE</span>
-          <span className="value" style={{ color: 'var(--good)' }}>{activeCount}</span>
-          <span className="sub">{staff.filter(m => m.status === 'On leave').length} on leave today</span>
+          <span className="label">ON DUTY</span>
+          <span className="value" style={{ color: 'var(--good)' }}>{kpis ? kpis.on_duty : '—'}</span>
+          <span className="sub">currently on shift</span>
         </div>
         <div className="surface stat-card">
-          <span className="label">ON SHIFT TODAY</span>
-          <span className="value">{onShiftToday}</span>
-          <span className="sub">{totalTxnsToday} transactions processed</span>
-        </div>
-        <div className="surface stat-card" style={{ borderColor: totalSalesToday > 0 ? 'var(--accent-line)' : 'var(--line)' }}>
           <span className="label">SALES TODAY</span>
-          <span className="value" style={{ color: 'var(--accent)', fontSize: totalSalesToday > 999_999 ? 20 : 26 }}>{fmtShort(totalSalesToday)}</span>
-          <span className="sub">across {totalTxnsToday} transactions</span>
+          <span className="value" style={{ color: 'var(--accent)', fontSize: (kpis?.total_sales_today ?? 0) > 999_999 ? 20 : 26 }}>
+            {kpis ? fmtShort(kpis.total_sales_today) : '—'}
+          </span>
+          <span className="sub">team combined</span>
+        </div>
+        <div className="surface stat-card">
+          <span className="label">TOP CASHIER</span>
+          <span className="value" style={{ fontSize: 16 }}>{kpis?.top_cashier ?? '—'}</span>
+          <span className="sub">avg {kpis ? fmtShort(kpis.avg_ticket_today) : '—'} / ticket today</span>
         </div>
       </div>
 
       {/* Filter bar */}
       <div className="filter-bar">
-        {/* Search */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 200, padding: '0 10px 0 12px', height: 32, border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg)' }}>
           {Icons.search}
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, phone or email…"
+            placeholder="Search by name or phone…"
             style={{ flex: 1, background: 'transparent', border: 0, outline: 0, color: 'var(--fg)', fontSize: 13, fontFamily: 'inherit' }}
           />
           {query && <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{filtered.length}</span>}
@@ -363,7 +187,7 @@ export default function StaffPage() {
 
         {/* Role pills */}
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-          {(['All', 'Owner', 'Manager', 'Cashier'] as Array<'All' | Role>).map((r) => (
+          {(['All', 'owner', 'manager', 'cashier']).map((r) => (
             <button
               key={r}
               onClick={() => setRoleFilter(r)}
@@ -376,9 +200,9 @@ export default function StaffPage() {
                 display: 'inline-flex', alignItems: 'center', gap: 6,
               }}
             >
-              {r}
+              {r === 'All' ? 'All' : r.charAt(0).toUpperCase() + r.slice(1)}
               <span className="mono" style={{ fontSize: 10, color: roleFilter === r ? 'var(--accent)' : 'var(--fg-4)' }}>
-                {r === 'All' ? staff.length : staff.filter(m => m.role === r).length}
+                {r === 'All' ? staff.length : staff.filter(m => m.role.toLowerCase() === r).length}
               </span>
             </button>
           ))}
@@ -386,9 +210,8 @@ export default function StaffPage() {
 
         <span style={{ width: 1, height: 20, background: 'var(--line-2)', margin: '0 2px' }} />
 
-        {/* Status segment */}
         <div style={{ display: 'inline-flex', border: '1px solid var(--line)', borderRadius: 7, overflow: 'hidden', background: 'var(--bg)' }}>
-          {(['All', 'Active', 'On leave', 'Inactive'] as Array<'All' | Status>).map((s, i, arr) => (
+          {(['All', 'active', 'on leave', 'inactive']).map((s, i, arr) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
@@ -400,154 +223,163 @@ export default function StaffPage() {
                 cursor: 'pointer', whiteSpace: 'nowrap',
               }}
             >
-              {s}
+              {s === 'All' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Mobile card list */}
-      <div className="surface staff-cards-wrap" style={{ overflow: 'hidden', marginBottom: 0 }}>
-        {filtered.length === 0 && (
-          <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
-            No staff members match your search.
+      {loading ? (
+        <div className="surface" style={{ padding: '60px 20px', textAlign: 'center' }}>
+          <Spinner />
+          <div style={{ marginTop: 12, fontSize: 13, color: 'var(--fg-3)' }}>Loading staff…</div>
+        </div>
+      ) : (
+        <>
+          {/* Mobile card list */}
+          <div className="surface staff-cards-wrap" style={{ overflow: 'hidden', marginBottom: 0 }}>
+            {filtered.length === 0 && (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
+                No staff members match your search.
+              </div>
+            )}
+            {filtered.map((m) => (
+              <Link
+                key={m.id}
+                href={`/staff/${m.id}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: '1px solid var(--line)', color: 'inherit' }}
+              >
+                <div style={{ width: 40, height: 40, borderRadius: 999, flexShrink: 0, background: `hsl(${m.avatar_hue}, 60%, 50%)`, display: 'grid', placeItems: 'center', fontSize: 13.5, fontWeight: 600, color: '#fff' }}>
+                  {m.initials}
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 500, fontSize: 13.5 }}>{m.full_name}</span>
+                    <span className={getRolePill(m.role)} style={{ fontSize: 10 }}>{m.role}</span>
+                  </div>
+                  <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <ShiftDot shift={m.shift} />
+                    {m.shift_display} · {m.phone}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <span className={getStatusPill(m.employment_status)} style={{ fontSize: 10 }}>{m.employment_status}</span>
+                  {m.sales_today > 0 && (
+                    <div className="mono" style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>{fmtShort(m.sales_today)} today</div>
+                  )}
+                </div>
+              </Link>
+            ))}
+            <div style={{ padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'var(--bg-3)' }}>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{filtered.length} staff member{filtered.length !== 1 ? 's' : ''}</span>
+            </div>
           </div>
-        )}
-        {filtered.map((m) => (
-          <Link
-            key={m.id}
-            href={`/staff/${m.id}`}
-            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderBottom: '1px solid var(--line)', color: 'inherit' }}
-          >
-            <div style={{ width: 40, height: 40, borderRadius: 999, flexShrink: 0, background: `oklch(52% 0.18 ${m.avatarHue})`, display: 'grid', placeItems: 'center', fontSize: 13.5, fontWeight: 600, color: '#fff' }}>
-              {initials(m.name)}
-            </div>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 500, fontSize: 13.5 }}>{m.name}</span>
-                <span className={ROLE_STYLE[m.role].pill} style={{ fontSize: 10 }}>{m.role}</span>
-              </div>
-              <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 5 }}>
-                <ShiftDot shift={m.shift} />
-                {m.shift} · {m.phone}
-              </div>
-            </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <span className={STATUS_STYLE[m.status].pill} style={{ fontSize: 10 }}>{m.status}</span>
-              {m.salesToday > 0 && (
-                <div className="mono" style={{ fontSize: 11, color: 'var(--accent)', marginTop: 4 }}>{fmtShort(m.salesToday)} today</div>
-              )}
-            </div>
-          </Link>
-        ))}
-        <div style={{ padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'var(--bg-3)' }}>
-          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{filtered.length} staff member{filtered.length !== 1 ? 's' : ''}</span>
-        </div>
-      </div>
 
-      {/* Desktop table */}
-      <div className="surface staff-table-wrap" style={{ overflow: 'hidden' }}>
-        <div className="table-scroll">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Staff member</th>
-                <th>Phone</th>
-                <th>Shift</th>
-                <th>Joined</th>
-                <th>Status</th>
-                <th className="num">Sales today</th>
-                <th className="num">Total sales</th>
-                <th style={{ width: 80 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--fg-3)' }}>
-                    No staff members match your search.
-                  </td>
-                </tr>
-              )}
-              {filtered.map((m) => (
-                <tr key={m.id}>
-                  {/* Name + role */}
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 36, height: 36, borderRadius: 999, flexShrink: 0, background: `oklch(52% 0.18 ${m.avatarHue})`, display: 'grid', placeItems: 'center', fontSize: 12.5, fontWeight: 600, color: '#fff' }}>
-                        {initials(m.name)}
-                      </div>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
-                          <Link href={`/staff/${m.id}`} style={{ fontSize: 13.5, fontWeight: 500, color: 'inherit' }}>{m.name}</Link>
-                          <span className={ROLE_STYLE[m.role].pill} style={{ fontSize: 10 }}>{m.role}</span>
+          {/* Desktop table */}
+          <div className="surface staff-table-wrap" style={{ overflow: 'hidden' }}>
+            <div className="table-scroll">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Staff member</th>
+                    <th>Phone</th>
+                    <th>Shift</th>
+                    <th>Status</th>
+                    <th className="num">Sales today</th>
+                    <th className="num">Total sales</th>
+                    <th>Permissions</th>
+                    <th style={{ width: 80 }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--fg-3)' }}>
+                        No staff members match your search.
+                      </td>
+                    </tr>
+                  )}
+                  {filtered.map((m) => (
+                    <tr key={m.id}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 999, flexShrink: 0, background: `hsl(${m.avatar_hue}, 60%, 50%)`, display: 'grid', placeItems: 'center', fontSize: 12.5, fontWeight: 600, color: '#fff' }}>
+                            {m.initials}
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 2 }}>
+                              <Link href={`/staff/${m.id}`} style={{ fontSize: 13.5, fontWeight: 500, color: 'inherit' }}>{m.full_name}</Link>
+                              <span className={getRolePill(m.role)} style={{ fontSize: 10 }}>{m.role}</span>
+                            </div>
+                            <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{m.store_name || '—'}</div>
+                          </div>
                         </div>
-                        <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{m.email || '—'}</div>
-                      </div>
-                    </div>
-                  </td>
+                      </td>
+                      <td className="mono" style={{ fontSize: 12, color: 'var(--fg-2)' }}>{m.phone}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <ShiftDot shift={m.shift} />
+                          <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>{m.shift_display}</span>
+                        </div>
+                      </td>
+                      <td><span className={getStatusPill(m.employment_status)}>{m.employment_status}</span></td>
+                      <td className="num mono" style={{ fontSize: 13, color: m.sales_today > 0 ? 'var(--accent)' : 'var(--fg-4)' }}>
+                        {m.sales_today > 0 ? fmtShort(m.sales_today) : '—'}
+                        {m.txns_today > 0 && (
+                          <div style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 1 }}>{m.txns_today} txns</div>
+                        )}
+                      </td>
+                      <td className="num mono" style={{ fontSize: 13, color: 'var(--fg-2)' }}>
+                        {m.total_sales > 0 ? fmtShort(m.total_sales) : <span style={{ color: 'var(--fg-4)' }}>—</span>}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          {[
+                            { key: 'can_refund' as const,       label: 'Refund' },
+                            { key: 'can_discount' as const,     label: 'Discount' },
+                            { key: 'can_view_reports' as const, label: 'Reports' },
+                          ].map(({ key, label }) => (
+                            <button
+                              key={key}
+                              disabled={permSaving === m.id + key}
+                              onClick={() => togglePerm(m, key)}
+                              style={{
+                                padding: '2px 7px', borderRadius: 5, fontSize: 10.5, cursor: 'pointer',
+                                border: '1px solid ' + (m[key] ? 'var(--good)' : 'var(--line)'),
+                                background: m[key] ? 'var(--good-soft)' : 'var(--bg-3)',
+                                color: m[key] ? 'var(--good)' : 'var(--fg-4)',
+                                opacity: permSaving === m.id + key ? 0.5 : 1,
+                              }}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                      <td>
+                        <Link href={`/staff/${m.id}`}>
+                          <button className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12 }}>View</button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                  {/* Phone */}
-                  <td className="mono" style={{ fontSize: 12, color: 'var(--fg-2)' }}>{m.phone}</td>
+            <div style={{ padding: '11px 16px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-3)', flexWrap: 'wrap', gap: 8 }}>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
+                Showing {filtered.length} of {staff.length} staff members
+              </span>
+              <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
+                Today's total:{' '}
+                <span style={{ color: 'var(--accent)' }}>{fmt(filtered.reduce((s, m) => s + m.sales_today, 0))}</span>
+              </span>
+            </div>
+          </div>
+        </>
+      )}
 
-                  {/* Shift */}
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <ShiftDot shift={m.shift} />
-                      <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>{m.shift}</span>
-                    </div>
-                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 2 }}>{SHIFT_LABEL[m.shift]}</div>
-                  </td>
-
-                  {/* Joined */}
-                  <td className="mono" style={{ fontSize: 12, color: 'var(--fg-3)' }}>
-                    {m.joined.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}
-                  </td>
-
-                  {/* Status */}
-                  <td><span className={STATUS_STYLE[m.status].pill}>{m.status}</span></td>
-
-                  {/* Sales today */}
-                  <td className="num mono" style={{ fontSize: 13, color: m.salesToday > 0 ? 'var(--accent)' : 'var(--fg-4)' }}>
-                    {m.salesToday > 0 ? fmtShort(m.salesToday) : '—'}
-                    {m.txnsToday > 0 && (
-                      <div style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 1 }}>{m.txnsToday} txns</div>
-                    )}
-                  </td>
-
-                  {/* Total sales */}
-                  <td className="num mono" style={{ fontSize: 13, color: 'var(--fg-2)' }}>
-                    {m.totalSales > 0 ? fmtShort(m.totalSales) : <span style={{ color: 'var(--fg-4)' }}>—</span>}
-                  </td>
-
-                  {/* Action */}
-                  <td>
-                    <Link href={`/staff/${m.id}`}>
-                      <button className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12 }}>View</button>
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Footer */}
-        <div style={{ padding: '11px 16px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-3)', flexWrap: 'wrap', gap: 8 }}>
-          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
-            Showing {filtered.length} of {staff.length} staff members
-          </span>
-          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
-            Today's total:{' '}
-            <span style={{ color: 'var(--accent)' }}>{fmt(filtered.reduce((s, m) => s + m.salesToday, 0))}</span>
-          </span>
-        </div>
-      </div>
-
-      {/* Add drawer */}
-      {addOpen && <AddStaffDrawer onClose={() => setAddOpen(false)} onSave={handleAdd} />}
-
-      {/* Toast */}
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </AppShell>
   );

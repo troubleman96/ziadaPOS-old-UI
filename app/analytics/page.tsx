@@ -1,11 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmtShort } from '../../lib/utils';
+import { analyticsApi, AnalyticsOverview } from '../../lib/api';
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function rangeToParams(range: string): string {
+  const today = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const fmtD = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const todayStr = fmtD(today);
+  if (range === '7d')  { const f = new Date(today); f.setDate(f.getDate()-6);  return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
+  if (range === '30d') { const f = new Date(today); f.setDate(f.getDate()-29); return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
+  if (range === '90d') { const f = new Date(today); f.setDate(f.getDate()-89); return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
+  if (range === 'ytd') { const f = new Date(today.getFullYear(), 0, 1);        return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
+  return '';
+}
 
 // ── Analytics Nav ─────────────────────────────────────────────────────────────
 function AnalyticsNav() {
@@ -29,9 +43,10 @@ function AnalyticsNav() {
   );
 }
 
-// ── Shared charts / atoms ─────────────────────────────────────────────────────
+// ── Charts ────────────────────────────────────────────────────────────────────
 function MiniSpark({ data, color = 'var(--accent)' }: { data: number[]; color?: string }) {
   const w = 200, h = 36;
+  if (data.length < 2) return <div style={{ width: '100%', height: h }} />;
   const min = Math.min(...data), max = Math.max(...data);
   const range = max - min || 1;
   const pts = data.map((v, i) => {
@@ -51,9 +66,10 @@ function MiniSpark({ data, color = 'var(--accent)' }: { data: number[]; color?: 
 
 function AreaChart({ data, height = 240 }: { data: Array<{ v: number; label: string }>; height?: number }) {
   const w = 820, h = height;
+  if (data.length < 2) return <div style={{ height }} />;
   const pad = { l: 48, r: 16, t: 16, b: 32 };
-  const max = Math.max(...data.map(d => d.v)) * 1.1;
-  const stepX = (w - pad.l - pad.r) / (data.length - 1);
+  const max = Math.max(...data.map(d => d.v)) * 1.1 || 1;
+  const stepX = (w - pad.l - pad.r) / Math.max(data.length - 1, 1);
   const yScale = (v: number) => h - pad.b - (v / max) * (h - pad.t - pad.b);
   const xScale = (i: number) => pad.l + i * stepX;
   const linePath = data.map((d, i) => (i === 0 ? 'M' : 'L') + xScale(i).toFixed(1) + ',' + yScale(d.v).toFixed(1)).join(' ');
@@ -62,7 +78,7 @@ function AreaChart({ data, height = 240 }: { data: Array<{ v: number; label: str
   return (
     <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', display: 'block' }}>
       <defs>
-        <linearGradient id="aFill2" x1="0" x2="0" y1="0" y2="1">
+        <linearGradient id="aFillOverview" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.25" />
           <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
         </linearGradient>
@@ -78,7 +94,7 @@ function AreaChart({ data, height = 240 }: { data: Array<{ v: number; label: str
       {data.map((d, i) => i % Math.ceil(data.length / 8) === 0 && (
         <text key={i} x={xScale(i)} y={h - 12} textAnchor="middle" fontSize="11" fontWeight="500" fill="var(--fg-2)" fontFamily="var(--mono)">{d.label}</text>
       ))}
-      <path d={areaPath} fill="url(#aFill2)" />
+      <path d={areaPath} fill="url(#aFillOverview)" />
       <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth="1.75" />
     </svg>
   );
@@ -108,40 +124,51 @@ function Donut({ slices, total, centerLabel, centerValue }: { slices: Array<{ la
   );
 }
 
-// ── Daily data ────────────────────────────────────────────────────────────────
-const TODAY = new Date(2026, 4, 24);
-const DAILY = Array.from({ length: 90 }, (_, i) => {
-  const d = new Date(TODAY.getTime() - (89 - i) * 86400000);
-  const base = 800000 + Math.sin(i * 0.15) * 200000;
-  const v = Math.round(base + Math.sin(i * 0.4) * 80000 + i * 2000);
-  return { v, label: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) };
-});
+// ── Spinner ───────────────────────────────────────────────────────────────────
+function Spinner() {
+  return (
+    <>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{width:20,height:20,borderRadius:'50%',border:'2px solid var(--line-2)',borderTopColor:'var(--accent)',animation:'spin 0.7s linear infinite',margin:'0 auto'}} />
+    </>
+  );
+}
 
-const PAYMENT_MIX = [
-  { label: 'M-Pesa',    v: 48, color: '#10b981' },
-  { label: 'Cash',      v: 28, color: 'var(--accent)' },
-  { label: 'Tigo Pesa', v: 14, color: '#f59e0b' },
-  { label: 'Bank',      v: 7,  color: '#60a5fa' },
-  { label: 'Credit',    v: 3,  color: '#fb7185' },
-];
+// ── PAYMENT COLORS ────────────────────────────────────────────────────────────
+const PAYMENT_COLORS: Record<string, string> = {
+  'M-Pesa': '#10b981',
+  'Cash': 'var(--accent)',
+  'Tigo Pesa': '#f59e0b',
+  'Bank': '#60a5fa',
+  'Credit': '#fb7185',
+};
+function paymentColor(method: string, idx: number) {
+  return PAYMENT_COLORS[method] ?? ['#10b981','var(--accent)','#f59e0b','#60a5fa','#fb7185'][idx % 5];
+}
 
-const AI_INSIGHTS = [
-  { kind: 'win',  title: 'Revenue up 18% this month', body: 'Strongest growth from beverages (+34%) and snacks (+22%). Your new shelf layout may be driving impulse buys.', action: 'See breakdown' },
-  { kind: 'warn', title: 'Friday peak underserved', body: '14:00–16:00 on Fridays averages 2× normal traffic but you\'re often short-staffed. You\'ve missed ~TZS 180K in potential sales.', action: 'View pattern' },
-  { kind: 'risk', title: '3 products losing margin', body: 'Mafuta ya Cooking 1L, Sukari 2kg and Chai Bora 500g have slipped below 18% margin due to cost increases not passed on.', action: 'Reprice now' },
-];
-
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function AnalyticsPage() {
   const [range, setRange] = useState('30d');
-  const chartData = range === '7d' ? DAILY.slice(-7) : range === '90d' ? DAILY : DAILY.slice(-30);
+  const [data, setData] = useState<AnalyticsOverview | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const totalRevenue = chartData.reduce((s, d) => s + d.v, 0);
-  const lastPeriod = DAILY.slice(-(chartData.length * 2), -chartData.length);
-  const lastRevenue = lastPeriod.reduce((s, d) => s + d.v, 0);
-  const revDelta = lastRevenue ? ((totalRevenue - lastRevenue) / lastRevenue * 100).toFixed(1) : '0';
+  useEffect(() => {
+    setLoading(true);
+    analyticsApi.getOverview(rangeToParams(range)).then((res) => {
+      if (res.success) setData(res.data);
+      setLoading(false);
+    });
+  }, [range]);
 
-  const totalProfit = Math.round(totalRevenue * 0.22);
-  const totalTickets = Math.round(chartData.length * 87);
+  const chartData = data?.trend.map((t) => ({ v: t.revenue, label: t.label })) ?? [];
+
+  const paymentSlices = data?.payment_mix.map((p, i) => ({
+    label: p.method,
+    v: p.pct,
+    color: paymentColor(p.method, i),
+  })) ?? [];
+
+  const deltaStr = (pct: number | null) => pct === null ? null : pct >= 0 ? `+${pct.toFixed(1)}%` : `${pct.toFixed(1)}%`;
 
   return (
     <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Analytics' }]}>
@@ -168,114 +195,136 @@ export default function AnalyticsPage() {
 
       <AnalyticsNav />
 
-      {/* KPI strip — 4 col on wide, 2 col on mobile */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
-        <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>REVENUE</span>
-            <span className="pill good">↗ +{revDelta}%</span>
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>{fmtShort(totalRevenue)}</div>
-          <div style={{ height: 36 }}><MiniSpark data={chartData.map(d => d.v)} /></div>
+      {loading ? (
+        <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+          <Spinner />
+          <div style={{ marginTop: 12, fontSize: 13, color: 'var(--fg-3)' }}>Loading analytics…</div>
         </div>
-        <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>GROSS PROFIT</span>
-            <span className="pill good">↗ +12%</span>
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>{fmtShort(totalProfit)}</div>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>22.2% margin</div>
+      ) : !data ? (
+        <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>📊</div>
+          <div style={{ fontSize: 15, fontWeight: 500 }}>No analytics data available</div>
         </div>
-        <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>TRANSACTIONS</span>
-            <span className="pill good">↗ +9%</span>
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>{totalTickets.toLocaleString()}</div>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>avg {fmtShort(Math.round(totalRevenue / totalTickets))} / ticket</div>
-        </div>
-        <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>CUSTOMERS</span>
-            <span className="pill good">↗ +22%</span>
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>1,284</div>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>142 new this month</div>
-        </div>
-        {/* Discount KPI — linked to /discounts */}
-        <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'var(--info-soft)', background: 'var(--info-soft)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>DISCOUNTS GIVEN</span>
-            <span className="pill warn">13.8% rate</span>
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--info)' }}>TZS 284K</div>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>
-            47 transactions · avg 6.2%
-          </div>
-          <a href="/discounts" style={{ fontSize: 11.5, color: 'var(--info)', marginTop: 'auto', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
-            View full report →
-          </a>
-        </div>
-      </div>
-
-      {/* Main chart + payment mix */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12, marginBottom: 16 }}>
-        <div className="surface">
-          <div className="card-head">
-            <span className="card-title">Revenue trend</span>
-            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>{range === '7d' ? 'last 7 days' : range === '90d' ? 'last 90 days' : 'last 30 days'}</span>
-          </div>
-          <div style={{ padding: 16 }}>
-            <AreaChart data={chartData} />
-          </div>
-        </div>
-        <div className="surface">
-          <div className="card-head">
-            <span className="card-title">Payment mix</span>
-            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>by revenue share</span>
-          </div>
-          <div className="payment-mix-layout">
-            <Donut slices={PAYMENT_MIX} total={100} centerLabel="SHARE" centerValue="100%" />
-            <div style={{ flex: 1, minWidth: 120, display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {PAYMENT_MIX.map((s) => (
-                <div key={s.label} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, alignItems: 'center', fontSize: 12 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 2, background: s.color, display: 'inline-block', flexShrink: 0 }}></span>
-                  <span style={{ color: 'var(--fg-2)' }}>{s.label}</span>
-                  <span className="mono" style={{ color: 'var(--fg)' }}>{s.v}%</span>
-                </div>
-              ))}
+      ) : (
+        <>
+          {/* KPI strip */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
+            <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>REVENUE</span>
+                {deltaStr(data.kpis.revenue_delta_pct) && (
+                  <span className={`pill ${(data.kpis.revenue_delta_pct ?? 0) >= 0 ? 'good' : 'bad'}`}>
+                    {(data.kpis.revenue_delta_pct ?? 0) >= 0 ? '↗' : '↘'} {deltaStr(data.kpis.revenue_delta_pct)}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>{fmtShort(data.kpis.revenue)}</div>
+              <div style={{ height: 36 }}><MiniSpark data={chartData.map(d => d.v)} /></div>
+            </div>
+            <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>GROSS PROFIT</span>
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>{fmtShort(data.kpis.profit)}</div>
+              <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>{data.kpis.margin_pct.toFixed(1)}% margin</div>
+            </div>
+            <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>TRANSACTIONS</span>
+                {deltaStr(data.kpis.transaction_delta_pct) && (
+                  <span className={`pill ${(data.kpis.transaction_delta_pct ?? 0) >= 0 ? 'good' : 'bad'}`}>
+                    {(data.kpis.transaction_delta_pct ?? 0) >= 0 ? '↗' : '↘'} {deltaStr(data.kpis.transaction_delta_pct)}
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>{data.kpis.transaction_count.toLocaleString()}</div>
+              <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>avg {fmtShort(data.kpis.avg_ticket)} / ticket</div>
+            </div>
+            <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>CUSTOMERS</span>
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>{data.kpis.customer_count.toLocaleString()}</div>
+              <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>active in period</div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* AI insights */}
-      <div className="surface" style={{ marginBottom: 16 }}>
-        <div className="card-head">
-          <span className="card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {Icons.sparkles} AI Insights
-          </span>
-          <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>updated 2 min ago</span>
-        </div>
-        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {AI_INSIGHTS.map((ins, i) => {
-            const color = ins.kind === 'win' ? 'var(--good)' : ins.kind === 'warn' ? 'var(--warn)' : ins.kind === 'risk' ? 'var(--bad)' : 'var(--accent)';
-            const bg = ins.kind === 'win' ? 'rgba(52,211,153,0.08)' : ins.kind === 'warn' ? 'rgba(251,191,36,0.08)' : ins.kind === 'risk' ? 'rgba(251,113,133,0.08)' : 'var(--accent-soft)';
-            return (
-              <div key={i} className="surface" style={{ padding: '14px 16px', borderColor: color, background: bg, display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                <span style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--bg-2)', border: '1px solid ' + color, color, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-                  {Icons.sparkles}
+          {/* Main chart + payment mix */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12, marginBottom: 16 }}>
+            <div className="surface">
+              <div className="card-head">
+                <span className="card-title">Revenue trend</span>
+                <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>
+                  {range === '7d' ? 'last 7 days' : range === '90d' ? 'last 90 days' : range === 'ytd' ? 'year to date' : 'last 30 days'}
                 </span>
-                <div style={{ flex: 1, minWidth: 180 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 2 }}>{ins.title}</div>
-                  <div style={{ fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.5 }}>{ins.body}</div>
-                </div>
-                <button className="btn btn-soft" style={{ padding: '5px 10px', fontSize: 12, flexShrink: 0, marginLeft: 'auto' }}>{ins.action}</button>
               </div>
-            );
-          })}
-        </div>
-      </div>
+              <div style={{ padding: 16 }}>
+                {chartData.length > 1 ? <AreaChart data={chartData} /> : (
+                  <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
+                    No trend data available
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="surface">
+              <div className="card-head">
+                <span className="card-title">Payment mix</span>
+                <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>by revenue share</span>
+              </div>
+              <div className="payment-mix-layout">
+                {paymentSlices.length > 0 ? (
+                  <>
+                    <Donut slices={paymentSlices} total={100} centerLabel="SHARE" centerValue="100%" />
+                    <div style={{ flex: 1, minWidth: 120, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                      {data.payment_mix.map((s, i) => (
+                        <div key={s.method} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, alignItems: 'center', fontSize: 12 }}>
+                          <span style={{ width: 8, height: 8, borderRadius: 2, background: paymentColor(s.method, i), display: 'inline-block', flexShrink: 0 }}></span>
+                          <span style={{ color: 'var(--fg-2)' }}>{s.method}</span>
+                          <span className="mono" style={{ color: 'var(--fg)' }}>{s.pct.toFixed(1)}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13, width: '100%' }}>
+                    No payment data for this period
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Top products */}
+          {data.top_products.length > 0 && (
+            <div className="surface" style={{ marginBottom: 16 }}>
+              <div className="card-head">
+                <span className="card-title">Top products</span>
+                <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>by revenue</span>
+              </div>
+              <div className="table-scroll">
+                <table className="table" style={{ width: '100%' }}>
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th className="num">Qty sold</th>
+                      <th className="num">Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.top_products.map((p) => (
+                      <tr key={p.product_id}>
+                        <td style={{ fontSize: 13.5, fontWeight: 500 }}>{p.product_name}</td>
+                        <td className="num mono" style={{ fontSize: 13 }}>{p.qty_sold}</td>
+                        <td className="num mono" style={{ fontSize: 13 }}>{fmtShort(p.revenue)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </AppShell>
   );
 }

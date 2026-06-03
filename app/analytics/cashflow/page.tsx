@@ -1,69 +1,64 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
 import { fmtShort } from '../../../lib/utils';
 import { AnalyticsNav, AnalyticsHeader, AreaChart } from '../_shared';
-import { seeded } from '../../../lib/utils';
+import { analyticsApi, CashflowAnalytics } from '../../../lib/api';
 
-// ── Synthetic cashflow data ────────────────────────────────────────────────────
-const TODAY = new Date(2026, 4, 24);
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function rangeToParams(range: string): string {
+  const today = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const fmtD = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const todayStr = fmtD(today);
+  if (range === '7d')  { const f = new Date(today); f.setDate(f.getDate()-6);  return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
+  if (range === '30d') { const f = new Date(today); f.setDate(f.getDate()-29); return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
+  if (range === '90d') { const f = new Date(today); f.setDate(f.getDate()-89); return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
+  if (range === 'ytd') { const f = new Date(today.getFullYear(), 0, 1);        return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
+  return '';
+}
 
-const DAILY_CF = Array.from({ length: 90 }, (_, i) => {
-  const d = new Date(TODAY.getTime() - (89 - i) * 86400000);
-  const inflow  = Math.round(800000 + Math.sin(i * 0.15) * 200000 + i * 2000);
-  const cogs    = Math.round(inflow * (0.72 + seeded(i * 7) * 0.06));
-  const opex    = Math.round(60000 + seeded(i * 11) * 20000);
-  const net     = inflow - cogs - opex;
-  return {
-    v: inflow, net, cogs, opex, inflow,
-    label: d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
-    dow: d.getDay(),
-  };
-});
+// ── Spinner ───────────────────────────────────────────────────────────────────
+function Spinner() {
+  return (
+    <>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{width:20,height:20,borderRadius:'50%',border:'2px solid var(--line-2)',borderTopColor:'var(--accent)',animation:'spin 0.7s linear infinite',margin:'0 auto'}} />
+    </>
+  );
+}
 
-const EXPENSES_BREAKDOWN = [
-  { name: 'Cost of Goods',   amount: 23040000, pct: 72, color: 'var(--bad)'   },
-  { name: 'Rent & Utilities',amount: 1800000,  pct: 6,  color: '#f59e0b'      },
-  { name: 'Staff wages',     amount: 2400000,  pct: 7,  color: '#60a5fa'      },
-  { name: 'Transport',       amount: 650000,   pct: 2,  color: 'var(--accent)'},
-  { name: 'Other OPEX',      amount: 480000,   pct: 2,  color: 'var(--fg-4)' },
-];
+// ── PAYMENT COLORS ────────────────────────────────────────────────────────────
+const PAYMENT_COLORS: Record<string, string> = {
+  'M-Pesa': '#10b981',
+  'Cash': 'var(--accent)',
+  'Tigo Pesa': '#f59e0b',
+  'Bank': '#60a5fa',
+  'Credit': '#fb7185',
+};
+function paymentColor(method: string, idx: number) {
+  return PAYMENT_COLORS[method] ?? ['#10b981','var(--accent)','#f59e0b','#60a5fa','#fb7185'][idx % 5];
+}
 
-const PAYMENT_IN = [
-  { method: 'M-Pesa',    amount: 15360000, pct: 48, color: '#10b981' },
-  { method: 'Cash',      amount: 8960000,  pct: 28, color: 'var(--accent)' },
-  { method: 'Tigo Pesa', amount: 4480000,  pct: 14, color: '#f59e0b' },
-  { method: 'Bank',      amount: 2240000,  pct: 7,  color: '#60a5fa' },
-  { method: 'Credit',    amount: 960000,   pct: 3,  color: '#fb7185' },
-];
-
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function CashflowPage() {
   const [range, setRange] = useState('30d');
+  const [data, setData] = useState<CashflowAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const chartData = useMemo(() =>
-    range === '7d' ? DAILY_CF.slice(-7) :
-    range === '90d' ? DAILY_CF : DAILY_CF.slice(-30)
-  , [range]);
-
-  const totals = useMemo(() => ({
-    inflow:  chartData.reduce((s, d) => s + d.inflow, 0),
-    cogs:    chartData.reduce((s, d) => s + d.cogs, 0),
-    opex:    chartData.reduce((s, d) => s + d.opex, 0),
-    net:     chartData.reduce((s, d) => s + d.net, 0),
-  }), [chartData]);
-
-  const netData = chartData.map(d => ({ v: Math.max(0, d.net), label: d.label }));
-  const runningBalance = useMemo(() => {
-    let bal = 4800000; // opening
-    return chartData.map(d => {
-      bal += d.net;
-      return { v: bal, label: d.label };
+  useEffect(() => {
+    setLoading(true);
+    analyticsApi.getCashflow(rangeToParams(range)).then((res) => {
+      if (res.success) setData(res.data);
+      setLoading(false);
     });
-  }, [chartData]);
+  }, [range]);
 
-  const maxExp = Math.max(...EXPENSES_BREAKDOWN.map(e => e.amount));
+  const netData    = data?.daily.map(d => ({ v: Math.max(0, d.net), label: d.label })) ?? [];
+  const balData    = data?.running_balance.map(d => ({ v: d.balance, label: d.label })) ?? [];
+  const maxPayment = data ? Math.max(...data.payment_inflow.map(p => p.amount), 1) : 1;
 
   return (
     <AppShell crumbs={[
@@ -79,103 +74,138 @@ export default function CashflowPage() {
       <AnalyticsHeader range={range} setRange={setRange} />
       <AnalyticsNav />
 
-      {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
-        {[
-          { label: 'TOTAL INFLOW',  value: fmtShort(totals.inflow), sub: 'gross revenue', border: '' },
-          { label: 'COST OF GOODS', value: fmtShort(totals.cogs),   sub: `${(totals.cogs / totals.inflow * 100).toFixed(1)}% of inflow`, border: 'var(--bad)' },
-          { label: 'OPERATING EXP', value: fmtShort(totals.opex),   sub: `${(totals.opex / totals.inflow * 100).toFixed(1)}% of inflow`, border: 'var(--warn)' },
-          { label: 'NET CASHFLOW',  value: fmtShort(totals.net),    sub: `${(totals.net / totals.inflow * 100).toFixed(1)}% net margin`,  border: 'var(--good)' },
-        ].map((k) => (
-          <div key={k.label} className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, borderTop: k.border ? `3px solid ${k.border}` : undefined }}>
-            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>{k.label}</span>
-            <div style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 4 }}>{k.value}</div>
-            <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{k.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-        <div className="surface">
-          <div className="card-head"><span className="card-title">Net cashflow</span></div>
-          <div style={{ padding: '12px 20px 16px' }}>
-            <AreaChart data={netData} height={200} color="var(--good)" />
-          </div>
+      {loading ? (
+        <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+          <Spinner />
+          <div style={{ marginTop: 12, fontSize: 13, color: 'var(--fg-3)' }}>Loading cashflow data…</div>
         </div>
-
-        <div className="surface">
-          <div className="card-head"><span className="card-title">Running balance (est.)</span></div>
-          <div style={{ padding: '12px 20px 16px' }}>
-            <AreaChart data={runningBalance} height={200} color="var(--accent)" />
-          </div>
+      ) : !data ? (
+        <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>💰</div>
+          <div style={{ fontSize: 15, fontWeight: 500 }}>No cashflow data available</div>
         </div>
-      </div>
-
-      {/* Expenses + payment in */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        {/* Expense breakdown */}
-        <div className="surface">
-          <div className="card-head"><span className="card-title">Expense breakdown</span></div>
-          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {EXPENSES_BREAKDOWN.map((e) => (
-              <div key={e.name}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ fontSize: 13 }}>{e.name}</span>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{e.pct}%</span>
-                    <span className="mono" style={{ fontSize: 13 }}>{fmtShort(e.amount)}</span>
-                  </div>
-                </div>
-                <div style={{ height: 6, borderRadius: 3, background: 'var(--bg-3)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${(e.amount / maxExp) * 100}%`, background: e.color, borderRadius: 3 }} />
-                </div>
+      ) : (
+        <>
+          {/* KPIs */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
+            {[
+              { label: 'TOTAL INFLOW',  value: fmtShort(data.totals.inflow), sub: 'gross revenue', border: '' },
+              { label: 'COST OF GOODS', value: fmtShort(data.totals.cogs),   sub: `${(data.totals.cogs / (data.totals.inflow || 1) * 100).toFixed(1)}% of inflow`, border: 'var(--bad)' },
+              { label: 'OPERATING EXP', value: fmtShort(data.totals.opex),   sub: `${(data.totals.opex / (data.totals.inflow || 1) * 100).toFixed(1)}% of inflow`, border: 'var(--warn)' },
+              { label: 'NET CASHFLOW',  value: fmtShort(data.totals.net),    sub: `${data.totals.net_margin_pct.toFixed(1)}% net margin`, border: 'var(--good)' },
+            ].map((k) => (
+              <div key={k.label} className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 6, borderTop: k.border ? `3px solid ${k.border}` : undefined }}>
+                <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>{k.label}</span>
+                <div style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 4 }}>{k.value}</div>
+                <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{k.sub}</div>
               </div>
             ))}
-            <div style={{ marginTop: 8, padding: '10px 14px', background: 'var(--bg-3)', borderRadius: 7, border: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 500 }}>
-                <span>Total expenses</span>
-                <span className="mono">{fmtShort(EXPENSES_BREAKDOWN.reduce((s, e) => s + e.amount, 0))}</span>
+          </div>
+
+          {/* Charts row */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+            <div className="surface">
+              <div className="card-head"><span className="card-title">Net cashflow</span></div>
+              <div style={{ padding: '12px 20px 16px' }}>
+                {netData.length > 1 ? (
+                  <AreaChart data={netData} height={200} color="var(--good)" />
+                ) : (
+                  <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13 }}>No daily data</div>
+                )}
+              </div>
+            </div>
+
+            <div className="surface">
+              <div className="card-head"><span className="card-title">Running balance</span></div>
+              <div style={{ padding: '12px 20px 16px' }}>
+                {balData.length > 1 ? (
+                  <AreaChart data={balData} height={200} color="var(--accent)" />
+                ) : (
+                  <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fg-3)', fontSize: 13 }}>No balance data</div>
+                )}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Payment methods in */}
-        <div className="surface">
-          <div className="card-head"><span className="card-title">Inflow by payment method</span></div>
-          <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {PAYMENT_IN.map((p) => (
-              <div key={p.method}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: p.color }} />
-                    <span style={{ fontSize: 13 }}>{p.method}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{p.pct}%</span>
-                    <span className="mono" style={{ fontSize: 13 }}>{fmtShort(p.amount)}</span>
-                  </div>
+          {/* Payment inflow + credit outstanding */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="surface">
+              <div className="card-head"><span className="card-title">Inflow by payment method</span></div>
+              {data.payment_inflow.length === 0 ? (
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>No payment data.</div>
+              ) : (
+                <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {data.payment_inflow.map((p, i) => {
+                    const color = paymentColor(p.method, i);
+                    return (
+                      <div key={p.method}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                            <span style={{ fontSize: 13 }}>{p.method}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 12 }}>
+                            <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{p.pct.toFixed(1)}%</span>
+                            <span className="mono" style={{ fontSize: 13 }}>{fmtShort(p.amount)}</span>
+                          </div>
+                        </div>
+                        <div style={{ height: 6, borderRadius: 3, background: 'var(--bg-3)', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${(p.amount / maxPayment) * 100}%`, background: color, borderRadius: 3 }} />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div style={{ height: 6, borderRadius: 3, background: 'var(--bg-3)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${p.pct}%`, background: p.color, borderRadius: 3 }} />
-                </div>
-              </div>
-            ))}
+              )}
+            </div>
 
-            {/* Outstanding credits */}
-            <div style={{ marginTop: 8, padding: '12px 14px', background: 'color-mix(in srgb, var(--bad) 10%, var(--bg-2))', border: '1px solid color-mix(in srgb, var(--bad) 25%, var(--line))', borderRadius: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--bad)' }}>Credit outstanding</div>
-                  <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 2 }}>5 customers · 4 overdue</div>
+            <div className="surface">
+              <div className="card-head"><span className="card-title">Credit outstanding</span></div>
+              <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ padding: '20px', borderRadius: 10, background: 'color-mix(in srgb, var(--bad) 10%, var(--bg-2))', border: '1px solid color-mix(in srgb, var(--bad) 25%, var(--line))' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--bad)', marginBottom: 4 }}>Total credit outstanding</div>
+                      <div style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.02em' }}>{fmtShort(data.credit_outstanding.total)}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {[
+                      { label: 'Customers with credit', value: `${data.credit_outstanding.customer_count}` },
+                      { label: 'Overdue accounts',      value: `${data.credit_outstanding.overdue_count}`, color: data.credit_outstanding.overdue_count > 0 ? 'var(--bad)' : 'var(--fg)' },
+                    ].map((row) => (
+                      <div key={row.label} className="field-row">
+                        <span className="k">{row.label}</span>
+                        <span className="v mono" style={{ fontSize: 12.5, color: (row as { color?: string }).color }}>
+                          {row.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <span className="mono" style={{ fontSize: 18, fontWeight: 600 }}>TZS 330K</span>
+
+                {/* Daily cashflow summary */}
+                {data.daily.length > 0 && (
+                  <div>
+                    <div style={{ marginBottom: 10, fontSize: 12, fontWeight: 500, color: 'var(--fg-3)' }}>Recent daily cashflow</div>
+                    {data.daily.slice(-5).reverse().map((d) => (
+                      <div key={d.date} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
+                        <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{d.label}</span>
+                        <div style={{ display: 'flex', gap: 16 }}>
+                          <span className="mono" style={{ fontSize: 11.5, color: 'var(--fg-2)' }}>{fmtShort(d.inflow)}</span>
+                          <span className="mono" style={{ fontSize: 11.5, color: d.net >= 0 ? 'var(--good)' : 'var(--bad)', fontWeight: 500 }}>
+                            {d.net >= 0 ? '+' : ''}{fmtShort(d.net)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </AppShell>
   );
 }
