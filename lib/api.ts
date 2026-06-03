@@ -658,6 +658,170 @@ export const storesApi = {
   },
 };
 
+// ── Customer directory types ───────────────────────────────────────────────────
+
+export interface CustomerListItem {
+  id: string; name: string; phone: string; email: string;
+  avatar_hue: number; initials: string; segment: string;
+  total_spent: number; last_visit: string | null;
+  avg_ticket: number; open_credit: number; has_open_credit: boolean;
+  notes: string; is_active: boolean; created_at: string;
+}
+
+export interface CustomerSummary {
+  total_customers: number; total_lifetime_value: number;
+  total_open_credit: number; avg_ticket: number;
+  active_this_month: number; on_credit_count: number;
+  by_segment: Record<string, number>;
+}
+
+// ── Supplier types ─────────────────────────────────────────────────────────────
+
+export interface SupplierListItem {
+  id: string; name: string; phone: string; email: string; city: string;
+  category: string; status: string; total_value: number;
+  outstanding_balance: number; last_delivery_date: string | null;
+  delivery_count: number; created_at: string;
+}
+
+export interface SupplierStats {
+  total_suppliers: number; active_suppliers: number;
+  total_outstanding: number; total_value_ytd: number;
+}
+
+// ── Staff types ────────────────────────────────────────────────────────────────
+
+export interface StaffMember {
+  id: string; full_name: string; initials: string; phone: string; email: string;
+  role: string; avatar_hue: number; shift: string; shift_display: string;
+  employment_status: string; can_refund: boolean; can_discount: boolean;
+  can_view_reports: boolean; is_active: boolean;
+  sales_today: number; txns_today: number; total_sales: number;
+  avg_ticket: number; txns_total: number; store_name: string;
+}
+
+export interface StaffKPIs {
+  total_staff: number; on_duty: number; total_sales_today: number;
+  avg_ticket_today: number; top_cashier: string | null;
+}
+
+// ── Discount summary types ─────────────────────────────────────────────────────
+
+export interface DiscountSummary {
+  total_discount_amount: number; discounted_count: number;
+  total_transactions: number; discount_rate: number;
+  avg_discount_pct: number; avg_discount_amount: number;
+  by_cashier: { cashier_name: string; amount: number; count: number; avg_pct: number }[];
+  by_day: { day: string; amount: number; count: number }[];
+  largest_discounts: { txn_number: string; customer_name: string; discount_amount: number; discount_pct: number; total: number; created_at: string }[];
+}
+
+// ── Analytics sub-page types ───────────────────────────────────────────────────
+
+export interface SalesAnalytics {
+  category_breakdown: { category: string; revenue: number; pct: number; delta_pct: number | null }[];
+  day_of_week: { dow: number; label: string; avg_revenue: number; avg_transactions: number }[];
+  hourly_pattern: { hour: number; label: string; avg_revenue: number }[];
+}
+
+export interface CustomerAnalytics {
+  daily_visits: { date: string; label: string; total: number; new_customers: number; returning: number }[];
+  segments: { segment: string; count: number; spend: number; pct: number }[];
+  retention_cohorts: { month: string; new: number; m1: number; m2: number; m3: number }[];
+  top_customers: { customer_id: string; customer_name: string; total_spent: number; txn_count: number; avg_ticket: number; segment: string }[];
+}
+
+export interface CashflowAnalytics {
+  totals: { inflow: number; cogs: number; opex: number; net: number; net_margin_pct: number };
+  daily: { date: string; label: string; inflow: number; cogs: number; net: number }[];
+  running_balance: { date: string; label: string; balance: number }[];
+  payment_inflow: { method: string; amount: number; pct: number }[];
+  credit_outstanding: { total: number; customer_count: number; overdue_count: number };
+}
+
+export interface AnalyticsOverview {
+  kpis: {
+    revenue: number; profit: number; margin_pct: number; transaction_count: number;
+    customer_count: number; avg_ticket: number; revenue_delta_pct: number | null;
+    transaction_delta_pct: number | null;
+  };
+  trend: { date: string; label: string; revenue: number; transactions: number }[];
+  payment_mix: { method: string; amount: number; pct: number }[];
+  top_products: { product_id: string; product_name: string; revenue: number; qty_sold: number }[];
+}
+
+// ── Customer directory API ─────────────────────────────────────────────────────
+
+export const customerApi = {
+  async getList(params?: string): Promise<ApiResult<CustomerListItem[]>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<CustomerListItem[]>(`/api/v1/customers/${qs}`, {}, token ?? undefined);
+  },
+  async getDetail(id: string): Promise<ApiResult<CustomerListItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<CustomerListItem>(`/api/v1/customers/${id}/`, {}, token ?? undefined);
+  },
+  async getSummary(): Promise<ApiResult<CustomerSummary>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<CustomerSummary>('/api/v1/customers/summary/', {}, token ?? undefined);
+  },
+  async create(payload: Record<string, unknown>): Promise<ApiResult<CustomerListItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<CustomerListItem>('/api/v1/customers/', { method: 'POST', body: JSON.stringify(payload) }, token ?? undefined);
+  },
+  async update(id: string, payload: Record<string, unknown>): Promise<ApiResult<CustomerListItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<CustomerListItem>(`/api/v1/customers/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) }, token ?? undefined);
+  },
+};
+
+// ── Supplier API ───────────────────────────────────────────────────────────────
+
+export const supplierApi = {
+  async getList(params?: string): Promise<ApiResult<SupplierListItem[]>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<SupplierListItem[]>(`/api/v1/suppliers/${qs}`, {}, token ?? undefined);
+  },
+  async getDetail(id: string): Promise<ApiResult<SupplierListItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<SupplierListItem>(`/api/v1/suppliers/${id}/`, {}, token ?? undefined);
+  },
+  async getStats(): Promise<ApiResult<SupplierStats>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<SupplierStats>('/api/v1/suppliers/stats/', {}, token ?? undefined);
+  },
+};
+
+// ── Staff API ──────────────────────────────────────────────────────────────────
+
+export const staffApi = {
+  async getList(params?: string): Promise<ApiResult<StaffMember[]>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<StaffMember[]>(`/api/v1/staff/${qs}`, {}, token ?? undefined);
+  },
+  async getKPIs(): Promise<ApiResult<StaffKPIs>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<StaffKPIs>('/api/v1/staff/kpis/', {}, token ?? undefined);
+  },
+  async updatePermissions(id: string, payload: { can_refund?: boolean; can_discount?: boolean; can_view_reports?: boolean }): Promise<ApiResult<StaffMember>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<StaffMember>(`/api/v1/staff/${id}/permissions/`, { method: 'PATCH', body: JSON.stringify(payload) }, token ?? undefined);
+  },
+};
+
+// ── Discounts API ──────────────────────────────────────────────────────────────
+
+export const discountApi = {
+  async getSummary(params?: string): Promise<ApiResult<DiscountSummary>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<DiscountSummary>(`/api/v1/transactions/discount-summary/${qs}`, {}, token ?? undefined);
+  },
+};
+
 // ── Analytics API ──────────────────────────────────────────────────────────────
 
 export const analyticsApi = {
@@ -665,11 +829,30 @@ export const analyticsApi = {
     const token = await getUsableAccessToken();
     return apiFetch<DashboardData>('/api/v1/analytics/dashboard/', {}, token ?? undefined);
   },
-
+  async getOverview(params?: string): Promise<ApiResult<AnalyticsOverview>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<AnalyticsOverview>(`/api/v1/analytics/overview/${qs}`, {}, token ?? undefined);
+  },
   async getProducts(params?: string): Promise<ApiResult<AnalyticsProduct[]>> {
     const token = await getUsableAccessToken();
     const qs = params ? `?${params}` : '';
     return apiFetch<AnalyticsProduct[]>(`/api/v1/analytics/products/${qs}`, {}, token ?? undefined);
+  },
+  async getSales(params?: string): Promise<ApiResult<SalesAnalytics>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<SalesAnalytics>(`/api/v1/analytics/sales/${qs}`, {}, token ?? undefined);
+  },
+  async getCustomers(params?: string): Promise<ApiResult<CustomerAnalytics>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<CustomerAnalytics>(`/api/v1/analytics/customers/${qs}`, {}, token ?? undefined);
+  },
+  async getCashflow(params?: string): Promise<ApiResult<CashflowAnalytics>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<CashflowAnalytics>(`/api/v1/analytics/cashflow/${qs}`, {}, token ?? undefined);
   },
 };
 

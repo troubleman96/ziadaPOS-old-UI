@@ -29,28 +29,28 @@ function KPISpark({ data, color }: { data: number[]; color: string }) {
 }
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
-function KPI({ label, value, delta, deltaKind = 'good', subtitle, spark, accent = 'var(--accent)' }: {
+function KPI({ label, value, delta, deltaKind = 'good', subtitle, spark, accent = 'var(--accent)', compact }: {
   label: string; value: string;
   delta?: string; deltaKind?: 'good' | 'bad' | 'warn';
-  subtitle?: string; spark?: number[]; accent?: string;
+  subtitle?: string; spark?: number[]; accent?: string; compact?: boolean;
 }) {
   return (
-    <div className="surface" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, minHeight: 130 }}>
+    <div className="surface" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>{label}</span>
+        <span className="mono" style={{ fontSize: 10.5, fontWeight: 500, color: 'var(--fg-3)', letterSpacing: '0.07em' }}>{label}</span>
         {delta && (
-          <span className={'pill ' + deltaKind} style={{ gap: 3, display: 'flex', alignItems: 'center' }}>
+          <span className={'pill ' + deltaKind} style={{ gap: 3, display: 'flex', alignItems: 'center', fontSize: 10 }}>
             {deltaKind === 'good' ? Icons.arrowUpRight : deltaKind === 'bad' ? Icons.arrowDownRight : null}
             {delta}
           </span>
         )}
       </div>
       <div>
-        <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
-        {subtitle && <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 4 }}>{subtitle}</div>}
+        <div className="dash-kpi-v" style={{ fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
+        {subtitle && <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 3 }}>{subtitle}</div>}
       </div>
       {spark && spark.length > 1 && (
-        <div style={{ height: 32, marginTop: 'auto' }}>
+        <div style={{ height: 28, marginTop: 'auto' }} className="page-sec">
           <KPISpark data={spark} color={accent} />
         </div>
       )}
@@ -583,21 +583,31 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
+      {/* KPI row — 2×2 on mobile */}
+      <style>{`
+        .dash-kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+        @media (min-width:640px) { .dash-kpi-grid { grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; } }
+        .dash-kpi-grid .surface { padding:12px 14px; min-height:unset; }
+        @media (min-width:640px) { .dash-kpi-grid .surface { padding:16px 18px; min-height:130px; } }
+        .dash-kpi-v { font-size:20px; }
+        @media (min-width:640px) { .dash-kpi-v { font-size:26px; } }
+      `}</style>
+      <div className="dash-kpi-grid">
         <KPI
-          label="TODAY'S SALES"
+          label="SALES"
           value={loading ? '—' : fmtShort(totalRevenue)}
           delta={!loading && dash?.kpis_today.revenue_delta_pct != null ? `${dash.kpis_today.revenue_delta_pct > 0 ? '+' : ''}${dash.kpis_today.revenue_delta_pct}%` : undefined}
           deltaKind={(dash?.kpis_today.revenue_delta_pct ?? 0) >= 0 ? 'good' : 'bad'}
-          subtitle={loading ? undefined : `vs. yesterday`}
+          subtitle={loading ? undefined : 'today'}
           spark={hourlySpark}
+          compact
         />
         <KPI
-          label="GROSS PROFIT"
+          label="PROFIT"
           value={loading ? '—' : fmtShort(dash!.kpis_today.profit)}
           subtitle={loading ? undefined : `${dash!.kpis_today.margin_pct}% margin`}
           spark={hourlySpark.map(v => v * 0.22)}
+          compact
         />
         <KPI
           label="TICKETS"
@@ -606,13 +616,15 @@ export default function DashboardPage() {
           deltaKind={(dash?.kpis_today.transaction_delta_pct ?? 0) >= 0 ? 'good' : 'bad'}
           subtitle={loading ? undefined : `avg ${fmtShort(dash!.kpis_today.avg_ticket)}`}
           spark={hourlySpark.map((_, i) => i)}
+          compact
         />
         <KPI
           label="CREDIT"
           value={loading ? '—' : fmtShort(dash?.credit_kpi.total ?? 0)}
-          subtitle={loading ? undefined : `${dash?.credit_kpi.customer_count ?? 0} customers · ${dash?.credit_kpi.overdue_count ?? 0} overdue`}
+          subtitle={loading ? undefined : `${dash?.credit_kpi.customer_count ?? 0} cust`}
           deltaKind="warn"
           accent="var(--warn)"
+          compact
         />
       </div>
 

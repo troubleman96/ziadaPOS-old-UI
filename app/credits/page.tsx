@@ -188,27 +188,35 @@ export default function CreditsPage() {
         </div>
       </div>
 
-      {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
-        <div className="surface" style={{ padding: '16px 18px' }}>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>TOTAL OUTSTANDING</div>
-          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--fg)' }}>{fmtShort(kpis?.total_outstanding ?? 0)}</div>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 6 }}>{kpis?.customer_count ?? 0} customers</div>
+      {/* KPI strip — 2×2 on mobile, 4-col on desktop */}
+      <style>{`
+        .credits-kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+        @media (min-width:640px) { .credits-kpi-grid { grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; } }
+        .credits-kpi { padding:14px; }
+        @media (min-width:640px) { .credits-kpi { padding:16px 18px; } }
+        .credits-kpi .kv { font-size:22px; }
+        @media (min-width:640px) { .credits-kpi .kv { font-size:26px; } }
+      `}</style>
+      <div className="credits-kpi-grid">
+        <div className="surface credits-kpi">
+          <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>OUTSTANDING</div>
+          <div className="kv mono" style={{ fontWeight: 500, letterSpacing: '-0.02em', marginTop: 6, color: 'var(--fg)' }}>{fmtShort(kpis?.total_outstanding ?? 0)}</div>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 4 }}>{kpis?.customer_count ?? 0} customers</div>
         </div>
-        <div className="surface" style={{ padding: '16px 18px', borderColor: (kpis?.overdue ?? 0) > 0 ? 'rgba(251,113,133,0.3)' : 'var(--line)' }}>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>OVERDUE</div>
-          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--bad)' }}>{fmtShort(kpis?.overdue ?? 0)}</div>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--bad)', marginTop: 6 }}>⚠ Needs follow-up</div>
+        <div className="surface credits-kpi" style={{ borderColor: (kpis?.overdue ?? 0) > 0 ? 'rgba(251,113,133,0.3)' : 'var(--line)' }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>OVERDUE</div>
+          <div className="kv mono" style={{ fontWeight: 500, letterSpacing: '-0.02em', marginTop: 6, color: 'var(--bad)' }}>{fmtShort(kpis?.overdue ?? 0)}</div>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--bad)', marginTop: 4 }}>follow-up</div>
         </div>
-        <div className="surface" style={{ padding: '16px 18px', borderColor: (kpis?.due_soon ?? 0) > 0 ? 'rgba(251,191,36,0.3)' : 'var(--line)' }}>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>DUE SOON</div>
-          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--warn)' }}>{fmtShort(kpis?.due_soon ?? 0)}</div>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 6 }}>within 7 days</div>
+        <div className="surface credits-kpi" style={{ borderColor: (kpis?.due_soon ?? 0) > 0 ? 'rgba(251,191,36,0.3)' : 'var(--line)' }}>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>DUE SOON</div>
+          <div className="kv mono" style={{ fontWeight: 500, letterSpacing: '-0.02em', marginTop: 6, color: 'var(--warn)' }}>{fmtShort(kpis?.due_soon ?? 0)}</div>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 4 }}>7 days</div>
         </div>
-        <div className="surface" style={{ padding: '16px 18px' }}>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>RECOVERED · THIS MONTH</div>
-          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--good)' }}>{fmtShort(kpis?.recovered_month ?? 0)}</div>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--good)', marginTop: 6 }}>↗ recovered</div>
+        <div className="surface credits-kpi">
+          <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>RECOVERED</div>
+          <div className="kv mono" style={{ fontWeight: 500, letterSpacing: '-0.02em', marginTop: 6, color: 'var(--good)' }}>{fmtShort(kpis?.recovered_month ?? 0)}</div>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--good)', marginTop: 4 }}>this month</div>
         </div>
       </div>
 
@@ -283,34 +291,65 @@ export default function CreditsPage() {
           </div>
         ) : (
           filtered.map((c) => (
-            <div key={c.id} className="customer-row">
-              <div className="cust-avatar" style={{ background: `hsl(${c.avatar_hue}, 60%, 50%)` }}>
+            <div key={c.id} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '13px 16px',
+              borderBottom: '1px solid var(--line)',
+            }}>
+              {/* Avatar */}
+              <div style={{
+                width: 38, height: 38, borderRadius: 999, flexShrink: 0,
+                background: `linear-gradient(135deg,hsl(${c.avatar_hue},55%,42%),hsl(${c.avatar_hue + 40},55%,52%))`,
+                color: '#fff', display: 'grid', placeItems: 'center',
+                fontSize: 13, fontWeight: 600,
+              }}>
                 {c.initials || avatarFromName(c.name)}
               </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                  <Link href={`/credits/${c.id}`} style={{ fontSize: 14, fontWeight: 500, color: 'inherit' }}>{c.name}</Link>
+
+              {/* Name + meta */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Row 1: name + status pill */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                  <Link href={`/credits/${c.id}`} style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.name}
+                  </Link>
                   <StatusPill status={c.status} days={c.due_days} />
                 </div>
-                <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginBottom: 4 }}>
-                  {c.id} <span style={{ color: 'var(--fg-4)', margin: '0 6px' }}>·</span> {c.phone}
-                </div>
-                <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                  <span>Last sale: {c.last_tab_date ? new Date(c.last_tab_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—'}</span>
-                  <span>Last payment: {c.last_pay_amount ? fmt(c.last_pay_amount) + (c.last_pay_date ? ' · ' + new Date(c.last_pay_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '') : 'none'}</span>
+                {/* Row 2: phone + last payment (compact) */}
+                <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                  {c.phone && (
+                    <>
+                      <a href={`tel:${c.phone}`} style={{ color: 'var(--fg-4)', textDecoration: 'none' }}>{c.phone}</a>
+                      {c.last_pay_amount && <span style={{ color: 'var(--line-3)' }}>·</span>}
+                    </>
+                  )}
+                  {c.last_pay_amount && (
+                    <span>paid {fmtShort(c.last_pay_amount)}{c.last_pay_date ? ' · ' + new Date(c.last_pay_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : ''}</span>
+                  )}
                 </div>
               </div>
-              <div className="customer-row-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                <div style={{ fontSize: 22, fontWeight: 500, color: c.status === 'overdue' ? 'var(--bad)' : c.status === 'due-soon' ? 'var(--warn)' : 'var(--fg)', fontFamily: 'var(--mono)', letterSpacing: '-0.01em' }}>
-                  {fmt(c.balance)}
+
+              {/* Right: balance + pay button */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7, flexShrink: 0 }}>
+                <div style={{
+                  fontSize: 17, fontWeight: 600,
+                  color: c.status === 'overdue' ? 'var(--bad)' : c.status === 'due-soon' ? 'var(--warn)' : 'var(--fg)',
+                  fontFamily: 'var(--mono)', letterSpacing: '-0.01em', lineHeight: 1,
+                }}>
+                  {fmtShort(c.balance)}
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="icon-btn" title="Call" style={{ width: 30, height: 30 }}><PhoneIcon /></button>
-                  <button className="icon-btn" title="WhatsApp" style={{ width: 30, height: 30 }}><WhatsAppMini /></button>
-                  <button onClick={() => setPaymentTarget(c)} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <CashSmall /> Record payment
-                  </button>
-                </div>
+                <button
+                  onClick={() => setPaymentTarget(c)}
+                  style={{
+                    padding: '5px 11px', borderRadius: 6, border: 0,
+                    background: '#0C2A4E', color: '#fff',
+                    fontSize: 11.5, fontWeight: 500, cursor: 'pointer',
+                    fontFamily: 'var(--sans)', display: 'flex', alignItems: 'center', gap: 4,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <CashSmall /> Pay
+                </button>
               </div>
             </div>
           ))
