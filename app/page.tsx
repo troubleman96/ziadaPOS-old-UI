@@ -235,8 +235,8 @@ function Header({ theme, onToggleTheme }: { theme: string; onToggleTheme: () => 
         <button onClick={onToggleTheme} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--line)', background: 'var(--bg-2)', cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-2)' }} className="landing-nav">
           {theme === 'dark' ? '◐ dark' : '◑ light'}
         </button>
-        <a href="#" style={{ fontSize: 13, color: 'var(--fg-2)', textDecoration: 'none' }} className="landing-nav">Sign in</a>
-        <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 13px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
+        <Link href="/auth/login" style={{ fontSize: 13, color: 'var(--fg-2)', textDecoration: 'none' }} className="landing-nav">Sign in</Link>
+        <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 13px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
           Start trial <span style={{ opacity: 0.8 }}>→</span>
         </Link>
         {/* Mobile hamburger */}
@@ -249,9 +249,10 @@ function Header({ theme, onToggleTheme }: { theme: string; onToggleTheme: () => 
       {/* Mobile menu */}
       {menuOpen && (
         <div style={{ borderTop: '1px solid var(--line)', background: 'var(--bg-2)', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }} className="landing-mobile-menu">
-          {[['Product','#features'],['Ziada AI','#ai'],['Pricing','#'],['Docs','#'],['Sign in','#']].map(([l,h]) => (
+          {[['Product','#features'],['Ziada AI','#ai'],['Pricing','#'],['Docs','#']].map(([l,h]) => (
             <a key={l} href={h} style={{ fontSize: 14, color: 'var(--fg-2)', textDecoration: 'none' }} onClick={() => setMenuOpen(false)}>{l}</a>
           ))}
+          <Link href="/auth/login" style={{ fontSize: 14, color: 'var(--fg-2)', textDecoration: 'none' }} onClick={() => setMenuOpen(false)}>Sign in</Link>
           <button onClick={onToggleTheme} style={{ padding: '8px 0', border: 0, background: 'transparent', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--fg-3)', cursor: 'pointer', textAlign: 'left' }}>
             {theme === 'dark' ? '◐ Switch to light mode' : '◑ Switch to dark mode'}
           </button>
@@ -281,11 +282,11 @@ function Hero({ accent }: { accent: string }) {
             POS, inventory, credit, analytics and an AI that actually knows your store — running on one calm, fast platform. Built in Tanzania, made for any counter.
           </p>
           <div style={{ display: 'flex', gap: 10, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 20px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+            <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 20px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
               Start free 7-day trial <span style={{ opacity: 0.8 }}>→</span>
             </Link>
-            <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 20px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none', background: 'transparent' }}>
-              Try the live demo
+            <Link href="/auth/login" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 20px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none', background: 'transparent' }}>
+              Sign in
             </Link>
           </div>
           <div style={{ display: 'flex', gap: 20, marginTop: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -499,7 +500,7 @@ function CTA() {
         <h2 style={{ margin: '16px 0 18px', fontSize: 'clamp(32px, 4.5vw, 52px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05 }}>Run your shop on calm software.</h2>
         <p style={{ margin: '0 auto', maxWidth: 520, fontSize: 16, color: 'var(--fg-2)' }}>Seven days, every feature, no card. Most shops are live on Ziada in under an hour.</p>
         <div style={{ display: 'inline-flex', gap: 10, marginTop: 28, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Link href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+          <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
             Start free trial <span style={{ opacity: 0.8 }}>→</span>
           </Link>
           <a href="#" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 6, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none' }}>Talk to the team</a>

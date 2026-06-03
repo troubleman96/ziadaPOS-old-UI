@@ -1,0 +1,647 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { authApi, TANZANIA_REGIONS, BUSINESS_TYPES } from '@/lib/api';
+import { saveTokens, cacheUser } from '@/lib/auth';
+
+// ── Eye icon ───────────────────────────────────────────────────────────────────
+function EyeIcon({ open }: { open: boolean }) {
+  return open ? (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+    </svg>
+  ) : (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+
+// ── Check icon ─────────────────────────────────────────────────────────────────
+function CheckIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M2 6.2L4.5 8.7L10 3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// ── Step indicator ─────────────────────────────────────────────────────────────
+function StepDots({ step, total }: { step: number; total: number }) {
+  return (
+    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            width: i < step ? 20 : 7,
+            height: 7,
+            borderRadius: 999,
+            background: i < step ? 'var(--accent)' : i === step ? 'var(--fg-2)' : 'var(--line-2)',
+            transition: 'all 250ms ease',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Left panel ─────────────────────────────────────────────────────────────────
+function LeftPanel() {
+  return (
+    <div className="auth-left-reg">
+      <style>{`
+        .auth-left-reg {
+          display: flex; flex-direction: column; justify-content: space-between;
+          padding: 44px 48px; background: var(--bg-2);
+          border-right: 1px solid var(--line); min-height: 100vh;
+          position: relative; overflow: hidden;
+        }
+        .auth-left-reg::before {
+          content: '';
+          position: absolute; inset: 0; pointer-events: none;
+          background-image:
+            linear-gradient(to right, var(--line) 1px, transparent 1px),
+            linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+          background-size: 48px 48px;
+          mask-image: radial-gradient(ellipse 80% 70% at 30% 40%, #000 30%, transparent 80%);
+        }
+        @media (max-width: 900px) { .auth-left-reg { display: none; } }
+      `}</style>
+
+      <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src="/ziada.PNG" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 7, objectFit: 'cover' }} />
+          <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>Ziada POS</span>
+        </div>
+      </div>
+
+      <div style={{ position: 'relative' }}>
+        {/* Trial callout */}
+        <div style={{ padding: '16px 18px', borderRadius: 10, border: '1px solid var(--accent-line)', background: 'var(--accent-soft)', marginBottom: 28 }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.08em', marginBottom: 5 }}>FREE TRIAL OFFER</div>
+          <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em' }}>7 days free</div>
+          <div style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 5 }}>Activate with a one-time payment of <strong>TZS 10,000</strong> after sign-up.</div>
+        </div>
+
+        <h2 style={{ margin: '0 0 10px', fontSize: 'clamp(24px, 2.6vw, 32px)', fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.1 }}>
+          Everything your<br />shop needs.
+        </h2>
+        <p style={{ margin: '0 0 28px', fontSize: 14, color: 'var(--fg-3)', lineHeight: 1.6 }}>
+          Your account is live in under 2 minutes. All 5 modules included on every plan.
+        </p>
+
+        {/* What's included */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[
+            'Point of Sale — sell instantly, online or offline',
+            'Inventory — auto-tracked across all stores',
+            'Credits — track every kopo without a notebook',
+            'Analytics — live profit, margins and cashflow',
+            'Ziada AI — ask your data in Swahili or English',
+          ].map(item => (
+            <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 13, color: 'var(--fg-2)' }}>
+              <span style={{ color: 'var(--good)', flexShrink: 0, marginTop: 2 }}><CheckIcon /></span>
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ position: 'relative', fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>
+        DAR ES SALAAM · ARUSHA · MWANZA · DODOMA
+      </div>
+    </div>
+  );
+}
+
+// ── Form field components ──────────────────────────────────────────────────────
+interface FieldProps {
+  label: string;
+  error?: string;
+  hint?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}
+
+function Field({ label, error, hint, required, children }: FieldProps) {
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 7, color: 'var(--fg-2)' }}>
+        {label}
+        {!required && <span style={{ fontWeight: 400, color: 'var(--fg-4)', marginLeft: 5 }}>(optional)</span>}
+      </label>
+      {children}
+      {error && (
+        <div className="field-error">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="var(--bad)"><circle cx="6" cy="6" r="5.5" /><rect x="5.25" y="3.5" width="1.5" height="3.5" rx=".5" fill="#fff" /><rect x="5.25" y="8" width="1.5" height="1.5" rx=".5" fill="#fff" /></svg>
+          {error}
+        </div>
+      )}
+      {hint && !error && (
+        <div style={{ fontSize: 11.5, color: 'var(--fg-4)', marginTop: 5 }}>{hint}</div>
+      )}
+    </div>
+  );
+}
+
+// ── Password strength ──────────────────────────────────────────────────────────
+function PasswordStrength({ password }: { password: string }) {
+  if (!password) return null;
+  const checks = [
+    password.length >= 8,
+    /[A-Z]/.test(password),
+    /[0-9]/.test(password),
+  ];
+  const score = checks.filter(Boolean).length;
+  const colors = ['var(--bad)', 'var(--warn)', 'var(--good)'];
+  const labels = ['Weak', 'Fair', 'Strong'];
+  return (
+    <div style={{ marginTop: 7 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{ flex: 1, height: 3, borderRadius: 999, background: i < score ? colors[score - 1] : 'var(--line-2)', transition: 'background 200ms' }} />
+        ))}
+      </div>
+      <div style={{ fontSize: 11, color: colors[score - 1] ?? 'var(--fg-4)', fontFamily: 'var(--mono)' }}>
+        {score > 0 ? labels[score - 1] : ''}
+      </div>
+    </div>
+  );
+}
+
+// ── Main registration page ─────────────────────────────────────────────────────
+const TOTAL_STEPS = 2;
+
+export default function RegisterPage() {
+  const router = useRouter();
+
+  const [step, setStep] = useState(0); // 0 = personal, 1 = business
+  const [loading, setLoading] = useState(false);
+  const [globalError, setGlobalError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [theme, setTheme] = useState('dark');
+
+  // Form state
+  const [fullName,    setFullName]    = useState('');
+  const [phone,       setPhone]       = useState('');
+  const [email,       setEmail]       = useState('');
+  const [shopName,    setShopName]    = useState('');
+  const [bizType,     setBizType]     = useState('');
+  const [region,      setRegion]      = useState('');
+  const [password,    setPassword]    = useState('');
+  const [confirm,     setConfirm]     = useState('');
+
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem('ziada-theme');
+      if (t === 'light' || t === 'dark') setTheme(t);
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('ziada-theme', theme); } catch {}
+  }, [theme]);
+
+  function clearErr(field: string) {
+    if (fieldErrors[field]) setFieldErrors(p => ({ ...p, [field]: '' }));
+  }
+
+  // ── Step 0 validation (personal details) ──────────────────────────────────
+  function validateStep0(): boolean {
+    const errs: Record<string, string> = {};
+    if (!fullName.trim()) errs.full_name = 'Full name is required.';
+    else if (fullName.trim().split(/\s+/).length < 2) errs.full_name = 'Please enter your first and last name.';
+
+    const p = phone.trim();
+    if (!p) errs.phone = 'Phone number is required.';
+    else if (!/^\d{10}$/.test(p)) errs.phone = 'Enter a valid 10-digit number (e.g. 0712 345 678).';
+
+    if (!password) errs.password = 'Password is required.';
+    else if (password.length < 8) errs.password = 'Password must be at least 8 characters.';
+
+    if (!confirm) errs.confirm_password = 'Please confirm your password.';
+    else if (password !== confirm) errs.confirm_password = 'Passwords do not match.';
+
+    if (Object.keys(errs).length) { setFieldErrors(errs); return false; }
+    return true;
+  }
+
+  // ── Step 1 validation (business details) ──────────────────────────────────
+  function validateStep1(): boolean {
+    const errs: Record<string, string> = {};
+    if (!shopName.trim()) errs.main_shop_name = 'Shop name is required.';
+    if (!bizType) errs.business_type = 'Please select a business type.';
+    if (!region) errs.region = 'Please select your region.';
+    if (Object.keys(errs).length) { setFieldErrors(errs); return false; }
+    return true;
+  }
+
+  function handleNext(e: React.FormEvent) {
+    e.preventDefault();
+    setGlobalError('');
+    if (step === 0 && validateStep0()) setStep(1);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setGlobalError('');
+    if (!validateStep1()) return;
+
+    setLoading(true);
+    const result = await authApi.register({
+      full_name:        fullName.trim(),
+      phone:            phone.trim(),
+      email:            email.trim() || undefined,
+      main_shop_name:   shopName.trim(),
+      business_type:    bizType,
+      region:           region,
+      password,
+      confirm_password: confirm,
+    });
+    setLoading(false);
+
+    if (!result.success) {
+      if (result.errors) {
+        const flat: Record<string, string> = {};
+        for (const [k, v] of Object.entries(result.errors)) {
+          flat[k] = Array.isArray(v) ? v[0] : String(v);
+        }
+        setFieldErrors(flat);
+        // If error is on step-0 field, go back
+        const step0Fields = ['full_name', 'phone', 'password', 'confirm_password'];
+        if (step0Fields.some(f => flat[f])) setStep(0);
+        if (!Object.keys(flat).length) setGlobalError(result.message);
+      } else {
+        setGlobalError(result.message);
+      }
+      return;
+    }
+
+    saveTokens(result.data.access, result.data.refresh);
+    cacheUser(result.data.user);
+    router.push('/dashboard');
+  }
+
+  return (
+    <>
+      <style>{`
+        .reg-page {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          min-height: 100vh; min-height: 100dvh;
+          background: var(--bg); color: var(--fg);
+          font-family: var(--sans);
+          -webkit-font-smoothing: antialiased;
+        }
+        @media (max-width: 900px) { .reg-page { grid-template-columns: 1fr; } }
+
+        .reg-right {
+          display: flex; flex-direction: column;
+          justify-content: center; align-items: center;
+          padding: 48px 24px; min-height: 100dvh;
+        }
+        .reg-card { width: 100%; max-width: 440px; }
+
+        .auth-input {
+          width: 100%; height: 44px; padding: 0 14px;
+          border-radius: 8px; border: 1.5px solid var(--line-2);
+          background: var(--bg-2); color: var(--fg);
+          font-family: var(--sans); font-size: 14px;
+          transition: border-color 120ms, box-shadow 120ms;
+          outline: none; box-sizing: border-box;
+        }
+        .auth-input:focus {
+          border-color: var(--accent-line);
+          box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+        .auth-input.error {
+          border-color: var(--bad);
+          box-shadow: 0 0 0 3px rgba(251,113,133,0.12);
+        }
+        .auth-input.has-toggle { padding-right: 44px; }
+        .auth-select {
+          width: 100%; height: 44px; padding: 0 36px 0 14px;
+          border-radius: 8px; border: 1.5px solid var(--line-2);
+          background: var(--bg-2); color: var(--fg);
+          font-family: var(--sans); font-size: 14px;
+          transition: border-color 120ms, box-shadow 120ms;
+          outline: none; cursor: pointer;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 14px center;
+        }
+        .auth-select:focus {
+          border-color: var(--accent-line);
+          box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+        .auth-select.error {
+          border-color: var(--bad);
+          box-shadow: 0 0 0 3px rgba(251,113,133,0.12);
+        }
+        .toggle-pw {
+          position: absolute; right: 0; top: 0; bottom: 0;
+          width: 44px; display: grid; place-items: center;
+          background: transparent; border: 0; cursor: pointer;
+          color: var(--fg-3); transition: color 100ms;
+        }
+        .toggle-pw:hover { color: var(--fg-2); }
+
+        .auth-btn {
+          width: 100%; height: 46px;
+          border-radius: 8px; border: 0; cursor: pointer;
+          background: var(--accent); color: #fff;
+          font-family: var(--sans); font-size: 14px; font-weight: 500;
+          display: flex; align-items: center; justify-content: center; gap: 8px;
+          transition: filter 120ms, opacity 120ms;
+        }
+        .auth-btn:hover:not(:disabled) { filter: brightness(1.1); }
+        .auth-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+        .auth-btn-ghost {
+          width: 100%; height: 46px;
+          border-radius: 8px; border: 1.5px solid var(--line-2); cursor: pointer;
+          background: transparent; color: var(--fg-2);
+          font-family: var(--sans); font-size: 14px; font-weight: 500;
+          display: flex; align-items: center; justify-content: center; gap: 8px;
+          transition: background 120ms, border-color 120ms, color 120ms;
+        }
+        .auth-btn-ghost:hover { background: var(--bg-3); color: var(--fg); border-color: var(--line-3); }
+
+        .field-error {
+          font-size: 11.5px; color: var(--bad); margin-top: 5px;
+          display: flex; align-items: center; gap: 5px;
+        }
+        .global-error {
+          padding: 11px 14px; border-radius: 8px;
+          background: rgba(251,113,133,0.08); border: 1px solid rgba(251,113,133,0.25);
+          color: var(--bad); font-size: 13px; line-height: 1.45;
+          margin-bottom: 20px;
+        }
+
+        .form-grid-2 {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+        }
+        @media (max-width: 480px) { .form-grid-2 { grid-template-columns: 1fr; } }
+
+        .phone-prefix {
+          position: absolute; left: 14px;
+          font-family: var(--mono); font-size: 13px; color: var(--fg-3);
+          pointer-events: none; user-select: none; top: 50%; transform: translateY(-50%);
+        }
+        .phone-input { padding-left: 52px !important; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+          width: 16px; height: 16px; border-radius: 50%;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: #fff;
+          animation: spin 0.7s linear infinite; flex-shrink: 0;
+        }
+
+        /* Slide animation between steps */
+        @keyframes slideIn { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideOut { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+        .step-enter { animation: slideIn 200ms ease forwards; }
+        .step-back-enter { animation: slideOut 200ms ease forwards; }
+      `}</style>
+
+      <div className="reg-page">
+        <LeftPanel />
+
+        <div className="reg-right">
+          <div className="reg-card">
+
+            {/* Mobile logo */}
+            <style>{`.reg-mobile-logo { display: none !important; } @media (max-width: 900px) { .reg-mobile-logo { display: flex !important; } }`}</style>
+            <div className="reg-mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 9, marginBottom: 28 }}>
+              <img src="/ziada.PNG" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
+              <span style={{ fontSize: 15, fontWeight: 600 }}>Ziada POS</span>
+            </div>
+
+            {/* Progress */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+              <StepDots step={step + 1} total={TOTAL_STEPS} />
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)' }}>
+                Step {step + 1} of {TOTAL_STEPS}
+              </span>
+            </div>
+
+            {/* Header */}
+            <div style={{ marginBottom: 24 }}>
+              <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em' }}>
+                {step === 0 ? 'Create your account' : 'Set up your shop'}
+              </h1>
+              <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-3)' }}>
+                {step === 0
+                  ? 'Your login credentials. Start your free 7-day trial.'
+                  : 'Tell us about your business so we can configure Ziada for you.'}
+              </p>
+            </div>
+
+            {/* Global error */}
+            {globalError && <div className="global-error">{globalError}</div>}
+
+            {/* ── Step 0: Personal details ───────────────────────────────────── */}
+            {step === 0 && (
+              <form className="step-enter" onSubmit={handleNext} noValidate>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                  <Field label="Full name" error={fieldErrors.full_name} hint="First and last name, e.g. Hamisi Mwakapaga" required>
+                    <input
+                      className={`auth-input${fieldErrors.full_name ? ' error' : ''}`}
+                      type="text"
+                      placeholder="Hamisi Mwakapaga"
+                      value={fullName}
+                      onChange={e => { setFullName(e.target.value); clearErr('full_name'); }}
+                      autoComplete="name"
+                      autoFocus
+                    />
+                  </Field>
+
+                  <Field label="Phone number" error={fieldErrors.phone} hint="10-digit Tanzanian number used to sign in" required>
+                    <div style={{ position: 'relative' }}>
+                      <span className="phone-prefix">+255</span>
+                      <input
+                        className={`auth-input phone-input${fieldErrors.phone ? ' error' : ''}`}
+                        type="tel"
+                        inputMode="numeric"
+                        placeholder="0712 345 678"
+                        value={phone}
+                        maxLength={10}
+                        onChange={e => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); clearErr('phone'); }}
+                        autoComplete="tel"
+                      />
+                    </div>
+                  </Field>
+
+                  <Field label="Email" error={fieldErrors.email} hint="Used for receipts and account recovery">
+                    <input
+                      className={`auth-input${fieldErrors.email ? ' error' : ''}`}
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={e => { setEmail(e.target.value); clearErr('email'); }}
+                      autoComplete="email"
+                    />
+                  </Field>
+
+                  <div className="form-grid-2">
+                    <Field label="Password" error={fieldErrors.password} required>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          className={`auth-input has-toggle${fieldErrors.password ? ' error' : ''}`}
+                          type={showPw ? 'text' : 'password'}
+                          placeholder="Min 8 characters"
+                          value={password}
+                          onChange={e => { setPassword(e.target.value); clearErr('password'); }}
+                          autoComplete="new-password"
+                        />
+                        <button type="button" className="toggle-pw" onClick={() => setShowPw(v => !v)} tabIndex={-1} aria-label={showPw ? 'Hide' : 'Show'}>
+                          <EyeIcon open={showPw} />
+                        </button>
+                      </div>
+                      {password && <PasswordStrength password={password} />}
+                    </Field>
+
+                    <Field label="Confirm password" error={fieldErrors.confirm_password} required>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          className={`auth-input has-toggle${fieldErrors.confirm_password ? ' error' : ''}`}
+                          type={showConfirm ? 'text' : 'password'}
+                          placeholder="Repeat password"
+                          value={confirm}
+                          onChange={e => { setConfirm(e.target.value); clearErr('confirm_password'); }}
+                          autoComplete="new-password"
+                        />
+                        <button type="button" className="toggle-pw" onClick={() => setShowConfirm(v => !v)} tabIndex={-1} aria-label={showConfirm ? 'Hide' : 'Show'}>
+                          <EyeIcon open={showConfirm} />
+                        </button>
+                      </div>
+                      {confirm && password === confirm && (
+                        <div style={{ fontSize: 11.5, color: 'var(--good)', marginTop: 5, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <CheckIcon /> Passwords match
+                        </div>
+                      )}
+                    </Field>
+                  </div>
+
+                  <button type="submit" className="auth-btn" style={{ marginTop: 8 }}>
+                    Continue →
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* ── Step 1: Business details ───────────────────────────────────── */}
+            {step === 1 && (
+              <form className="step-enter" onSubmit={handleSubmit} noValidate>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                  <Field label="Shop / business name" error={fieldErrors.main_shop_name} hint="This becomes your organisation and main store name" required>
+                    <input
+                      className={`auth-input${fieldErrors.main_shop_name ? ' error' : ''}`}
+                      type="text"
+                      placeholder="Duka Kuu Kariakoo"
+                      value={shopName}
+                      onChange={e => { setShopName(e.target.value); clearErr('main_shop_name'); }}
+                      autoFocus
+                    />
+                  </Field>
+
+                  <div className="form-grid-2">
+                    <Field label="Business type" error={fieldErrors.business_type} required>
+                      <select
+                        className={`auth-select${fieldErrors.business_type ? ' error' : ''}`}
+                        value={bizType}
+                        onChange={e => { setBizType(e.target.value); clearErr('business_type'); }}
+                      >
+                        <option value="" disabled>Select type…</option>
+                        {BUSINESS_TYPES.map(t => (
+                          <option key={t.value} value={t.value}>{t.label}</option>
+                        ))}
+                      </select>
+                    </Field>
+
+                    <Field label="Region" error={fieldErrors.region} required>
+                      <select
+                        className={`auth-select${fieldErrors.region ? ' error' : ''}`}
+                        value={region}
+                        onChange={e => { setRegion(e.target.value); clearErr('region'); }}
+                      >
+                        <option value="" disabled>Select region…</option>
+                        {TANZANIA_REGIONS.map(r => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+
+                  {/* Trial info callout */}
+                  <div style={{ padding: '12px 14px', borderRadius: 8, border: '1px solid var(--line-2)', background: 'var(--bg-2)', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>⏱</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 2 }}>7-day free trial</div>
+                      <div style={{ fontSize: 12, color: 'var(--fg-3)', lineHeight: 1.5 }}>
+                        Your account is created instantly. Activate your trial by paying{' '}
+                        <strong style={{ color: 'var(--fg-2)' }}>TZS 10,000</strong> via M-Pesa, Tigo Pesa or bank transfer after sign-up.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                    <button type="button" className="auth-btn-ghost" onClick={() => { setStep(0); setGlobalError(''); }} style={{ flex: '0 0 auto', width: 'auto', padding: '0 20px' }}>
+                      ← Back
+                    </button>
+                    <button type="submit" className="auth-btn" disabled={loading}>
+                      {loading ? <><div className="spinner" /> Creating account…</> : <>Create account →</>}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+
+            {/* Terms */}
+            <p style={{ fontSize: 11.5, color: 'var(--fg-4)', textAlign: 'center', marginTop: 20, lineHeight: 1.55 }}>
+              By creating an account you agree to Ziada's{' '}
+              <a href="#" style={{ color: 'var(--fg-3)', textDecoration: 'underline', textDecorationColor: 'var(--line-2)' }}>Terms of Service</a>{' '}
+              and{' '}
+              <a href="#" style={{ color: 'var(--fg-3)', textDecoration: 'underline', textDecorationColor: 'var(--line-2)' }}>Privacy Policy</a>.
+            </p>
+
+            {/* Sign in link */}
+            <div style={{ textAlign: 'center', marginTop: 12 }}>
+              <span style={{ fontSize: 13.5, color: 'var(--fg-3)' }}>
+                Already have an account?{' '}
+                <Link href="/auth/login" style={{ color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
+                  Sign in
+                </Link>
+              </span>
+            </div>
+
+            {/* Theme toggle */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+              <button
+                onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+                style={{ background: 'transparent', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 10px', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', cursor: 'pointer' }}
+              >
+                {theme === 'dark' ? '◐ dark' : '◑ light'}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 28, fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--fg-4)', textAlign: 'center' }}>
+            © 2026 Ziada Technologies Ltd · Dar es Salaam
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
