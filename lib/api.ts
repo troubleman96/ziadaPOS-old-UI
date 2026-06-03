@@ -113,36 +113,83 @@ export interface MeResponse {
 
 // ── Core fetch helper ──────────────────────────────────────────────────────────
 
+async function rawFetch<T>(
+  path: string,
+  options: RequestInit,
+  accessToken?: string,
+): Promise<{ res: Response; json: unknown } | { networkError: true }> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> | undefined),
+  };
+  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+    const json = await res.json();
+    return { res, json };
+  } catch {
+    return { networkError: true };
+  }
+}
+
 async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
   accessToken?: string,
 ): Promise<ApiResult<T>> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> | undefined),
-  };
+  let result = await rawFetch<T>(path, options, accessToken);
 
-  if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+  // ── Auto-refresh on 401 ────────────────────────────────────────────────────
+  // If the access token expired, try the refresh token once, then retry.
+  if ('res' in result && result.res.status === 401 && accessToken) {
+    try {
+      const { getRefreshToken, saveTokens, clearTokens } = await import('./auth');
+      const refreshToken = getRefreshToken();
+      if (refreshToken) {
+        const refreshRes = await fetch(`${BASE_URL}/api/v1/auth/refresh/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh: refreshToken }),
+        });
+        if (refreshRes.ok) {
+          // Simple JWT returns { access, refresh } directly (not wrapped)
+          // refresh is present when ROTATE_REFRESH_TOKENS=True
+          const refreshJson = await refreshRes.json() as { access?: string; refresh?: string };
+          const newAccess  = refreshJson.access;
+          const newRefresh = refreshJson.refresh ?? refreshToken; // keep old if not rotated
+          if (newAccess) {
+            saveTokens(newAccess, newRefresh);
+            // Retry the original request with the new access token
+            result = await rawFetch<T>(path, options, newAccess);
+          }
+        } else {
+          // Refresh token invalid — force logout
+          clearTokens();
+          if (typeof window !== 'undefined') window.location.href = '/auth/login';
+          return { success: false, message: 'Session expired. Please sign in again.' };
+        }
+      }
+    } catch {
+      // Refresh attempt failed silently — fall through to return the 401
+    }
   }
 
-  try {
-    const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
-    const json = await res.json();
-
-    if (!res.ok) {
-      return {
-        success: false,
-        message: json.message ?? json.detail ?? 'Request failed.',
-        errors: json.errors ?? undefined,
-      };
-    }
-
-    return { success: true, message: json.message ?? '', data: json.data as T };
-  } catch {
+  if ('networkError' in result) {
     return { success: false, message: 'Network error. Please check your connection.' };
   }
+
+  const { res, json } = result as { res: Response; json: unknown };
+  const body = json as Record<string, unknown>;
+
+  if (!res.ok) {
+    return {
+      success: false,
+      message: (body.message ?? body.detail ?? 'Request failed.') as string,
+      errors: body.errors as Record<string, string[]> | undefined,
+    };
+  }
+
+  return { success: true, message: (body.message ?? '') as string, data: body.data as T };
 }
 
 // ── Auth endpoints ─────────────────────────────────────────────────────────────
