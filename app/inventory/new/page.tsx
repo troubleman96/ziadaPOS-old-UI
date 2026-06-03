@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
@@ -14,6 +14,25 @@ export default function NewProductPage() {
   const [unit, setUnit] = useState('pcs');
   const [minStock, setMinStock] = useState('');
   const [maxStock, setMaxStock] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleImageSelect(file: File) {
+    if (!file.type.startsWith('image/')) return;
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = e => setImagePreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleImageSelect(file);
+  }
 
   const margin = price && cost ? (((+price - +cost) / +price) * 100).toFixed(1) : null;
 
@@ -123,6 +142,70 @@ export default function NewProductPage() {
 
         {/* Right sidebar */}
         <div>
+          {/* Product image */}
+          <div className="surface" style={{ marginBottom: 14 }}>
+            <div className="card-head">
+              <span className="card-title">Product image</span>
+              <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>optional</span>
+            </div>
+            <div style={{ padding: '14px 16px' }}>
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleImageSelect(f); }}
+              />
+
+              {imagePreview ? (
+                /* Preview */
+                <div style={{ position: 'relative' }}>
+                  <img
+                    src={imagePreview}
+                    alt="Product preview"
+                    style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line-2)', display: 'block' }}
+                  />
+                  <button
+                    onClick={() => { setImageFile(null); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                    style={{
+                      position: 'absolute', top: 8, right: 8,
+                      width: 28, height: 28, borderRadius: 6,
+                      background: 'rgba(0,0,0,0.6)', border: 0, cursor: 'pointer',
+                      color: '#fff', display: 'grid', placeItems: 'center', fontSize: 14,
+                    }}
+                    title="Remove image"
+                  >×</button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{ width: '100%', marginTop: 8, padding: '7px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg-2)', fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    Change image
+                  </button>
+                </div>
+              ) : (
+                /* Drop zone */
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  style={{
+                    border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--line-2)'}`,
+                    borderRadius: 10, padding: '28px 16px',
+                    textAlign: 'center', cursor: 'pointer',
+                    background: dragOver ? 'var(--accent-soft)' : 'var(--bg)',
+                    transition: 'border-color 150ms, background 150ms',
+                  }}
+                >
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>🖼</div>
+                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Drop image here</div>
+                  <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>or click to browse · JPG, PNG, WEBP</div>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="surface" style={{ marginBottom: 14 }}>
             <div className="card-head"><span className="card-title">AI assist</span></div>
             <div style={{ padding: '14px 16px' }}>

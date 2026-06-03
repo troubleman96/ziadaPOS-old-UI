@@ -376,11 +376,15 @@ function ProductGrid({ items, cartMap, onAdd }: { items: Product[]; cartMap: Rec
       {items.map((p) => {
         const qty = cartMap[p.id] || 0;
         const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
+        const imgUrl = (p as { imageUrl?: string }).imageUrl;
         const stockKind = p.stock <= 5 ? 'bad' : p.stock <= 15 ? 'warn' : null;
         return (
           <div key={p.id} className={'product-card' + (qty ? ' added' : '')} onClick={() => onAdd(p)}>
-            <div className="product-thumb" style={{ background: scheme.bg, color: scheme.fg, borderColor: 'transparent' }}>
-              {p.name[0]}
+            <div className="product-thumb" style={{ background: imgUrl ? 'transparent' : scheme.bg, color: scheme.fg, borderColor: 'transparent', overflow: 'hidden' }}>
+              {imgUrl
+                ? <img src={imgUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                : p.name[0]
+              }
               {qty > 0 && <span className="qty-pill">{qty}</span>}
             </div>
             <div>

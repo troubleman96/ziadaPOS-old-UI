@@ -14,10 +14,19 @@ function statusFor(p: typeof INVENTORY[0]) {
   return { kind: 'good', label: 'Active' };
 }
 
-function ThumbLetter({ name, color }: { name: string; color: string }) {
+function ProductThumb({ name, color, imageUrl, size = 40 }: { name: string; color: string; imageUrl?: string | null; size?: number }) {
   const scheme = COLOR_SCHEMES[color] || COLOR_SCHEMES.indigo;
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt={name}
+        style={{ width: size, height: size, borderRadius: 7, objectFit: 'cover', border: '1px solid var(--line)', flexShrink: 0, display: 'block' }}
+      />
+    );
+  }
   return (
-    <div className="thumb-letter" style={{ background: scheme.bg, color: scheme.fg }}>
+    <div className="thumb-letter" style={{ width: size, height: size, background: scheme.bg, color: scheme.fg, borderRadius: 7, display: 'grid', placeItems: 'center', fontSize: size * 0.42, fontWeight: 600, flexShrink: 0 }}>
       {name[0]}
     </div>
   );
@@ -193,7 +202,6 @@ export default function InventoryPage() {
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>No matches</div>
           ) : filtered.map((p, i) => {
             const status = statusFor(p);
-            const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
             const margin = (((p.price - p.cost) / p.price) * 100).toFixed(0);
             return (
               <Link
@@ -204,13 +212,7 @@ export default function InventoryPage() {
                   borderBottom: i < filtered.length - 1 ? '1px solid var(--line)' : 'none',
                 }}
               >
-                {/* Thumbnail */}
-                <div style={{
-                  width: 44, height: 44, borderRadius: 10, flexShrink: 0,
-                  background: scheme.bg, color: scheme.fg,
-                  display: 'grid', placeItems: 'center',
-                  fontSize: 18, fontWeight: 600,
-                }}>{p.name[0]}</div>
+                <ProductThumb name={p.name} color={p.color} imageUrl={(p as { imageUrl?: string }).imageUrl} size={44} />
 
                 {/* Name + meta */}
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -246,10 +248,14 @@ export default function InventoryPage() {
         <div className="inv-grid-wrap mobile-only" style={{ marginBottom: 14 }}>
           {filtered.map((p) => {
             const status = statusFor(p);
+            const imgUrl = (p as { imageUrl?: string }).imageUrl;
             const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
             return (
               <Link key={p.id} href={`/inventory/${p.id}`} className="surface" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8, textDecoration: 'none', color: 'inherit' }}>
-                <div style={{ height: 72, background: scheme.bg, color: scheme.fg, borderRadius: 8, display: 'grid', placeItems: 'center', fontSize: 26, fontWeight: 600 }}>{p.name[0]}</div>
+                {imgUrl
+                  ? <img src={imgUrl} alt={p.name} style={{ height: 72, width: '100%', objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }} />
+                  : <div style={{ height: 72, background: scheme.bg, color: scheme.fg, borderRadius: 8, display: 'grid', placeItems: 'center', fontSize: 26, fontWeight: 600 }}>{p.name[0]}</div>
+                }
                 <div style={{ fontSize: 12.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
                 <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{p.sku}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
@@ -289,7 +295,7 @@ export default function InventoryPage() {
                 return (
                   <tr key={p.id}>
                     <td onClick={(e) => e.stopPropagation()}><input type="checkbox" style={{ accentColor: 'var(--accent)' }} /></td>
-                    <td><ThumbLetter name={p.name} color={p.color} /></td>
+                    <td><ProductThumb name={p.name} color={p.color} imageUrl={(p as { imageUrl?: string }).imageUrl} size={36} /></td>
                     <td>
                       <Link href={`/inventory/${p.id}`} style={{ fontWeight: 500, color: 'inherit' }}>{p.name}</Link>
                       <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 1 }}>{p.barcode}</div>
@@ -332,12 +338,14 @@ export default function InventoryPage() {
         <div className="inv-grid-wrap desktop-only">
           {filtered.map((p) => {
             const status = statusFor(p);
+            const imgUrl = (p as { imageUrl?: string }).imageUrl;
             const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
             return (
               <Link key={p.id} href={`/inventory/${p.id}`} className="surface" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12, textDecoration: 'none', color: 'inherit' }}>
-                <div style={{ aspectRatio: '1.4', background: scheme.bg, color: scheme.fg, borderRadius: 8, display: 'grid', placeItems: 'center', fontSize: 36, fontWeight: 500 }}>
-                  {p.name[0]}
-                </div>
+                {imgUrl
+                  ? <img src={imgUrl} alt={p.name} style={{ width: '100%', aspectRatio: '1.4', objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }} />
+                  : <div style={{ aspectRatio: '1.4', background: scheme.bg, color: scheme.fg, borderRadius: 8, display: 'grid', placeItems: 'center', fontSize: 36, fontWeight: 500 }}>{p.name[0]}</div>
+                }
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 500 }}>{p.name}</div>
                   <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 1 }}>{p.sku}</div>
