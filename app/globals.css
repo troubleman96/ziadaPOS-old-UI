@@ -9,9 +9,9 @@
   --line-3: rgba(255,255,255,0.18);
   /* True white text in dark mode — matches OpenRouter contrast */
   --fg: #ffffff;
-  --fg-2: rgba(255,255,255,0.68);
-  --fg-3: rgba(255,255,255,0.42);
-  --fg-4: rgba(255,255,255,0.24);
+  --fg-2: rgba(255,255,255,0.72);
+  --fg-3: rgba(255,255,255,0.54);
+  --fg-4: rgba(255,255,255,0.38);
   --accent: #6366f1;
   --accent-fg: #ffffff;
   --accent-soft: rgba(99,102,241,0.14);
@@ -45,9 +45,9 @@ html[data-theme="light"] {
   --line-3: rgba(0,0,0,0.18);
   /* True black text in light mode */
   --fg: #000000;
-  --fg-2: rgba(0,0,0,0.68);
-  --fg-3: rgba(0,0,0,0.44);
-  --fg-4: rgba(0,0,0,0.26);
+  --fg-2: rgba(0,0,0,0.72);
+  --fg-3: rgba(0,0,0,0.54);
+  --fg-4: rgba(0,0,0,0.38);
   --accent-soft: rgba(99,102,241,0.09);
   --accent-line: rgba(99,102,241,0.28);
   --good-soft: rgba(16,185,129,0.10);
@@ -82,7 +82,7 @@ button { font-family: inherit; color: inherit; }
 input, select, textarea { font-family: inherit; }
 
 /* ─── Utility classes ───────────────────────────────────────────────────────── */
-.mono { font-family: var(--mono); font-feature-settings: "ss01"; }
+.mono { font-family: var(--mono); font-weight: 500; font-feature-settings: "ss01"; }
 .tnum { font-variant-numeric: tabular-nums; }
 
 /* ─── App shell ─────────────────────────────────────────────────────────────── */
@@ -111,7 +111,7 @@ input, select, textarea { font-family: inherit; }
 .nav-item.active { background: var(--accent-soft); color: var(--fg); border-color: var(--accent-line); }
 .nav-item.active .nav-icon { color: var(--accent); }
 .nav-icon { width: 16px; height: 16px; flex-shrink: 0; display: grid; place-items: center; color: var(--fg-3); }
-.nav-badge { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--fg-3); }
+.nav-badge { margin-left: auto; font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--fg-2); }
 .nav-badge.dot { width: 6px; height: 6px; border-radius: 999px; background: var(--warn); padding: 0; }
 .nav-badge.pill-badge { padding: 1px 6px; border: 1px solid var(--line-2); border-radius: 999px; }
 
@@ -176,7 +176,7 @@ input, select, textarea { font-family: inherit; }
 
 .pill {
   display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--mono); font-size: 10.5px;
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
   padding: 2px 7px; border-radius: 999px;
   border: 1px solid var(--line-2); color: var(--fg-2);
 }
