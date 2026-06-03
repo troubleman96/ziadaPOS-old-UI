@@ -248,15 +248,6 @@ export default function LoginPage() {
           margin-bottom: 20px;
         }
 
-        /* Phone input prefix */
-        .phone-wrap { position: relative; display: flex; align-items: center; }
-        .phone-prefix {
-          position: absolute; left: 14px;
-          font-family: var(--mono); font-size: 13px; color: var(--fg-3);
-          pointer-events: none; user-select: none;
-        }
-        .phone-input { padding-left: 52px !important; }
-
         /* Loading spinner */
         @keyframes spin { to { transform: rotate(360deg); } }
         .spinner {
@@ -298,13 +289,12 @@ export default function LoginPage() {
                   Phone number
                 </label>
                 <div className="phone-wrap">
-                  <span className="phone-prefix">+255</span>
                   <input
                     ref={phoneRef}
-                    className={`auth-input phone-input${fieldErrors.phone ? ' error' : ''}`}
+                    className={`auth-input${fieldErrors.phone ? ' error' : ''}`}
                     type="tel"
                     inputMode="numeric"
-                    placeholder="0712 345 678"
+                    placeholder="0712345678"
                     value={phone}
                     maxLength={10}
                     onChange={e => {

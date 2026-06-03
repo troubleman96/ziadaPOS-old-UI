@@ -524,12 +524,7 @@ export default function RegisterPage() {
         }
         @media (max-width: 480px) { .form-grid-2 { grid-template-columns: 1fr; } }
 
-        .phone-prefix {
-          position: absolute; left: 14px;
-          font-family: var(--mono); font-size: 13px; color: var(--fg-3);
-          pointer-events: none; user-select: none; top: 50%; transform: translateY(-50%);
-        }
-        .phone-input { padding-left: 52px !important; }
+
 
         @keyframes spin { to { transform: rotate(360deg); } }
         .spinner {
@@ -599,14 +594,13 @@ export default function RegisterPage() {
                     />
                   </Field>
 
-                  <Field label="Phone number" error={fieldErrors.phone} hint="10-digit Tanzanian number used to sign in" required>
+                  <Field label="Phone number" error={fieldErrors.phone} hint="10 digits, e.g. 0712345678" required>
                     <div style={{ position: 'relative' }}>
-                      <span className="phone-prefix">+255</span>
                       <input
-                        className={`auth-input phone-input${fieldErrors.phone ? ' error' : ''}`}
+                        className={`auth-input${fieldErrors.phone ? ' error' : ''}`}
                         type="tel"
                         inputMode="numeric"
-                        placeholder="0712 345 678"
+                        placeholder="0712345678"
                         value={phone}
                         maxLength={10}
                         onChange={e => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 10)); clearErr('phone'); }}
