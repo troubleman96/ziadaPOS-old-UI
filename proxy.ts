@@ -1,5 +1,5 @@
 /**
- * middleware.ts — Ziada POS route protection (Edge Runtime)
+ * proxy.ts — Ziada POS route protection (Next.js 16 Edge Proxy)
  *
  * Reads the `ziada_session` cookie (set by lib/auth.ts on login/register).
  * The actual JWT lives in localStorage; the cookie is a presence flag only.
@@ -45,7 +45,7 @@ const PROTECTED_PREFIXES = [
 // Routes that should redirect to /dashboard when already authenticated
 const AUTH_ROUTES = ['/auth/login', '/auth/register'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSession = Boolean(request.cookies.get(SESSION_COOKIE)?.value);
 
