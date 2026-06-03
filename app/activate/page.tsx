@@ -71,6 +71,7 @@ export default function ActivatePage() {
   const router = useRouter();
   const [user, setUser] = useState<{ full_name: string; phone: string } | null>(null);
   const [theme, setTheme] = useState('dark');
+  const [stepsOpen, setStepsOpen] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated()) { router.replace('/auth/login'); return; }
@@ -211,18 +212,57 @@ export default function ActivatePage() {
             </div>
           </div>
 
-          {/* Steps */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>HOW TO PAY</div>
-            {steps.map(s => (
-              <div key={s.n} className="act-step">
-                <div className="act-step-num">{s.n}</div>
-                <div>
-                  <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 2 }}>{s.title}</div>
-                  <div style={{ fontSize: 12.5, color: 'var(--fg-3)', lineHeight: 1.5 }}>{s.desc}</div>
-                </div>
+          {/* Steps — collapsible */}
+          <div style={{ border: '1px solid var(--line)', borderRadius: 10, overflow: 'hidden' }}>
+            {/* Header — always visible, click to toggle */}
+            <button
+              onClick={() => setStepsOpen(v => !v)}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 16px', background: 'var(--bg-2)',
+                border: 0, cursor: 'pointer', gap: 10,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* Info icon */}
+                <span style={{
+                  width: 22, height: 22, borderRadius: 999, flexShrink: 0,
+                  background: 'var(--info-soft)', border: '1px solid rgba(96,165,250,0.25)',
+                  color: 'var(--info)', display: 'grid', placeItems: 'center',
+                }}>
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
+                    <circle cx="6" cy="6" r="5.5" fillOpacity="0" stroke="currentColor" strokeWidth="1.2" />
+                    <rect x="5.4" y="5" width="1.2" height="4" rx=".5" />
+                    <circle cx="6" cy="3.2" r=".7" />
+                  </svg>
+                </span>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.08em' }}>
+                  HOW TO PAY
+                </span>
               </div>
-            ))}
+              {/* Chevron */}
+              <svg
+                width="12" height="12" viewBox="0 0 12 12"
+                style={{ color: 'var(--fg-4)', transition: 'transform 200ms', transform: stepsOpen ? 'rotate(180deg)' : 'none', flexShrink: 0 }}
+              >
+                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {/* Steps body — animated reveal */}
+            {stepsOpen && (
+              <div style={{ padding: '4px 16px 16px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 14, background: 'var(--bg)' }}>
+                {steps.map(s => (
+                  <div key={s.n} className="act-step" style={{ marginTop: 12 }}>
+                    <div className="act-step-num">{s.n}</div>
+                    <div>
+                      <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 2 }}>{s.title}</div>
+                      <div style={{ fontSize: 12.5, color: 'var(--fg-3)', lineHeight: 1.5 }}>{s.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* WhatsApp CTA */}
