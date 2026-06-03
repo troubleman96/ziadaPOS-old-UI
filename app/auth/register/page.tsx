@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authApi, TANZANIA_REGIONS, BUSINESS_TYPES } from '@/lib/api';
-import { saveTokens, cacheUser, isAuthenticated } from '@/lib/auth';
+import { saveTokens, cacheUser, cacheSubscription, isAuthenticated } from '@/lib/auth';
 
 // ── Eye icon ───────────────────────────────────────────────────────────────────
 function EyeIcon({ open }: { open: boolean }) {
@@ -420,7 +420,8 @@ export default function RegisterPage() {
 
     saveTokens(result.data.access, result.data.refresh);
     cacheUser(result.data.user);
-    router.push('/dashboard');
+    cacheSubscription(result.data.subscription);
+    router.push('/activate');
   }
 
   return (

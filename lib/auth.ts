@@ -11,11 +11,12 @@
  * All functions are safe to call in SSR (typeof window guard).
  */
 
-import type { UserProfile } from './api';
+import type { UserProfile, SubscriptionInfo } from './api';
 
 const ACCESS_KEY   = 'ziada_access';
 const REFRESH_KEY  = 'ziada_refresh';
 const USER_KEY     = 'ziada_user';
+const SUB_KEY      = 'ziada_sub';
 const SESSION_COOKIE = 'ziada_session';
 
 // ── Cookie helpers (client-side only) ─────────────────────────────────────────
@@ -56,6 +57,7 @@ export function clearTokens(): void {
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
   localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(SUB_KEY);
   clearSessionCookie();
 }
 
@@ -74,6 +76,21 @@ export function getCachedUser(): UserProfile | null {
 export function cacheUser(user: UserProfile): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+export function getCachedSubscription(): SubscriptionInfo | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(SUB_KEY);
+    return raw ? (JSON.parse(raw) as SubscriptionInfo) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function cacheSubscription(sub: SubscriptionInfo): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(SUB_KEY, JSON.stringify(sub));
 }
 
 // ── Session helpers ────────────────────────────────────────────────────────────

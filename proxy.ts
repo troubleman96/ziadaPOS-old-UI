@@ -24,6 +24,7 @@ const SESSION_COOKIE = 'ziada_session';
 
 // Routes that require authentication
 const PROTECTED_PREFIXES = [
+  '/activate',
   '/dashboard',
   '/pos',
   '/inventory',
