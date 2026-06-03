@@ -189,13 +189,13 @@ function SalesChart() {
         {yTicks.map((t, i) => (
           <g key={i}>
             <line x1={pad.l} x2={w-pad.r} y1={yScale(t)} y2={yScale(t)} stroke="var(--line)" strokeDasharray="2 4" />
-            <text x={pad.l - 8} y={yScale(t) + 3} textAnchor="end" fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">
-              {t === 0 ? '0' : (t/1000).toFixed(0) + 'K'}
+            <text x={pad.l - 8} y={yScale(t) + 4} textAnchor="end" fontSize="11" fontWeight="500" fill="var(--fg-2)" fontFamily="var(--mono)">
+              {t === 0 ? '0' : t >= 1000 ? (t / 1000).toFixed(0) + 'M' : t + 'K'}
             </text>
           </g>
         ))}
         {labels.map((l, i) => l && (
-          <text key={i} x={xScale(i)} y={h - 10} textAnchor="middle" fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">{l}</text>
+          <text key={i} x={xScale(i)} y={h - 8} textAnchor="middle" fontSize="11" fontWeight="500" fill="var(--fg-2)" fontFamily="var(--mono)">{l}</text>
         ))}
         <path d={areaPath} fill="url(#salesFill)" />
         <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
@@ -203,8 +203,8 @@ function SalesChart() {
         <circle cx={xScale(peakIdx)} cy={yScale(max)} r="4" fill="var(--bg-2)" stroke="var(--accent)" strokeWidth="2" />
         <g transform={`translate(${xScale(peakIdx) - 64}, ${yScale(max) - 38})`}>
           <rect width="128" height="30" rx="6" fill="var(--bg)" stroke="var(--line-2)" />
-          <text x="10" y="13" fontSize="9.5" fill="var(--fg-4)" fontFamily="var(--mono)">PEAK · 13:00</text>
-          <text x="10" y="24" fontSize="11" fill="var(--fg)" fontWeight="500">TZS 310,000</text>
+          <text x="10" y="13" fontSize="10" fontWeight="500" fill="var(--fg-2)" fontFamily="var(--mono)">PEAK · 13:00</text>
+          <text x="10" y="25" fontSize="11.5" fill="var(--fg)" fontWeight="600">TZS 310,000</text>
         </g>
       </svg>
     </div>

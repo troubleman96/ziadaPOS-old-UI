@@ -45,10 +45,10 @@ function SalesChart() {
       <path d={areaPath} fill="url(#prodSalesFill)" />
       <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth="1.75" />
       {data.map((v, i) => i % 5 === 0 && (
-        <text key={i} x={xScale(i)} y={h - 10} textAnchor="middle" fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">{30 - i}d</text>
+        <text key={i} x={xScale(i)} y={h - 10} textAnchor="middle" fontSize="11" fontWeight="500" fill="var(--fg-2)" fontFamily="var(--mono)">{30 - i}d</text>
       ))}
       {[0.25, 0.5, 0.75, 1].map((t, i) => (
-        <text key={i} x={pad.l - 8} y={yScale(t*max) + 3} textAnchor="end" fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">{Math.round(t*max)}</text>
+        <text key={i} x={pad.l - 8} y={yScale(t*max) + 3} textAnchor="end" fontSize="11" fontWeight="500" fill="var(--fg-2)" fontFamily="var(--mono)">{Math.round(t*max)}</text>
       ))}
     </svg>
   );

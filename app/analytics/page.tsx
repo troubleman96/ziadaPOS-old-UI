@@ -70,13 +70,13 @@ function AreaChart({ data, height = 240 }: { data: Array<{ v: number; label: str
       {ticks.map((t, i) => (
         <g key={i}>
           <line x1={pad.l} x2={w-pad.r} y1={yScale(t)} y2={yScale(t)} stroke="var(--line)" strokeDasharray="2 4" />
-          <text x={pad.l - 8} y={yScale(t) + 3} textAnchor="end" fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">
+          <text x={pad.l - 8} y={yScale(t) + 3} textAnchor="end" fontSize="11" fontWeight="500" fill="var(--fg-2)" fontFamily="var(--mono)">
             {t === 0 ? '0' : fmtShort(t).replace('TZS ', '')}
           </text>
         </g>
       ))}
       {data.map((d, i) => i % Math.ceil(data.length / 8) === 0 && (
-        <text key={i} x={xScale(i)} y={h - 12} textAnchor="middle" fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">{d.label}</text>
+        <text key={i} x={xScale(i)} y={h - 12} textAnchor="middle" fontSize="11" fontWeight="500" fill="var(--fg-2)" fontFamily="var(--mono)">{d.label}</text>
       ))}
       <path d={areaPath} fill="url(#aFill2)" />
       <path d={linePath} fill="none" stroke="var(--accent)" strokeWidth="1.75" />
@@ -102,7 +102,7 @@ function Donut({ slices, total, centerLabel, centerValue }: { slices: Array<{ la
   return (
     <svg width="140" height="140" viewBox="0 0 140 140">
       {arcs.map((a, i) => <path key={i} d={a.d} fill={a.color} />)}
-      <text x={cx} y={cy - 2} textAnchor="middle" fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)" letterSpacing="0.06em">{centerLabel}</text>
+      <text x={cx} y={cy - 2} textAnchor="middle" fontSize="11" fontWeight="500" fill="var(--fg-2)" fontFamily="var(--mono)" letterSpacing="0.06em">{centerLabel}</text>
       <text x={cx} y={cy + 14} textAnchor="middle" fontSize="15" fill="var(--fg)" fontWeight="500">{centerValue}</text>
     </svg>
   );
