@@ -1,24 +1,43 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { use } from 'react';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
 import { fmt, fmtShort } from '../../../lib/utils';
-import { INVENTORY, COLOR_SCHEMES } from '../../../lib/data';
+import { inventoryApi, InventoryProduct } from '../../../lib/api';
 
-function generateMovements(p: typeof INVENTORY[0]) {
-  const today = new Date(2026, 4, 24);
+const SPINNER = (
+  <>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--line-2)', borderTopColor: 'var(--accent)', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+  </>
+);
+
+const COLOR_SCHEMES: Record<string, { bg: string; fg: string }> = {
+  indigo:  { bg: 'oklch(0.94 0.04 280)', fg: 'oklch(0.45 0.18 280)' },
+  green:   { bg: 'oklch(0.94 0.06 155)', fg: 'oklch(0.45 0.16 155)' },
+  amber:   { bg: 'oklch(0.95 0.06 80)',  fg: 'oklch(0.50 0.16 60)'  },
+  rose:    { bg: 'oklch(0.95 0.05 15)',  fg: 'oklch(0.50 0.18 15)'  },
+  sky:     { bg: 'oklch(0.95 0.04 220)', fg: 'oklch(0.50 0.14 220)' },
+  violet:  { bg: 'oklch(0.95 0.05 295)', fg: 'oklch(0.50 0.18 295)' },
+  teal:    { bg: 'oklch(0.94 0.05 185)', fg: 'oklch(0.46 0.14 185)' },
+};
+
+function generateMovements(p: InventoryProduct) {
+  const today = new Date();
   const evs: Array<{ ts: Date; kind: string; qty: number; who: string; note: string }> = [];
+  const weeklySold = p.weekly_sold ?? 0;
   for (let i = 0; i < 14; i++) {
     const d = new Date(today.getTime() - i * 86400000);
-    const sold = Math.max(0, Math.round(p.weeklySold / 7 + (Math.sin(i * 1.7) * 2)));
+    const sold = Math.max(0, Math.round(weeklySold / 7 + (Math.sin(i * 1.7) * 2)));
     if (sold > 0) evs.push({ ts: d, kind: 'sale', qty: -sold, who: i % 2 === 0 ? 'Hamisi M.' : 'Amani M.', note: `${sold} units sold` });
   }
-  evs.push({ ts: new Date(today.getTime() - 6 * 86400000), kind: 'restock', qty: 40, who: p.supplier, note: `Restock from ${p.supplier} · PO #4421` });
+  const supplier = p.supplier_name || 'Supplier';
+  evs.push({ ts: new Date(today.getTime() - 6 * 86400000), kind: 'restock', qty: 40, who: supplier, note: `Restock from ${supplier} · PO #4421` });
   evs.push({ ts: new Date(today.getTime() - 13 * 86400000), kind: 'adjustment', qty: -2, who: 'Hamisi M.', note: 'Damaged stock removed' });
-  evs.push({ ts: new Date(today.getTime() - 18 * 86400000), kind: 'restock', qty: 30, who: p.supplier, note: `Restock from ${p.supplier} · PO #4408` });
+  evs.push({ ts: new Date(today.getTime() - 18 * 86400000), kind: 'restock', qty: 30, who: supplier, note: `Restock from ${supplier} · PO #4408` });
   return evs.sort((a, b) => b.ts.getTime() - a.ts.getTime());
 }
 
@@ -57,28 +76,62 @@ function SalesChart() {
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [tab, setTab] = useState('overview');
+  const [p, setP] = useState<InventoryProduct | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  const p = INVENTORY.find((x) => x.id === id) || INVENTORY[0];
-  const idx = INVENTORY.findIndex(x => x.id === p.id);
-  const prev = INVENTORY[idx - 1];
-  const next = INVENTORY[idx + 1];
-  const movements = useMemo(() => generateMovements(p), [p]);
+  useEffect(() => {
+    setLoading(true);
+    inventoryApi.getProducts(`is_active=true`).then((res) => {
+      setLoading(false);
+      if (res.success) {
+        const data = res.data as unknown as { results?: InventoryProduct[] } | InventoryProduct[];
+        let list: InventoryProduct[] = [];
+        if (Array.isArray(data)) list = data;
+        else if (data && typeof data === 'object' && 'results' in data && Array.isArray((data as { results: InventoryProduct[] }).results)) {
+          list = (data as { results: InventoryProduct[] }).results;
+        }
+        const found = list.find(x => x.id === id);
+        if (found) setP(found);
+        else setError(true);
+      } else {
+        setError(true);
+      }
+    });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Inventory', href: '/inventory' }, { label: '…' }]}>
+        <div style={{ padding: 80, textAlign: 'center' }}>{SPINNER}</div>
+      </AppShell>
+    );
+  }
+
+  if (error || !p) {
+    return (
+      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Inventory', href: '/inventory' }, { label: 'Not found' }]}>
+        <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+          <div style={{ fontSize: 18, fontWeight: 500, marginBottom: 8 }}>Product not found</div>
+          <p style={{ color: 'var(--fg-3)', marginBottom: 24 }}>No product with this ID could be found.</p>
+          <Link href="/inventory" className="btn btn-primary">← Back to inventory</Link>
+        </div>
+      </AppShell>
+    );
+  }
+
+  const movements = generateMovements(p);
   const scheme = COLOR_SCHEMES[p.color] || COLOR_SCHEMES.indigo;
-  const margin = (((p.price - p.cost) / p.price) * 100).toFixed(1);
-  const stockKind = p.stock === 0 ? 'bad' : p.stock <= p.min * 0.4 ? 'bad' : p.stock <= p.min ? 'warn' : 'good';
-  const projDaysLeft = Math.round(p.stock / (p.weeklySold / 7));
-  const monthRevenue = p.weeklySold * 4 * p.price;
-  const monthProfit = p.weeklySold * 4 * (p.price - p.cost);
+  const margin = p.margin_pct?.toFixed(1) ?? (p.price > 0 ? (((p.price - p.cost) / p.price) * 100).toFixed(1) : '0');
+  const weeklySold = p.weekly_sold ?? 0;
+  const stockKind = p.stock_status === 'out' ? 'bad' : p.stock_status === 'critical' ? 'bad' : p.stock_status === 'low' ? 'warn' : 'good';
+  const projDaysLeft = weeklySold > 0 ? Math.round(p.stock / (weeklySold / 7)) : 999;
+  const monthRevenue = weeklySold * 4 * p.price;
+  const monthProfit = weeklySold * 4 * (p.price - p.cost);
 
   return (
     <AppShell
       crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Inventory', href: '/inventory' }, { label: p.name }]}
-      actions={
-        <div style={{ display: 'flex', gap: 6 }}>
-          {prev && <Link href={`/inventory/${prev.id}`} className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12 }}>← Prev</Link>}
-          {next && <Link href={`/inventory/${next.id}`} className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12 }}>Next →</Link>}
-        </div>
-      }
     >
       {/* Back */}
       <div style={{ marginBottom: 14, fontSize: 13, color: 'var(--fg-3)' }}>
@@ -100,13 +153,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <span className="dot-s" style={{ background: stockKind === 'good' ? 'var(--good)' : stockKind === 'warn' ? 'var(--warn)' : 'var(--bad)' }}></span>
               {stockKind === 'good' ? 'In stock' : stockKind === 'warn' ? 'Running low' : 'Critical'}
             </span>
-            <span className="pill" style={{ background: 'var(--bg-3)' }}>{p.cat}</span>
+            {p.category_name && <span className="pill" style={{ background: 'var(--bg-3)' }}>{p.category_name}</span>}
           </div>
           <div className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', marginBottom: 14 }}>
             {p.sku} <span style={{ color: 'var(--fg-4)', margin: '0 6px' }}>·</span>
             {p.barcode} <span style={{ color: 'var(--fg-4)', margin: '0 6px' }}>·</span>
-            {p.unit} <span style={{ color: 'var(--fg-4)', margin: '0 6px' }}>·</span>
-            supplier: {p.supplier}
+            {p.supplier_name && <>supplier: {p.supplier_name}</>}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.plus} Restock</button>
@@ -123,17 +175,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, marginBottom: 18 }}>
         <div className="surface kpi-mini">
           <div className="label">ON HAND</div>
-          <div className="value">{p.stock} <span style={{ fontSize: 12, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>{p.unit}</span></div>
-          <div className="delta" style={{ color: 'var(--fg-3)' }}>min {p.min} · max {p.max}</div>
+          <div className="value">{p.stock} <span style={{ fontSize: 12, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>units</span></div>
+          <div className="delta" style={{ color: 'var(--fg-3)' }}>min {p.min_stock} · max {p.max_stock}</div>
         </div>
         <div className="surface kpi-mini">
           <div className="label">DAYS OF COVER</div>
-          <div className="value" style={{ color: projDaysLeft < 7 ? 'var(--warn)' : 'var(--fg)' }}>{projDaysLeft}<span style={{ fontSize: 12, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}> days</span></div>
+          <div className="value" style={{ color: projDaysLeft < 7 ? 'var(--warn)' : 'var(--fg)' }}>{projDaysLeft < 999 ? projDaysLeft : '—'}<span style={{ fontSize: 12, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>{projDaysLeft < 999 ? ' days' : ''}</span></div>
           <div className="delta" style={{ color: 'var(--fg-3)' }}>at current sell rate</div>
         </div>
         <div className="surface kpi-mini">
           <div className="label">SOLD · 30D</div>
-          <div className="value">{p.weeklySold * 4} <span style={{ fontSize: 12, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>units</span></div>
+          <div className="value">{weeklySold * 4} <span style={{ fontSize: 12, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>units</span></div>
           <div className="delta" style={{ color: 'var(--good)' }}>↗ +14% vs prev</div>
         </div>
         <div className="surface kpi-mini">
@@ -153,7 +205,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <div className="surface" style={{ padding: '14px 16px', borderColor: 'var(--accent-line)', background: 'linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-2) 100%)', marginBottom: 18, display: 'flex', gap: 14, alignItems: 'center' }}>
           <span style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-2)', border: '1px solid var(--accent-line)', display: 'grid', placeItems: 'center', color: 'var(--accent)' }}>{Icons.sparkles}</span>
           <div style={{ flex: 1, fontSize: 13, color: 'var(--fg-2)' }}>
-            At <strong style={{ color: 'var(--fg)' }}>{p.weeklySold} units/week</strong>, you&apos;ll run out in <strong style={{ color: 'var(--fg)' }}>{projDaysLeft} days</strong>. Suggested restock: <strong style={{ color: 'var(--fg)' }}>{Math.max(40, p.weeklySold * 3)} units</strong> from {p.supplier}.
+            At <strong style={{ color: 'var(--fg)' }}>{weeklySold} units/week</strong>, you&apos;ll run out in <strong style={{ color: 'var(--fg)' }}>{projDaysLeft} days</strong>. Suggested restock: <strong style={{ color: 'var(--fg)' }}>{Math.max(40, weeklySold * 3)} units</strong>{p.supplier_name ? ` from ${p.supplier_name}` : ''}.
           </div>
           <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5 }}>Draft purchase order</button>
         </div>
@@ -219,28 +271,29 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="surface" style={{ marginBottom: 14 }}>
               <div className="card-head"><span className="card-title">Stock</span></div>
               <div style={{ padding: '14px 16px' }}>
-                <div className="field-row"><span className="k">On hand</span><span className="v mono">{p.stock} {p.unit}</span></div>
-                <div className="field-row"><span className="k">Reorder at</span><span className="v mono">{p.min}</span></div>
-                <div className="field-row"><span className="k">Max stock</span><span className="v mono">{p.max}</span></div>
-                <div className="field-row"><span className="k">Last restock</span><span className="v">{p.lastRestock}</span></div>
+                <div className="field-row"><span className="k">On hand</span><span className="v mono">{p.stock} units</span></div>
+                <div className="field-row"><span className="k">Reorder at</span><span className="v mono">{p.min_stock}</span></div>
+                <div className="field-row"><span className="k">Max stock</span><span className="v mono">{p.max_stock}</span></div>
                 <div className="field-row"><span className="k">Tracked</span><span className="v">Yes</span></div>
               </div>
             </div>
-            <div className="surface">
-              <div className="card-head"><span className="card-title">Supplier</span></div>
-              <div style={{ padding: '14px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 7, background: 'var(--bg-3)', color: 'var(--fg-2)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600 }}>
-                    {p.supplier.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
+            {p.supplier_name && (
+              <div className="surface">
+                <div className="card-head"><span className="card-title">Supplier</span></div>
+                <div style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 7, background: 'var(--bg-3)', color: 'var(--fg-2)', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600 }}>
+                      {p.supplier_name.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13.5, fontWeight: 500 }}>{p.supplier_name}</div>
+                      <div className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>preferred · 3 day lead time</div>
+                    </div>
                   </div>
-                  <div>
-                    <div style={{ fontSize: 13.5, fontWeight: 500 }}>{p.supplier}</div>
-                    <div className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>preferred · 3 day lead time</div>
-                  </div>
+                  <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center' }}>View supplier →</button>
                 </div>
-                <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center' }}>View supplier →</button>
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -297,15 +350,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <div className="field-row"><span className="k">Retail price</span><span className="v mono" style={{ color: 'var(--accent)', fontWeight: 500 }}>{fmt(p.price)}</span></div>
               <div className="field-row"><span className="k">Wholesale</span><span className="v mono" style={{ color: 'var(--fg-3)' }}>not set</span></div>
               <div className="field-row"><span className="k">Margin</span><span className="v mono" style={{ color: 'var(--good)' }}>{margin}%</span></div>
-              <div className="field-row"><span className="k">Markup</span><span className="v mono">{(((p.price - p.cost) / p.cost) * 100).toFixed(0)}%</span></div>
+              <div className="field-row"><span className="k">Markup</span><span className="v mono">{p.cost > 0 ? (((p.price - p.cost) / p.cost) * 100).toFixed(0) : '—'}%</span></div>
               <div className="field-row"><span className="k">VAT</span><span className="v">18% inclusive</span></div>
             </div>
           </div>
           <div className="surface">
             <div className="card-head"><span className="card-title">Projected revenue</span></div>
             <div style={{ padding: '14px 16px' }}>
-              <div className="field-row"><span className="k">/ day</span><span className="v mono">{fmtShort(Math.round((p.weeklySold/7) * p.price))}</span></div>
-              <div className="field-row"><span className="k">/ week</span><span className="v mono">{fmtShort(p.weeklySold * p.price)}</span></div>
+              <div className="field-row"><span className="k">/ day</span><span className="v mono">{fmtShort(Math.round((weeklySold/7) * p.price))}</span></div>
+              <div className="field-row"><span className="k">/ week</span><span className="v mono">{fmtShort(weeklySold * p.price)}</span></div>
               <div className="field-row"><span className="k">/ month</span><span className="v mono" style={{ color: 'var(--fg)', fontWeight: 500 }}>{fmtShort(monthRevenue)}</span></div>
               <div className="field-row"><span className="k">/ month profit</span><span className="v mono" style={{ color: 'var(--good)' }}>{fmtShort(monthProfit)}</span></div>
             </div>
@@ -319,16 +372,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div style={{ padding: '14px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 24px' }}>
             <div className="field-row"><span className="k">Name</span><span className="v">{p.name}</span></div>
             <div className="field-row"><span className="k">SKU</span><span className="v mono">{p.sku}</span></div>
-            <div className="field-row"><span className="k">Category</span><span className="v">{p.cat}</span></div>
-            <div className="field-row"><span className="k">Unit</span><span className="v">{p.unit}</span></div>
+            <div className="field-row"><span className="k">Category</span><span className="v">{p.category_name || '—'}</span></div>
             <div className="field-row"><span className="k">Barcode</span><span className="v mono">{p.barcode}</span></div>
-            <div className="field-row"><span className="k">Status</span><span className="v">{p.active ? 'Active' : 'Archived'}</span></div>
-            <div className="field-row"><span className="k">Supplier</span><span className="v">{p.supplier}</span></div>
+            <div className="field-row"><span className="k">Status</span><span className="v">{p.is_active ? 'Active' : 'Archived'}</span></div>
+            <div className="field-row"><span className="k">Supplier</span><span className="v">{p.supplier_name || '—'}</span></div>
             <div className="field-row"><span className="k">Lead time</span><span className="v">3 days</span></div>
             <div className="field-row"><span className="k">Tracked</span><span className="v">Yes — stock count maintained</span></div>
-            <div className="field-row"><span className="k">Created</span><span className="v">Feb 14, 2024</span></div>
-            <div className="field-row"><span className="k">Last updated</span><span className="v">{p.lastRestock}</span></div>
-            <div className="field-row"><span className="k">Description</span><span className="v" style={{ color: 'var(--fg-2)' }}>{p.name} — staple {p.cat.toLowerCase()} item.</span></div>
+            <div className="field-row"><span className="k">Created</span><span className="v">{new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></div>
+            <div className="field-row"><span className="k">Description</span><span className="v" style={{ color: 'var(--fg-2)' }}>{p.name} — {p.category_name ? p.category_name.toLowerCase() + ' item' : 'retail item'}.</span></div>
           </div>
         </div>
       )}

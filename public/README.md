@@ -8,7 +8,7 @@ Everything in this directory is served as-is at the root URL (`/`). Files here a
 
 ```
 public/
-├── ziada.PNG           ← Master app logo — source of truth for all icon sizes
+├── ziadaposicon.jpeg           ← Master app logo — source of truth for all icon sizes
 ├── sw.js               ← PWA service worker
 └── icons/              ← Generated PWA icon set (9 sizes)
     ├── icon-48x48.png
@@ -24,15 +24,15 @@ public/
 
 ---
 
-## `ziada.PNG` — Master Logo
+## `ziadaposicon.jpeg` — Master Logo
 
 The official Ziada brand logo. White price-tag shape with "ziada." wordmark on a deep indigo background.
 
 | Property | Value |
 |---|---|
-| Dimensions | 6250 × 6250 px |
-| Format | PNG |
-| URL | `/ziada.PNG` |
+| Dimensions | 1080 × 1080 px |
+| Format | JPEG |
+| URL | `/ziadaposicon.jpeg` |
 
 **This is the source of truth for all icon derivations.** The 9 PWA icons in `public/icons/` were generated from this file using `sharp`:
 
@@ -41,7 +41,7 @@ const sharp = require('sharp');
 const sizes = [48, 72, 96, 128, 144, 152, 192, 384, 512];
 await Promise.all(
   sizes.map(s =>
-    sharp('public/ziada.PNG')
+    sharp('public/ziadaposicon.jpeg')
       .resize(s, s)
       .png()
       .toFile(`public/icons/icon-${s}x${s}.png`)
@@ -53,12 +53,12 @@ await Promise.all(
 
 | Surface | URL | Size |
 |---|---|---|
-| Landing page nav logo | `/ziada.PNG` | 26×26 (CSS scaled) |
-| Footer logo | `/ziada.PNG` | 26×26 (CSS scaled) |
-| Open Graph image (WhatsApp, Telegram, Slack link preview) | `/ziada.PNG` | 1200×1200 declared |
-| Twitter card image | `/ziada.PNG` | 1200×1200 declared |
+| Landing page nav logo | `/ziadaposicon.jpeg` | 26×26 (CSS scaled) |
+| Footer logo | `/ziadaposicon.jpeg` | 26×26 (CSS scaled) |
+| Open Graph image (WhatsApp, Telegram, Slack link preview) | `/ziadaposicon.jpeg` | 1200×1200 declared |
+| Twitter card image | `/ziadaposicon.jpeg` | 1200×1200 declared |
 
-The OG/Twitter URLs resolve to `https://www.ziadapos.com/ziada.PNG` because `metadataBase` in `app/layout.tsx` is set to the production domain.
+The OG/Twitter URLs resolve to `https://www.ziadapos.com/ziadaposicon.jpeg` because `metadataBase` in `app/layout.tsx` is set to the production domain.
 
 **Regenerating icons** after updating the logo:
 
@@ -67,7 +67,7 @@ node -e "
 const sharp = require('sharp');
 const sizes = [48, 72, 96, 128, 144, 152, 192, 384, 512];
 Promise.all(sizes.map(s =>
-  sharp('public/ziada.PNG')
+  sharp('public/ziadaposicon.jpeg')
     .resize(s, s)
     .png()
     .toFile('public/icons/icon-' + s + 'x' + s + '.png')
@@ -94,7 +94,7 @@ The PWA service worker implementing a cache-first offline strategy.
 
 ### Cache name
 
-`ziada-pos-v1`
+`ziada-pos-v2`
 
 Increment this string when deploying breaking changes to force cache invalidation on all clients.
 
@@ -107,7 +107,7 @@ const PRECACHE = [
   '/pos',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
-  '/ziada.PNG',
+  '/ziadaposicon.jpeg',
 ];
 ```
 
@@ -135,14 +135,14 @@ Only `GET` requests are intercepted. `POST`, `PUT`, `DELETE` etc. pass through d
 ### Cache lifecycle
 
 On `activate`:
-- Old caches (any key ≠ `ziada-pos-v1`) are deleted
+- Old caches (any key ≠ `ziada-pos-v2`) are deleted
 - `clients.claim()` is called so the new service worker takes control immediately
 
 ---
 
 ## `icons/` — PWA Icon Set
 
-9 PNG files generated from `ziada.PNG` for PWA installation:
+9 JPEG files generated from `ziadaposicon.jpeg` for PWA installation:
 
 | File | Size | Use case |
 |---|---|---|
@@ -179,4 +179,4 @@ background-image: url('/my-image.png');
 
 Assets in `public/` are served with long-lived cache headers by Vercel. Do not put sensitive files here — everything is publicly accessible.
 
-**For icons specifically:** add them to `components/icons.tsx` as SVG components rather than PNG files. Only use image files for photographic content, logos, and app icons.
+**For icons specifically:** add them to `components/icons.tsx` as SVG components rather than JPEG files. Only use image files for photographic content, logos, and app icons.

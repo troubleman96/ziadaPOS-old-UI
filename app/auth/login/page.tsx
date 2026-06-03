@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Suspense, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
@@ -58,7 +58,7 @@ function LeftPanel() {
       {/* Logo */}
       <div style={{ position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/ziada.PNG" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 7, objectFit: 'cover' }} />
+          <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 7, objectFit: 'cover' }} />
           <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>Ziada POS</span>
         </div>
       </div>
@@ -98,7 +98,7 @@ function LeftPanel() {
 }
 
 // ── Main login page ────────────────────────────────────────────────────────────
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const phoneRef = useRef<HTMLInputElement>(null);
@@ -282,7 +282,7 @@ export default function LoginPage() {
 
             {/* Mobile-only logo */}
             <div style={{ display: 'none', alignItems: 'center', gap: 9, marginBottom: 32 }} className="auth-mobile-logo">
-              <img src="/ziada.PNG" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
+              <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
               <span style={{ fontSize: 15, fontWeight: 600 }}>Ziada POS</span>
             </div>
             <style>{`.auth-mobile-logo { display: none !important; } @media (max-width: 768px) { .auth-mobile-logo { display: flex !important; } }`}</style>
@@ -393,5 +393,13 @@ export default function LoginPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

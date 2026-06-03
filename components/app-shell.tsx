@@ -7,6 +7,7 @@ import { Topbar } from './topbar';
 import { STORES } from '../lib/data';
 import { isAuthenticated, getCachedSubscription, cacheSubscription, getAccessToken } from '../lib/auth';
 import { authApi } from '../lib/api';
+import { ReviewPrompt } from './review-prompt';
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
@@ -120,7 +121,7 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
       // Cache says inactive — verify with the live API before blocking
       const token = getAccessToken();
       if (token) {
-        const result = await authApi.mySubscription(token);
+        const result = await authApi.mySubscription();
         if (result.success) {
           cacheSubscription(result.data);
           if (!result.data.is_active_now) {
@@ -210,6 +211,7 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
               {full ? children : <div className="body">{children}</div>}
             </div>
           </div>
+          <ReviewPrompt />
         </ThemeContext.Provider>
       </StoreContext.Provider>
     </NotifContext.Provider>

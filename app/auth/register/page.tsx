@@ -202,7 +202,7 @@ function LeftPanel() {
 
       <div style={{ position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/ziada.PNG" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 7, objectFit: 'cover' }} />
+          <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 7, objectFit: 'cover' }} />
           <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>Ziada POS</span>
         </div>
       </div>
@@ -551,7 +551,7 @@ export default function RegisterPage() {
             {/* Mobile logo */}
             <style>{`.reg-mobile-logo { display: none !important; } @media (max-width: 900px) { .reg-mobile-logo { display: flex !important; } }`}</style>
             <div className="reg-mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 9, marginBottom: 28 }}>
-              <img src="/ziada.PNG" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
+              <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
               <span style={{ fontSize: 15, fontWeight: 600 }}>Ziada POS</span>
             </div>
 

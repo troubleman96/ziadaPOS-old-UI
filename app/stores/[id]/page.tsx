@@ -1,98 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
 import { fmt, fmtShort } from '../../../lib/utils';
+import { storesApi, StoreDetail } from '../../../lib/api';
 
-// ── Store data (mirrors stores list page) ─────────────────────────────────────
-const STORES = [
-  {
-    id: 'kariakoo',
-    name: 'Duka Kuu — Kariakoo',
-    shortName: 'Kariakoo',
-    badge: 'HQ',
-    active: true,
-    status: 'open' as const,
-    statusLabel: 'Open',
-    statusNote: '3 tills active',
-    todayRevenue: 1_842_000,
-    todayTxns: 87,
-    staffOnDuty: 4,
-    period: 'Today',
-    address: 'Msimbazi St, Kariakoo, Dar es Salaam',
-    manager: 'Hamisi Mwakapaga',
-    phone: '+255 712 345 678',
-    email: 'kariakoo@dukakuu.co.tz',
-    color: '#6366f1',
-    openHours: '7:00 AM – 9:00 PM',
-    weekData: [1_640_000, 1_720_000, 1_580_000, 1_890_000, 1_842_000, 0, 0],
-    staff: [
-      { name: 'Hamisi Mwakapaga', role: 'Manager',   status: 'on-duty',  since: '7:00 AM' },
-      { name: 'Zawadi Kimani',    role: 'Cashier',    status: 'on-duty',  since: '7:00 AM' },
-      { name: 'Juma Salehe',      role: 'Cashier',    status: 'on-duty',  since: '8:00 AM' },
-      { name: 'Pendo Msongo',     role: 'Storekeeper',status: 'on-duty',  since: '8:00 AM' },
-      { name: 'Rashidi Ally',     role: 'Cashier',    status: 'off-duty', since: '—' },
-    ],
-  },
-  {
-    id: 'kinondoni',
-    name: 'Kinondoni Branch',
-    shortName: 'Kinondoni',
-    badge: null,
-    active: false,
-    status: 'open' as const,
-    statusLabel: 'Open',
-    statusNote: '2 tills',
-    todayRevenue: 980_000,
-    todayTxns: 46,
-    staffOnDuty: 3,
-    period: 'Today',
-    address: 'Morocco Rd, Kinondoni, Dar es Salaam',
-    manager: 'Amani Msongo',
-    phone: '+255 713 456 789',
-    email: 'kinondoni@dukakuu.co.tz',
-    color: '#34d399',
-    openHours: '7:30 AM – 8:30 PM',
-    weekData: [910_000, 960_000, 880_000, 1_020_000, 980_000, 0, 0],
-    staff: [
-      { name: 'Amani Msongo',   role: 'Manager',   status: 'on-duty',  since: '7:30 AM' },
-      { name: 'Fatuma Baraka',  role: 'Cashier',    status: 'on-duty',  since: '7:30 AM' },
-      { name: 'Daudi Mwanga',   role: 'Storekeeper',status: 'on-duty',  since: '9:00 AM' },
-      { name: 'Neema Halisi',   role: 'Cashier',    status: 'off-duty', since: '—' },
-    ],
-  },
-  {
-    id: 'ilala',
-    name: 'Ilala Outlet',
-    shortName: 'Ilala',
-    badge: null,
-    active: false,
-    status: 'closed' as const,
-    statusLabel: 'Closed',
-    statusNote: 'opens 8:00 AM',
-    todayRevenue: 620_000,
-    todayTxns: 31,
-    staffOnDuty: 2,
-    period: 'Yesterday',
-    address: 'Uhuru St, Ilala, Dar es Salaam',
-    manager: 'Pendo Kilimba',
-    phone: '+255 714 567 890',
-    email: 'ilala@dukakuu.co.tz',
-    color: '#fbbf24',
-    openHours: '8:00 AM – 7:00 PM',
-    weekData: [580_000, 610_000, 640_000, 595_000, 620_000, 0, 0],
-    staff: [
-      { name: 'Pendo Kilimba',  role: 'Manager',   status: 'off-duty', since: '—' },
-      { name: 'Salim Banda',    role: 'Cashier',    status: 'off-duty', since: '—' },
-      { name: 'Grace Wanjiku',  role: 'Storekeeper',status: 'off-duty', since: '—' },
-    ],
-  },
-];
+const SPINNER = (
+  <>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--line-2)', borderTopColor: 'var(--accent)', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+  </>
+);
 
 const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+const STORE_COLORS = ['#6366f1', '#34d399', '#fbbf24', '#fb7185', '#60a5fa', '#a78bfa'];
 
 // ── Mini sparkline ────────────────────────────────────────────────────────────
 function WeekBars({ data, color }: { data: number[]; color: string }) {
@@ -127,38 +52,67 @@ function WeekBars({ data, color }: { data: number[]; color: string }) {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function StoreDetailPage() {
-  const params  = useParams();
-  const id      = params.id as string;
-  const store   = STORES.find((s) => s.id === id);
+  const params = useParams();
+  const id = params.id as string;
 
+  const [store, setStore] = useState<StoreDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [tab, setTab] = useState<'overview' | 'staff' | 'edit'>('overview');
-  const [editValues, setEditValues] = useState({
-    name:      store?.name      ?? '',
-    address:   store?.address   ?? '',
-    manager:   store?.manager   ?? '',
-    phone:     store?.phone     ?? '',
-    email:     store?.email     ?? '',
-    openHours: store?.openHours ?? '',
-  });
   const [saved, setSaved] = useState(false);
+  const [editValues, setEditValues] = useState({
+    name: '', address: '', manager: '', phone: '', email: '', openHours: '',
+  });
 
-  if (!store) {
+  useEffect(() => {
+    setLoading(true);
+    storesApi.getDetail(id).then((res) => {
+      setLoading(false);
+      if (res.success) {
+        setStore(res.data);
+        setEditValues({
+          name: res.data.name ?? '',
+          address: res.data.address ?? '',
+          manager: res.data.manager_name ?? '',
+          phone: res.data.phone ?? '',
+          email: '',
+          openHours: '',
+        });
+      } else {
+        setError(true);
+      }
+    });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Stores', href: '/stores' }, { label: '…' }]}>
+        <div style={{ padding: 80, textAlign: 'center' }}>{SPINNER}</div>
+      </AppShell>
+    );
+  }
+
+  if (error || !store) {
     return (
       <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Stores', href: '/stores' }, { label: 'Not found' }]}>
         <div style={{ textAlign: 'center', padding: '80px 20px' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🏪</div>
           <div style={{ fontSize: 18, fontWeight: 500, marginBottom: 8 }}>Store not found</div>
-          <p style={{ color: 'var(--fg-3)', marginBottom: 24 }}>No store with ID "{id}" exists.</p>
+          <p style={{ color: 'var(--fg-3)', marginBottom: 24 }}>No store with ID &ldquo;{id}&rdquo; exists.</p>
           <Link href="/stores" className="btn btn-primary">← Back to Stores</Link>
         </div>
       </AppShell>
     );
   }
 
-  const weekTotal = store.weekData.reduce((a, b) => a + b, 0);
-  const activeDays = store.weekData.filter((v) => v > 0).length;
-  const avgDay     = activeDays > 0 ? weekTotal / activeDays : 0;
-  const isOpen     = store.status === 'open';
+  const storeColor = STORE_COLORS[0]; // use accent color since we don't have it in API
+  const weekData = store.week_data || [0, 0, 0, 0, 0, 0, 0];
+  const weekBreakdown = store.week_breakdown || [];
+  const staffRoster = store.staff_roster || [];
+  const weekTotal = weekData.reduce((a, b) => a + b, 0);
+  const activeDays = weekData.filter((v) => v > 0).length;
+  const avgDay = activeDays > 0 ? weekTotal / activeDays : 0;
+  const isOpen = store.status === 'open';
 
   function handleSave() {
     setSaved(true);
@@ -170,7 +124,7 @@ export default function StoreDetailPage() {
       crumbs={[
         { label: 'ziada', href: '/' },
         { label: 'Stores', href: '/stores' },
-        { label: store.shortName },
+        { label: store.name },
       ]}
       actions={
         <div style={{ display: 'flex', gap: 8 }}>
@@ -199,37 +153,32 @@ export default function StoreDetailPage() {
       <div className="surface" style={{ padding: '20px 24px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
         <div style={{
           width: 56, height: 56, borderRadius: 12, flexShrink: 0,
-          background: store.color + '22', border: '2px solid ' + store.color + '44',
-          display: 'grid', placeItems: 'center', color: store.color, fontSize: 24,
+          background: storeColor + '22', border: '2px solid ' + storeColor + '44',
+          display: 'grid', placeItems: 'center', color: storeColor, fontSize: 24,
         }}>
           {Icons.store}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 600, letterSpacing: '-0.015em' }}>{store.name}</h1>
-            {store.badge && (
-              <span className="mono" style={{ fontSize: 10, background: 'var(--accent)', color: '#fff', padding: '2px 7px', borderRadius: 5 }}>
-                {store.badge}
-              </span>
-            )}
             <span className={`pill ${isOpen ? 'good' : 'warn'}`}>
               <span className="dot-s" style={{ background: isOpen ? 'var(--good)' : 'var(--warn)' }}></span>
-              {store.statusLabel}
+              {isOpen ? 'Open' : 'Closed'}
             </span>
           </div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6C12.5 3.5 10.5 1.5 8 1.5z"/><circle cx="8" cy="6" r="1.5"/></g></svg>
-              {store.address}
-            </span>
-            <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3a1.5 1.5 0 0 1 1.5-1.5h1l1.5 3.5-1.5 1A9 9 0 0 0 10 10l1-1.5 3.5 1.5v1A1.5 1.5 0 0 1 13 12.5C7 12.5 3 8.5 3 3z"/></g></svg>
-              {store.phone}
-            </span>
-            <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1.5" y="3.5" width="13" height="9" rx="1.5"/><path d="M1.5 5.5l6.5 4 6.5-4"/></g></svg>
-              {store.openHours}
-            </span>
+            {store.address && (
+              <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6c0 3.5 4.5 8.5 4.5 8.5S12.5 9.5 12.5 6C12.5 3.5 10.5 1.5 8 1.5z"/><circle cx="8" cy="6" r="1.5"/></g></svg>
+                {store.address}
+              </span>
+            )}
+            {store.phone && (
+              <span className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3a1.5 1.5 0 0 1 1.5-1.5h1l1.5 3.5-1.5 1A9 9 0 0 0 10 10l1-1.5 3.5 1.5v1A1.5 1.5 0 0 1 13 12.5C7 12.5 3 8.5 3 3z"/></g></svg>
+                {store.phone}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -237,21 +186,21 @@ export default function StoreDetailPage() {
       {/* KPI strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         <div className="surface stat-card">
-          <span className="label">{store.period.toUpperCase()} REVENUE</span>
-          <span className="value">{fmtShort(store.todayRevenue)}</span>
-          <span className="sub">{store.statusNote}</span>
+          <span className="label">TODAY REVENUE</span>
+          <span className="value">{fmtShort(store.today_revenue)}</span>
+          <span className="sub">{store.today_txns} transactions</span>
         </div>
         <div className="surface stat-card">
           <span className="label">TRANSACTIONS</span>
-          <span className="value">{store.todayTxns}</span>
+          <span className="value">{store.today_txns}</span>
           <span className="sub">cash + mobile</span>
         </div>
         <div className="surface stat-card">
           <span className="label">STAFF ON DUTY</span>
           <span className="value" style={{ color: isOpen ? 'var(--good)' : 'var(--fg-3)' }}>
-            {store.staffOnDuty}
+            {store.staff_on_duty}
           </span>
-          <span className="sub">of {store.staff.length} assigned</span>
+          <span className="sub">of {staffRoster.length || store.staff_count} assigned</span>
         </div>
         <div className="surface stat-card">
           <span className="label">WEEK TOTAL</span>
@@ -268,7 +217,7 @@ export default function StoreDetailPage() {
             className={`tab${tab === t ? ' active' : ''}`}
             onClick={() => setTab(t)}
           >
-            {t === 'edit' ? 'Edit store' : t === 'staff' ? `Staff (${store.staff.length})` : 'Overview'}
+            {t === 'edit' ? 'Edit store' : t === 'staff' ? `Staff (${staffRoster.length || store.staff_count})` : 'Overview'}
           </button>
         ))}
       </div>
@@ -282,10 +231,9 @@ export default function StoreDetailPage() {
             <div className="surface" style={{ overflow: 'hidden' }}>
               <div className="card-head">
                 <span className="card-title">This week — daily revenue</span>
-                <span className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>Mon 19 – Sun 25 May 2026</span>
               </div>
               <div style={{ padding: '20px 24px 16px' }}>
-                <WeekBars data={store.weekData} color={store.color} />
+                <WeekBars data={weekData} color={storeColor} />
               </div>
               <div style={{
                 padding: '10px 16px', borderTop: '1px solid var(--line)',
@@ -297,52 +245,90 @@ export default function StoreDetailPage() {
             </div>
 
             {/* Daily stats */}
-            <div className="surface" style={{ overflow: 'hidden' }}>
-              <div className="card-head">
-                <span className="card-title">Daily performance</span>
+            {weekBreakdown.length > 0 ? (
+              <div className="surface" style={{ overflow: 'hidden' }}>
+                <div className="card-head">
+                  <span className="card-title">Daily performance</span>
+                </div>
+                <div className="table-scroll">
+                  <table className="table" style={{ width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th>Day</th>
+                        <th className="num">Revenue</th>
+                        <th className="num">Transactions</th>
+                        <th className="num">vs Avg</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {weekBreakdown.map((day) => {
+                        const diff = avgDay > 0 ? ((day.revenue - avgDay) / avgDay) * 100 : 0;
+                        return (
+                          <tr key={day.date} style={{ opacity: day.revenue === 0 ? 0.4 : 1 }}>
+                            <td>{new Date(day.date).toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}</td>
+                            <td className="num mono" style={{ fontSize: 13 }}>
+                              {day.revenue > 0 ? fmtShort(day.revenue) : '—'}
+                            </td>
+                            <td className="num mono" style={{ fontSize: 13 }}>
+                              {day.txn_count > 0 ? day.txn_count : '—'}
+                            </td>
+                            <td className="num">
+                              {day.revenue > 0 ? (
+                                <span className="mono" style={{ fontSize: 11.5, color: diff >= 0 ? 'var(--good)' : 'var(--bad)' }}>
+                                  {diff >= 0 ? '+' : ''}{diff.toFixed(0)}%
+                                </span>
+                              ) : (
+                                <span className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div className="table-scroll">
-                <table className="table" style={{ width: '100%' }}>
-                  <thead>
-                    <tr>
-                      <th>Day</th>
-                      <th className="num">Revenue</th>
-                      <th className="num">vs Avg</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {WEEK_DAYS.map((day, i) => {
-                      const v = store.weekData[i];
-                      const diff = avgDay > 0 ? ((v - avgDay) / avgDay) * 100 : 0;
-                      const isToday = i === 4; // Friday = today
-                      return (
-                        <tr key={day} style={{ opacity: v === 0 ? 0.4 : 1 }}>
-                          <td style={{ fontWeight: isToday ? 600 : 400 }}>
-                            {day}
-                            {isToday && <span className="pill accent" style={{ marginLeft: 8, fontSize: 9.5 }}>today</span>}
-                          </td>
-                          <td className="num mono" style={{ fontSize: 13, fontWeight: isToday ? 600 : 400 }}>
-                            {v > 0 ? fmtShort(v) : '—'}
-                          </td>
-                          <td className="num">
-                            {v > 0 ? (
-                              <span className={`mono`} style={{
-                                fontSize: 11.5,
-                                color: diff >= 0 ? 'var(--good)' : 'var(--bad)',
-                              }}>
-                                {diff >= 0 ? '+' : ''}{diff.toFixed(0)}%
-                              </span>
-                            ) : (
-                              <span className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>—</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            ) : (
+              <div className="surface" style={{ overflow: 'hidden' }}>
+                <div className="card-head">
+                  <span className="card-title">Daily performance</span>
+                </div>
+                <div className="table-scroll">
+                  <table className="table" style={{ width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th>Day</th>
+                        <th className="num">Revenue</th>
+                        <th className="num">vs Avg</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {WEEK_DAYS.map((day, i) => {
+                        const v = weekData[i];
+                        const diff = avgDay > 0 ? ((v - avgDay) / avgDay) * 100 : 0;
+                        return (
+                          <tr key={day} style={{ opacity: v === 0 ? 0.4 : 1 }}>
+                            <td>{day}</td>
+                            <td className="num mono" style={{ fontSize: 13 }}>
+                              {v > 0 ? fmtShort(v) : '—'}
+                            </td>
+                            <td className="num">
+                              {v > 0 ? (
+                                <span className="mono" style={{ fontSize: 11.5, color: diff >= 0 ? 'var(--good)' : 'var(--bad)' }}>
+                                  {diff >= 0 ? '+' : ''}{diff.toFixed(0)}%
+                                </span>
+                              ) : (
+                                <span className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>—</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Right sidebar */}
@@ -355,12 +341,12 @@ export default function StoreDetailPage() {
               </div>
               <div style={{ padding: '4px 16px 8px' }}>
                 {[
-                  { k: 'Address',   v: store.address },
-                  { k: 'Manager',   v: store.manager },
-                  { k: 'Phone',     v: store.phone },
-                  { k: 'Email',     v: store.email },
-                  { k: 'Hours',     v: store.openHours },
-                  { k: 'Status',    v: store.statusLabel },
+                  { k: 'Address',   v: store.address || '—' },
+                  { k: 'Manager',   v: store.manager_name || '—' },
+                  { k: 'Phone',     v: store.phone || '—' },
+                  { k: 'Region',    v: store.region },
+                  { k: 'Status',    v: isOpen ? 'Open' : 'Closed' },
+                  { k: 'Staff',     v: `${store.staff_count} assigned` },
                 ].map((row) => (
                   <div key={row.k} className="field-row">
                     <span className="k">{row.k}</span>
@@ -391,42 +377,48 @@ export default function StoreDetailPage() {
       {tab === 'staff' && (
         <div className="surface" style={{ overflow: 'hidden' }}>
           <div className="card-head">
-            <span className="card-title">Staff roster — {store.shortName}</span>
+            <span className="card-title">Staff roster — {store.name}</span>
             <button className="btn btn-primary" style={{ padding: '5px 12px', fontSize: 12 }}>
               {Icons.plus} Add staff
             </button>
           </div>
-          {store.staff.map((s, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              padding: '14px 16px',
-              borderBottom: i < store.staff.length - 1 ? '1px solid var(--line)' : 'none',
-            }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 999, flexShrink: 0,
-                background: s.status === 'on-duty' ? store.color + '22' : 'var(--bg-3)',
-                border: '1px solid ' + (s.status === 'on-duty' ? store.color + '44' : 'var(--line)'),
-                display: 'grid', placeItems: 'center',
-                fontSize: 13, fontWeight: 600,
-                color: s.status === 'on-duty' ? store.color : 'var(--fg-4)',
-              }}>
-                {s.name.split(' ').map((n) => n[0]).slice(0, 2).join('')}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 2 }}>{s.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>{s.role}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span className={`pill ${s.status === 'on-duty' ? 'good' : ''}`} style={{ marginBottom: 4, display: 'block' }}>
-                  {s.status === 'on-duty' ? 'On duty' : 'Off duty'}
-                </span>
-                {s.since !== '—' && (
-                  <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)' }}>since {s.since}</div>
-                )}
-              </div>
-              <button className="icon-btn" style={{ width: 28, height: 28 }}>{Icons.edit}</button>
+          {staffRoster.length === 0 ? (
+            <div style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>
+              No staff roster available.
             </div>
-          ))}
+          ) : (
+            staffRoster.map((s, i) => (
+              <div key={s.id} style={{
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '14px 16px',
+                borderBottom: i < staffRoster.length - 1 ? '1px solid var(--line)' : 'none',
+              }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 999, flexShrink: 0,
+                  background: s.on_duty ? storeColor + '22' : 'var(--bg-3)',
+                  border: '1px solid ' + (s.on_duty ? storeColor + '44' : 'var(--line)'),
+                  display: 'grid', placeItems: 'center',
+                  fontSize: 13, fontWeight: 600,
+                  color: s.on_duty ? storeColor : 'var(--fg-4)',
+                }}>
+                  {s.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, marginBottom: 2 }}>{s.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>{s.role}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <span className={`pill ${s.on_duty ? 'good' : ''}`} style={{ marginBottom: 4, display: 'block' }}>
+                    {s.on_duty ? 'On duty' : 'Off duty'}
+                  </span>
+                  {s.phone && (
+                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)' }}>{s.phone}</div>
+                  )}
+                </div>
+                <button className="icon-btn" style={{ width: 28, height: 28 }}>{Icons.edit}</button>
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -549,9 +541,9 @@ export default function StoreDetailPage() {
               <div style={{ padding: '4px 16px 8px' }}>
                 {[
                   { k: 'Store ID',  v: store.id },
-                  { k: 'Status',    v: store.statusLabel },
-                  { k: 'Staff',     v: `${store.staff.length} assigned` },
-                  { k: 'Today rev', v: fmtShort(store.todayRevenue) },
+                  { k: 'Status',    v: isOpen ? 'Open' : 'Closed' },
+                  { k: 'Staff',     v: `${store.staff_count} assigned` },
+                  { k: 'Today rev', v: fmtShort(store.today_revenue) },
                 ].map((row) => (
                   <div key={row.k} className="field-row">
                     <span className="k">{row.k}</span>

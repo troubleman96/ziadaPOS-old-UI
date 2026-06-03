@@ -3,9 +3,14 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
-import { NOTES, type Note } from '../../lib/data';
+import { notebookApi, Note } from '../../lib/api';
 
-const uid = () => Math.random().toString(36).slice(2, 9);
+const SPINNER = (
+  <>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--line-2)', borderTopColor: 'var(--accent)', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+  </>
+);
 
 const FOLDERS = ['All notes', 'Suppliers', 'Staff', 'Marketing', 'Ideas'] as const;
 
@@ -189,12 +194,30 @@ function NoteModal({ open, editing, form, onChange, onSubmit, onDelete, onClose 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function NotebookPage() {
-  const [notes, setNotes] = useState<Note[]>(NOTES);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFolder, setActiveFolder] = useState<string>('All notes');
   const [query, setQuery] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Note | null>(null);
   const [form, setForm] = useState({ title: '', content: '', tags: '' });
+
+  // ── Initial fetch ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    setLoading(true);
+    notebookApi.getNotes().then((res) => {
+      setLoading(false);
+      if (res.success) {
+        const data = res.data as unknown as { results?: Note[] } | Note[];
+        if (Array.isArray(data)) setNotes(data);
+        else if (data && typeof data === 'object' && 'results' in data && Array.isArray((data as { results: Note[] }).results)) {
+          setNotes((data as { results: Note[] }).results);
+        } else {
+          setNotes([]);
+        }
+      }
+    });
+  }, []);
 
   // ── Folder counts ──────────────────────────────────────────────────────────
   const folderCount = (folder: string) =>
@@ -230,7 +253,7 @@ export default function NotebookPage() {
     setModalOpen(true);
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return;
     const tags = form.tags
@@ -239,27 +262,24 @@ export default function NotebookPage() {
       .filter(Boolean);
 
     if (editing) {
-      setNotes((prev) =>
-        prev.map((n) =>
-          n.id === editing.id
-            ? { ...n, title: form.title, content: form.content, tags, date: 'Just now' }
-            : n,
-        ),
-      );
+      const res = await notebookApi.updateNote(editing.id, { title: form.title, content: form.content, tags });
+      if (res.success) {
+        setNotes((prev) => prev.map((n) => n.id === editing.id ? res.data : n));
+      } else {
+        // Optimistic fallback
+        setNotes((prev) => prev.map((n) => n.id === editing.id ? { ...n, title: form.title, content: form.content, tags, date_label: 'Just now' } : n));
+      }
     } else {
-      const newNote: Note = {
-        id: uid(),
-        title: form.title,
-        content: form.content,
-        tags,
-        date: 'Just now',
-      };
-      setNotes((prev) => [newNote, ...prev]);
+      const res = await notebookApi.createNote({ title: form.title, content: form.content, tags });
+      if (res.success) {
+        setNotes((prev) => [res.data, ...prev]);
+      }
     }
     setModalOpen(false);
   };
 
-  const deleteNote = (id: string) => {
+  const deleteNote = async (id: string) => {
+    await notebookApi.deleteNote(id);
     setNotes((prev) => prev.filter((n) => n.id !== id));
     setModalOpen(false);
     setEditing(null);
@@ -393,8 +413,13 @@ export default function NotebookPage() {
             </div>
           )}
 
+          {/* Loading state */}
+          {loading && (
+            <div style={{ padding: 48, textAlign: 'center' }}>{SPINNER}</div>
+          )}
+
           {/* Empty state */}
-          {filtered.length === 0 && (
+          {!loading && filtered.length === 0 && (
             <div
               className="surface"
               style={{ padding: '52px 24px', textAlign: 'center', borderStyle: 'dashed' }}
@@ -421,7 +446,7 @@ export default function NotebookPage() {
           )}
 
           {/* Note cards */}
-          {filtered.map((n) => (
+          {!loading && filtered.map((n) => (
             <div
               key={n.id}
               className="surface note-card"
@@ -434,7 +459,7 @@ export default function NotebookPage() {
                   {n.title}
                 </h3>
                 <span className="mono" style={{ fontSize: 11, color: 'var(--fg-4)', flexShrink: 0, paddingTop: 1 }}>
-                  {n.date}
+                  {n.date_label}
                 </span>
                 <NoteMenu onEdit={() => openEdit(n)} onDelete={() => confirmDelete(n.id)} />
               </div>
@@ -458,7 +483,7 @@ export default function NotebookPage() {
           ))}
 
           {/* Footer count when results exist */}
-          {filtered.length > 0 && (
+          {!loading && filtered.length > 0 && (
             <div
               className="mono"
               style={{ fontSize: 11, color: 'var(--fg-4)', textAlign: 'right', paddingTop: 4 }}

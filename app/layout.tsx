@@ -36,29 +36,25 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/icons/icon-48x48.png',   sizes: '48x48',   type: 'image/png' },
-      { url: '/icons/icon-96x96.png',   sizes: '96x96',   type: 'image/png' },
-      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg' },
     ],
     apple: [
-      { url: '/icons/icon-152x152.png', sizes: '152x152', type: 'image/png' },
-      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg' },
     ],
-    shortcut: '/icons/icon-192x192.png',
+    shortcut: '/ziadaposicon.jpeg',
   },
   openGraph: {
     type: 'website',
     title: 'Ziada POS',
     description: 'Retail operating system for East African traders.',
     siteName: 'Ziada POS',
-    images: [{ url: '/ziada.PNG', width: 1200, height: 1200, alt: 'Ziada POS' }],
+    images: [{ url: '/ziadaposicon.jpeg', width: 1200, height: 1200, alt: 'Ziada POS' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Ziada POS',
     description: 'Retail operating system for East African traders.',
-    images: ['/ziada.PNG'],
+    images: ['/ziadaposicon.jpeg'],
   },
 };
 
@@ -79,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+        <meta name="msapplication-TileImage" content="/ziadaposicon.jpeg" />
         <meta name="msapplication-TileColor" content="#4f46e5" />
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>

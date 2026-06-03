@@ -144,6 +144,7 @@ export const Icons = {
   ),
   filter: <Icon d={<><path d="M2 4h12" /><path d="M4 8h8" /><path d="M6 12h4" /></>} />,
   download: <Icon d={<><path d="M8 2v8" /><path d="M5 7l3 3 3-3" /><path d="M2.5 13.5h11" /></>} />,
+  upload: <Icon d={<><path d="M8 10V2" /><path d="M5 5l3-3 3 3" /><path d="M2.5 13.5h11" /></>} />,
   command: (
     <Icon d={<>
       <path d="M5.5 2a1.5 1.5 0 0 1 1.5 1.5V7H5.5a1.5 1.5 0 1 1 0-3z" />

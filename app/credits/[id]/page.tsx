@@ -1,12 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { use } from 'react';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
 import { fmt } from '../../../lib/utils';
-import { CREDIT_CUSTOMERS } from '../../../lib/data';
+import { creditsApi, CreditCustomerProfile } from '../../../lib/api';
+
+const SPINNER = (
+  <>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--line-2)', borderTopColor: 'var(--accent)', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+  </>
+);
 
 export default function CreditDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -14,9 +21,63 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('Cash');
+  const [saving, setSaving] = useState(false);
 
-  const c = CREDIT_CUSTOMERS.find((x) => x.id === id) || CREDIT_CUSTOMERS[0];
-  const initials = c.name.split(' ').map((s: string) => s[0]).slice(0, 2).join('').toUpperCase();
+  const [profile, setProfile] = useState<CreditCustomerProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    creditsApi.getCustomerProfile(id).then((res) => {
+      setLoading(false);
+      if (res.success) setProfile(res.data);
+      else setError(true);
+    });
+  }, [id]);
+
+  async function handlePayment() {
+    if (!profile || !amount) return;
+    setSaving(true);
+    const res = await creditsApi.recordPayment(profile.customer.id, { amount: parseFloat(amount), method });
+    setSaving(false);
+    if (res.success) {
+      setPaymentOpen(false);
+      setAmount('');
+      // reload
+      creditsApi.getCustomerProfile(id).then(r => { if (r.success) setProfile(r.data); });
+    }
+  }
+
+  if (loading) {
+    return (
+      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Credits', href: '/credits' }, { label: '…' }]}>
+        <div style={{ padding: 80, textAlign: 'center' }}>{SPINNER}</div>
+      </AppShell>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Credits', href: '/credits' }, { label: 'Not found' }]}>
+        <div style={{ textAlign: 'center', padding: '80px 20px' }}>
+          <div style={{ fontSize: 18, fontWeight: 500, marginBottom: 8 }}>Customer not found</div>
+          <p style={{ color: 'var(--fg-3)', marginBottom: 24 }}>No credit profile found for this customer.</p>
+          <Link href="/credits" className="btn btn-primary">← Back to credits</Link>
+        </div>
+      </AppShell>
+    );
+  }
+
+  const c = profile.customer;
+  const tabs = profile.tabs ?? [];
+  const payments = profile.payments ?? [];
+  const messages = profile.messages ?? [];
+  const notes = profile.notes ?? [];
+
+  const initials = c.initials || c.name.split(' ').map((s: string) => s[0]).slice(0, 2).join('').toUpperCase();
+  const totalBalance = tabs.reduce((s, t) => s + t.balance, 0);
+  const overdueStatus = tabs.some(t => t.is_overdue) ? 'overdue' : tabs.some(t => t.due_date && new Date(t.due_date) <= new Date(Date.now() + 7*86400000)) ? 'due-soon' : 'current';
 
   return (
     <AppShell
@@ -40,32 +101,32 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, marginBottom: 24, flexWrap: 'wrap' }}>
-        <div style={{ width: 64, height: 64, borderRadius: 999, background: `linear-gradient(135deg, oklch(70% 0.18 ${c.avatarHue}), oklch(60% 0.18 ${c.avatarHue + 30}))`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 600, flexShrink: 0 }}>
+        <div style={{ width: 64, height: 64, borderRadius: 999, background: `hsl(${c.avatar_hue}, 60%, 50%)`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 22, fontWeight: 600, flexShrink: 0 }}>
           {initials}
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
             <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>{c.name}</h1>
-            {c.status === 'overdue'  && <span className="pill bad"  style={{ fontSize: 11 }}>{-c.dueDays}d overdue</span>}
-            {c.status === 'due-soon' && <span className="pill warn" style={{ fontSize: 11 }}>Due in {c.dueDays}d</span>}
-            {c.status === 'current'  && <span className="pill good" style={{ fontSize: 11 }}>Current</span>}
+            {overdueStatus === 'overdue'   && <span className="pill bad"  style={{ fontSize: 11 }}>Overdue</span>}
+            {overdueStatus === 'due-soon'  && <span className="pill warn" style={{ fontSize: 11 }}>Due soon</span>}
+            {overdueStatus === 'current'   && <span className="pill good" style={{ fontSize: 11 }}>Current</span>}
           </div>
           <div className="mono" style={{ fontSize: 12, color: 'var(--fg-3)', marginBottom: 14 }}>
             {c.id} <span style={{ color: 'var(--fg-4)', margin: '0 6px' }}>·</span>
             {c.phone}
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <div style={{ padding: '10px 16px', borderRadius: 8, background: 'var(--bg-3)', border: '1px solid var(--line)' }}>
               <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>BALANCE</div>
-              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: c.status === 'overdue' ? 'var(--bad)' : 'var(--fg)', marginTop: 2 }}>{fmt(c._balance ?? 0)}</div>
+              <div className="mono" style={{ fontSize: 20, fontWeight: 600, color: overdueStatus === 'overdue' ? 'var(--bad)' : 'var(--fg)', marginTop: 2 }}>{fmt(c.open_credit)}</div>
             </div>
             <div style={{ padding: '10px 16px', borderRadius: 8, background: 'var(--bg-3)', border: '1px solid var(--line)' }}>
               <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>OPEN TABS</div>
-              <div style={{ fontSize: 20, fontWeight: 500, marginTop: 2 }}>{c.tabs.length}</div>
+              <div style={{ fontSize: 20, fontWeight: 500, marginTop: 2 }}>{tabs.length}</div>
             </div>
             <div style={{ padding: '10px 16px', borderRadius: 8, background: 'var(--bg-3)', border: '1px solid var(--line)' }}>
               <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>PAYMENTS</div>
-              <div style={{ fontSize: 20, fontWeight: 500, marginTop: 2 }}>{c.payments.length}</div>
+              <div style={{ fontSize: 20, fontWeight: 500, marginTop: 2 }}>{payments.length}</div>
             </div>
           </div>
         </div>
@@ -85,25 +146,25 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
             <div className="surface" style={{ marginBottom: 14 }}>
               <div className="card-head">
                 <span className="card-title">Open credit tabs</span>
-                <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>{c.tabs.length} transactions</span>
+                <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>{tabs.length} transactions</span>
               </div>
               <div className="table-scroll">
               <table className="table">
                 <thead><tr>
                   <th style={{ width: 120 }}>TXN ID</th>
                   <th style={{ width: 100 }}>DATE</th>
-                  <th>ITEMS</th>
-                  <th style={{ width: 90 }}>CASHIER</th>
+                  <th style={{ width: 90 }}>STATUS</th>
                   <th style={{ width: 120, textAlign: 'right' }} className="num">AMOUNT</th>
+                  <th style={{ width: 120, textAlign: 'right' }} className="num">BALANCE</th>
                 </tr></thead>
                 <tbody>
-                  {c.tabs.map((t, i) => (
-                    <tr key={i}>
-                      <td className="mono" style={{ color: 'var(--accent)' }}>{t.id}</td>
-                      <td className="mono" style={{ color: 'var(--fg-3)' }}>{t.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
-                      <td style={{ color: 'var(--fg-2)' }}>{`${t.items} items`}</td>
-                      <td className="mono" style={{ color: 'var(--fg-3)', fontSize: 11.5 }}>{t.cashier}</td>
-                      <td className="num" style={{ color: 'var(--bad)', fontWeight: 500 }}>{fmt(t.amount)}</td>
+                  {tabs.map((t) => (
+                    <tr key={t.id}>
+                      <td className="mono" style={{ color: 'var(--accent)' }}>{t.txn_number}</td>
+                      <td className="mono" style={{ color: 'var(--fg-3)' }}>{new Date(t.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
+                      <td><span className={`pill ${t.is_overdue ? 'bad' : t.status === 'paid' ? 'good' : 'warn'}`}>{t.status}</span></td>
+                      <td className="num" style={{ color: 'var(--fg-2)', fontWeight: 500 }}>{fmt(t.amount)}</td>
+                      <td className="num" style={{ color: 'var(--bad)', fontWeight: 500 }}>{fmt(t.balance)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -117,7 +178,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
                 <span className="card-title">Payment history</span>
                 <button onClick={() => setPaymentOpen(true)} className="btn btn-primary" style={{ padding: '5px 10px', fontSize: 12 }}>+ Record payment</button>
               </div>
-              {c.payments.length === 0 ? (
+              {payments.length === 0 ? (
                 <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>No payments recorded yet.</div>
               ) : (
                 <div className="table-scroll">
@@ -129,9 +190,9 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
                     <th style={{ width: 120, textAlign: 'right' }} className="num">AMOUNT</th>
                   </tr></thead>
                   <tbody>
-                    {c.payments.map((p, i) => (
-                      <tr key={i} style={{ cursor: 'default' }}>
-                        <td className="mono" style={{ color: 'var(--fg-3)' }}>{p.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
+                    {payments.map((p) => (
+                      <tr key={p.id} style={{ cursor: 'default' }}>
+                        <td className="mono" style={{ color: 'var(--fg-3)' }}>{new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
                         <td><span className="pill good">{p.method}</span></td>
                         <td style={{ color: 'var(--fg-2)' }}>{p.note}</td>
                         <td className="num" style={{ color: 'var(--good)', fontWeight: 500 }}>{fmt(p.amount)}</td>
@@ -152,17 +213,19 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
                 <div className="field-row"><span className="k">Name</span><span className="v">{c.name}</span></div>
                 <div className="field-row"><span className="k">Phone</span><span className="v mono">{c.phone}</span></div>
                 <div className="field-row"><span className="k">Customer ID</span><span className="v mono" style={{ color: 'var(--fg-3)' }}>{c.id}</span></div>
-                <div className="field-row"><span className="k">Balance</span><span className="v mono" style={{ color: c.status === 'overdue' ? 'var(--bad)' : 'var(--fg)' }}>{fmt(c._balance ?? 0)}</span></div>
-                <div className="field-row"><span className="k">Status</span><span className="v">{c.status}</span></div>
+                <div className="field-row"><span className="k">Open credit</span><span className="v mono" style={{ color: overdueStatus === 'overdue' ? 'var(--bad)' : 'var(--fg)' }}>{fmt(c.open_credit)}</span></div>
+                <div className="field-row"><span className="k">Total spent</span><span className="v mono">{fmt(c.total_spent)}</span></div>
+                <div className="field-row"><span className="k">Avg ticket</span><span className="v mono">{fmt(c.avg_ticket)}</span></div>
+                {c.last_visit && <div className="field-row"><span className="k">Last visit</span><span className="v mono">{new Date(c.last_visit).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span></div>}
               </div>
             </div>
 
-            {c.notes.length > 0 && (
+            {notes.length > 0 && (
               <div className="surface">
                 <div className="card-head"><span className="card-title">Notes</span></div>
                 <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {c.notes.map((n: { date: Date; by: string; body: string }, i: number) => (
-                    <div key={i} style={{ fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.55, padding: '10px 12px', background: 'var(--bg-3)', borderRadius: 6 }}>{n.body}</div>
+                  {notes.map((n) => (
+                    <div key={n.id} style={{ fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.55, padding: '10px 12px', background: 'var(--bg-3)', borderRadius: 6 }}>{n.body}</div>
                   ))}
                 </div>
               </div>
@@ -174,26 +237,26 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
       {tab === 'tabs' && (
         <div className="surface">
           <div className="card-head">
-            <span className="card-title">All credit tabs · {c.tabs.length} transactions</span>
-            <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Total: <span style={{ color: 'var(--bad)' }}>{fmt(c._balance ?? 0)}</span></span>
+            <span className="card-title">All credit tabs · {tabs.length} transactions</span>
+            <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Total: <span style={{ color: 'var(--bad)' }}>{fmt(c.open_credit)}</span></span>
           </div>
           <div className="table-scroll">
           <table className="table">
             <thead><tr>
               <th style={{ width: 120 }}>TXN ID</th>
               <th style={{ width: 100 }}>DATE</th>
-              <th>ITEMS</th>
-              <th style={{ width: 90 }}>CASHIER</th>
+              <th style={{ width: 90 }}>STATUS</th>
               <th style={{ width: 120, textAlign: 'right' }} className="num">AMOUNT</th>
+              <th style={{ width: 120, textAlign: 'right' }} className="num">BALANCE</th>
             </tr></thead>
             <tbody>
-              {c.tabs.map((t, i) => (
-                <tr key={i}>
-                  <td className="mono" style={{ color: 'var(--accent)' }}>{t.id}</td>
-                  <td className="mono" style={{ color: 'var(--fg-3)' }}>{t.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
-                  <td style={{ color: 'var(--fg-2)' }}>{`${t.items} items`}</td>
-                  <td className="mono" style={{ color: 'var(--fg-3)', fontSize: 11.5 }}>{t.cashier}</td>
-                  <td className="num" style={{ color: 'var(--bad)', fontWeight: 500 }}>{fmt(t.amount)}</td>
+              {tabs.map((t) => (
+                <tr key={t.id}>
+                  <td className="mono" style={{ color: 'var(--accent)' }}>{t.txn_number}</td>
+                  <td className="mono" style={{ color: 'var(--fg-3)' }}>{new Date(t.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
+                  <td><span className={`pill ${t.is_overdue ? 'bad' : t.status === 'paid' ? 'good' : 'warn'}`}>{t.status}</span></td>
+                  <td className="num" style={{ color: 'var(--fg-2)', fontWeight: 500 }}>{fmt(t.amount)}</td>
+                  <td className="num" style={{ color: 'var(--bad)', fontWeight: 500 }}>{fmt(t.balance)}</td>
                 </tr>
               ))}
             </tbody>
@@ -208,7 +271,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
             <span className="card-title">Payment history</span>
             <button onClick={() => setPaymentOpen(true)} className="btn btn-primary" style={{ padding: '5px 10px', fontSize: 12 }}>+ Record payment</button>
           </div>
-          {c.payments.length === 0 ? (
+          {payments.length === 0 ? (
             <div style={{ padding: '48px', textAlign: 'center', color: 'var(--fg-3)' }}>No payments recorded yet.</div>
           ) : (
             <div className="table-scroll">
@@ -220,9 +283,9 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
                 <th style={{ width: 130, textAlign: 'right' }} className="num">AMOUNT</th>
               </tr></thead>
               <tbody>
-                {c.payments.map((p, i) => (
-                  <tr key={i} style={{ cursor: 'default' }}>
-                    <td className="mono" style={{ color: 'var(--fg-3)' }}>{p.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
+                {payments.map((p) => (
+                  <tr key={p.id} style={{ cursor: 'default' }}>
+                    <td className="mono" style={{ color: 'var(--fg-3)' }}>{new Date(p.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</td>
                     <td><span className="pill good">{p.method}</span></td>
                     <td style={{ color: 'var(--fg-2)' }}>{p.note}</td>
                     <td className="num" style={{ color: 'var(--good)', fontWeight: 500 }}>{fmt(p.amount)}</td>
@@ -241,10 +304,21 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
             <span className="card-title">Messages & reminders</span>
             <button className="btn btn-primary" style={{ padding: '5px 10px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.sparkles} Draft with AI</button>
           </div>
-          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--fg-3)' }}>
-            <div style={{ fontSize: 14, marginBottom: 8 }}>No messages sent yet</div>
-            <button className="btn btn-soft" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{Icons.sparkles} Draft reminder in Swahili</button>
-          </div>
+          {messages.length === 0 ? (
+            <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--fg-3)' }}>
+              <div style={{ fontSize: 14, marginBottom: 8 }}>No messages sent yet</div>
+              <button className="btn btn-soft" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{Icons.sparkles} Draft reminder in Swahili</button>
+            </div>
+          ) : (
+            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {messages.map((m) => (
+                <div key={m.id} style={{ padding: '10px 14px', borderRadius: 8, background: m.direction === 'outbound' ? 'var(--accent-soft)' : 'var(--bg-3)', border: '1px solid var(--line)', fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.55 }}>
+                  <div style={{ marginBottom: 4 }}>{m.body}</div>
+                  <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{m.channel} · {m.sent_by_name} · {new Date(m.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -258,17 +332,17 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
             </div>
             <div style={{ padding: '16px 20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 0', borderBottom: '1px solid var(--line)', marginBottom: 16 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 999, background: `linear-gradient(135deg, var(--accent), #a855f7)`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 600 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 999, background: `hsl(${c.avatar_hue}, 60%, 50%)`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 600 }}>
                   {initials}
                 </div>
                 <div>
                   <div style={{ fontSize: 13.5, fontWeight: 500 }}>{c.name}</div>
-                  <div className="mono" style={{ fontSize: 11, color: 'var(--bad)' }}>Outstanding: {fmt(c._balance ?? 0)}</div>
+                  <div className="mono" style={{ fontSize: 11, color: 'var(--bad)' }}>Outstanding: {fmt(c.open_credit)}</div>
                 </div>
               </div>
               <div style={{ marginBottom: 14 }}>
                 <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>AMOUNT (TZS)</label>
-                <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder={String(c._balance ?? 0)} style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 15, fontFamily: 'var(--mono)', outline: 0, boxSizing: 'border-box' }} />
+                <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder={String(c.open_credit)} style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 15, fontFamily: 'var(--mono)', outline: 0, boxSizing: 'border-box' }} />
               </div>
               <div style={{ marginBottom: 20 }}>
                 <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', marginBottom: 6 }}>METHOD</div>
@@ -278,8 +352,8 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
                   ))}
                 </div>
               </div>
-              <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '10px', fontSize: 13.5, display: 'flex', alignItems: 'center' }}>
-                Confirm payment
+              <button onClick={handlePayment} disabled={saving} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '10px', fontSize: 13.5, display: 'flex', alignItems: 'center' }}>
+                {saving ? 'Saving…' : 'Confirm payment'}
               </button>
             </div>
           </div>

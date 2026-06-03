@@ -1,11 +1,18 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
-import { CREDIT_CUSTOMERS, CREDIT_TOTALS, AGING_BUCKETS } from '../../lib/data';
+import { creditsApi, CreditCustomer, CreditsDashboard } from '../../lib/api';
+
+const SPINNER = (
+  <>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--line-2)', borderTopColor: 'var(--accent)', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+  </>
+);
 
 const PhoneIcon = () => <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M3.5 2.5l2 .5 1 2.5-1.5 1.5a8 8 0 0 0 4 4l1.5-1.5 2.5 1 .5 2-1 1a11 11 0 0 1-10-10l1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>;
 const WhatsAppMini = () => <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 14l1-3a6 6 0 1 1 2.5 2.5L2 14z"/></g></svg>;
@@ -21,7 +28,9 @@ function StatusPill({ status, days }: { status: string; days: number }) {
   return <span className="pill good" style={{ fontSize: 11 }}>Current · {days}d</span>;
 }
 
-function AgingBar({ buckets }: { buckets: typeof AGING_BUCKETS }) {
+type AgingBucket = { label: string; range: string; amount: number; color: string };
+
+function AgingBar({ buckets }: { buckets: AgingBucket[] }) {
   const total = buckets.reduce((s, b) => s + b.amount, 0) || 1;
   return (
     <div>
@@ -49,9 +58,23 @@ function AgingBar({ buckets }: { buckets: typeof AGING_BUCKETS }) {
 }
 
 // ── Record Payment Drawer ─────────────────────────────────────────────────────
-function RecordPaymentDrawer({ open, customer, onClose }: { open: boolean; customer: typeof CREDIT_CUSTOMERS[0] | null; onClose: () => void }) {
+function RecordPaymentDrawer({ open, customer, onClose, onSuccess }: { open: boolean; customer: CreditCustomer | null; onClose: () => void; onSuccess: () => void }) {
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState('Cash');
+  const [saving, setSaving] = useState(false);
+
+  async function handleConfirm() {
+    if (!customer || !amount) return;
+    setSaving(true);
+    const res = await creditsApi.recordPayment(customer.id, { amount: parseFloat(amount), method });
+    setSaving(false);
+    if (res.success) {
+      setAmount('');
+      onSuccess();
+      onClose();
+    }
+  }
+
   if (!open || !customer) return null;
   return (
     <div className="drawer-overlay" onClick={onClose}>
@@ -62,12 +85,12 @@ function RecordPaymentDrawer({ open, customer, onClose }: { open: boolean; custo
         </div>
         <div style={{ padding: '16px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 0', borderBottom: '1px solid var(--line)', marginBottom: 16 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 999, background: `linear-gradient(135deg, var(--accent), #a855f7)`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 600 }}>
-              {avatarFromName(customer.name)}
+            <div style={{ width: 36, height: 36, borderRadius: 999, background: `hsl(${customer.avatar_hue}, 60%, 50%)`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 600 }}>
+              {customer.initials || avatarFromName(customer.name)}
             </div>
             <div>
               <div style={{ fontSize: 13.5, fontWeight: 500 }}>{customer.name}</div>
-              <div className="mono" style={{ fontSize: 11, color: 'var(--bad)' }}>Outstanding: {fmt(customer._balance ?? 0)}</div>
+              <div className="mono" style={{ fontSize: 11, color: 'var(--bad)' }}>Outstanding: {fmt(customer.balance)}</div>
             </div>
           </div>
           <div style={{ marginBottom: 14 }}>
@@ -76,7 +99,7 @@ function RecordPaymentDrawer({ open, customer, onClose }: { open: boolean; custo
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder={String(customer._balance ?? 0)}
+              placeholder={String(customer.balance)}
               style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 15, fontFamily: 'var(--mono)', outline: 0 }}
             />
           </div>
@@ -88,8 +111,8 @@ function RecordPaymentDrawer({ open, customer, onClose }: { open: boolean; custo
               ))}
             </div>
           </div>
-          <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '10px', fontSize: 13.5 }}>
-            Confirm payment
+          <button onClick={handleConfirm} disabled={saving} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '10px', fontSize: 13.5 }}>
+            {saving ? 'Saving…' : 'Confirm payment'}
           </button>
         </div>
       </div>
@@ -100,18 +123,41 @@ function RecordPaymentDrawer({ open, customer, onClose }: { open: boolean; custo
 export default function CreditsPage() {
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
-  const [paymentTarget, setPaymentTarget] = useState<typeof CREDIT_CUSTOMERS[0] | null>(null);
+  const [paymentTarget, setPaymentTarget] = useState<CreditCustomer | null>(null);
+  const [dashboard, setDashboard] = useState<CreditsDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => CREDIT_CUSTOMERS.filter((c) => {
-    if (filter === 'overdue'  && c.status !== 'overdue')   return false;
-    if (filter === 'due-soon' && c.status !== 'due-soon')  return false;
-    if (filter === 'current'  && c.status !== 'current')   return false;
+  const loadDashboard = useCallback(() => {
+    setLoading(true);
+    const params = filter !== 'all' ? `status=${filter}` : undefined;
+    creditsApi.getDashboard(params).then((res) => {
+      setLoading(false);
+      if (res.success) setDashboard(res.data);
+    });
+  }, [filter]);
+
+  useEffect(() => { loadDashboard(); }, [loadDashboard]);
+
+  const kpis = dashboard?.kpis;
+  const agingBuckets = dashboard?.aging_buckets ?? [];
+  const allCustomers = dashboard?.customers ?? [];
+
+  const filtered = useMemo(() => {
+    let list = allCustomers;
+    if (filter !== 'all') list = list.filter(c => c.status === filter);
     if (query) {
       const q = query.toLowerCase();
-      if (!c.name.toLowerCase().includes(q) && !c.id.toLowerCase().includes(q) && !(c.phone || '').includes(query)) return false;
+      list = list.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q) || (c.phone || '').includes(query));
     }
-    return true;
-  }), [filter, query]);
+    return list;
+  }, [allCustomers, filter, query]);
+
+  const filterCounts = useMemo(() => ({
+    all: allCustomers.length,
+    overdue: allCustomers.filter(c => c.status === 'overdue').length,
+    'due-soon': allCustomers.filter(c => c.status === 'due-soon').length,
+    current: allCustomers.filter(c => c.status === 'current').length,
+  }), [allCustomers]);
 
   return (
     <AppShell
@@ -146,34 +192,36 @@ export default function CreditsPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         <div className="surface" style={{ padding: '16px 18px' }}>
           <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>TOTAL OUTSTANDING</div>
-          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--fg)' }}>{fmtShort(CREDIT_TOTALS.outstanding)}</div>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 6 }}>{CREDIT_CUSTOMERS.length} customers · avg {fmtShort(Math.round(CREDIT_TOTALS.outstanding / CREDIT_CUSTOMERS.length))}</div>
+          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--fg)' }}>{fmtShort(kpis?.total_outstanding ?? 0)}</div>
+          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 6 }}>{kpis?.customer_count ?? 0} customers</div>
         </div>
-        <div className="surface" style={{ padding: '16px 18px', borderColor: CREDIT_TOTALS.overdue > 0 ? 'rgba(251,113,133,0.3)' : 'var(--line)' }}>
+        <div className="surface" style={{ padding: '16px 18px', borderColor: (kpis?.overdue ?? 0) > 0 ? 'rgba(251,113,133,0.3)' : 'var(--line)' }}>
           <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>OVERDUE</div>
-          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--bad)' }}>{fmtShort(CREDIT_TOTALS.overdue)}</div>
+          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--bad)' }}>{fmtShort(kpis?.overdue ?? 0)}</div>
           <div className="mono" style={{ fontSize: 10.5, color: 'var(--bad)', marginTop: 6 }}>⚠ Needs follow-up</div>
         </div>
-        <div className="surface" style={{ padding: '16px 18px', borderColor: CREDIT_TOTALS.dueSoon > 0 ? 'rgba(251,191,36,0.3)' : 'var(--line)' }}>
+        <div className="surface" style={{ padding: '16px 18px', borderColor: (kpis?.due_soon ?? 0) > 0 ? 'rgba(251,191,36,0.3)' : 'var(--line)' }}>
           <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>DUE SOON</div>
-          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--warn)' }}>{fmtShort(CREDIT_TOTALS.dueSoon)}</div>
+          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--warn)' }}>{fmtShort(kpis?.due_soon ?? 0)}</div>
           <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 6 }}>within 7 days</div>
         </div>
         <div className="surface" style={{ padding: '16px 18px' }}>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>RECOVERED · MAY</div>
-          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--good)' }}>{fmtShort(CREDIT_TOTALS.recovered)}</div>
-          <div className="mono" style={{ fontSize: 10.5, color: 'var(--good)', marginTop: 6 }}>↗ +18% vs Apr</div>
+          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>RECOVERED · THIS MONTH</div>
+          <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 8, color: 'var(--good)' }}>{fmtShort(kpis?.recovered_month ?? 0)}</div>
+          <div className="mono" style={{ fontSize: 10.5, color: 'var(--good)', marginTop: 6 }}>↗ recovered</div>
         </div>
       </div>
 
       {/* Aging */}
-      <div className="surface" style={{ padding: '14px 18px', marginBottom: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <span className="card-title">Aging buckets</span>
-          <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>distribution of debt by age</span>
+      {agingBuckets.length > 0 && (
+        <div className="surface" style={{ padding: '14px 18px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <span className="card-title">Aging buckets</span>
+            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>distribution of debt by age</span>
+          </div>
+          <AgingBar buckets={agingBuckets} />
         </div>
-        <AgingBar buckets={AGING_BUCKETS} />
-      </div>
+      )}
 
       {/* AI nudge */}
       <div className="surface" style={{ padding: '14px 16px', borderColor: 'var(--accent-line)', background: 'linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-2) 100%)', marginBottom: 16, display: 'flex', gap: 14, alignItems: 'center' }}>
@@ -182,7 +230,6 @@ export default function CreditsPage() {
           <div style={{ fontSize: 13, color: 'var(--fg)', marginBottom: 2 }}>
             <strong style={{ fontWeight: 500 }}>2 customers</strong> haven&apos;t responded to reminders in 7+ days. Want me to draft a personal message in Swahili?
           </div>
-          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Fatuma Ally · Asha Mwinyi</div>
         </div>
         <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.sparkles} Draft messages</button>
       </div>
@@ -200,13 +247,13 @@ export default function CreditsPage() {
           {query && <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{filtered.length} hits</span>}
         </div>
         <div className="filter-pills-scroll" style={{ display: 'flex', gap: 6 }}>
-          {[
-            ['all', 'All', CREDIT_CUSTOMERS.length],
-            ['overdue', 'Overdue', CREDIT_CUSTOMERS.filter(c => c.status === 'overdue').length],
-            ['due-soon', 'Due soon', CREDIT_CUSTOMERS.filter(c => c.status === 'due-soon').length],
-            ['current', 'Current', CREDIT_CUSTOMERS.filter(c => c.status === 'current').length],
-          ].map(([k, l, n]) => (
-            <button key={k as string} onClick={() => setFilter(k as string)} style={{
+          {([
+            ['all', 'All', filterCounts.all],
+            ['overdue', 'Overdue', filterCounts.overdue],
+            ['due-soon', 'Due soon', filterCounts['due-soon']],
+            ['current', 'Current', filterCounts.current],
+          ] as [string, string, number][]).map(([k, l, n]) => (
+            <button key={k} onClick={() => setFilter(k)} style={{
               flexShrink: 0,
               padding: '5px 11px', borderRadius: 999,
               border: '1px solid ' + (filter === k ? 'var(--accent-line)' : 'var(--line)'),
@@ -227,60 +274,63 @@ export default function CreditsPage() {
 
       {/* List */}
       <div className="surface" style={{ overflow: 'hidden' }}>
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={{ padding: 48, textAlign: 'center' }}>{SPINNER}</div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
             <div className="mono" style={{ fontSize: 11, letterSpacing: '0.06em' }}>NO MATCHES</div>
-            <div style={{ marginTop: 6 }}>Try clearing filters or searching differently.</div>
+            <div style={{ marginTop: 6 }}>No customers with open credit.</div>
           </div>
         ) : (
-          filtered.map((c) => {
-            const lastPay = c.payments[0];
-            const lastTab = c.tabs[0];
-            return (
-              <div key={c.id} className="customer-row">
-                <div className="cust-avatar" style={{ background: `linear-gradient(135deg, oklch(70% 0.18 ${c.avatarHue}), oklch(60% 0.18 ${c.avatarHue + 30}))` }}>
-                  {avatarFromName(c.name)}
+          filtered.map((c) => (
+            <div key={c.id} className="customer-row">
+              <div className="cust-avatar" style={{ background: `hsl(${c.avatar_hue}, 60%, 50%)` }}>
+                {c.initials || avatarFromName(c.name)}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                  <Link href={`/credits/${c.id}`} style={{ fontSize: 14, fontWeight: 500, color: 'inherit' }}>{c.name}</Link>
+                  <StatusPill status={c.status} days={c.due_days} />
                 </div>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                    <Link href={`/credits/${c.id}`} style={{ fontSize: 14, fontWeight: 500, color: 'inherit' }}>{c.name}</Link>
-                    <StatusPill status={c.status} days={c.dueDays} />
-                  </div>
-                  <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginBottom: 4 }}>
-                    {c.id} <span style={{ color: 'var(--fg-4)', margin: '0 6px' }}>·</span> {c.phone}
-                  </div>
-                  <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                    <span>Last sale: {lastTab ? lastTab.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—'} · {lastTab?.cashier || '—'}</span>
-                    <span>Last payment: {lastPay ? fmt(lastPay.amount) + ' · ' + lastPay.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'none'}</span>
-                  </div>
+                <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginBottom: 4 }}>
+                  {c.id} <span style={{ color: 'var(--fg-4)', margin: '0 6px' }}>·</span> {c.phone}
                 </div>
-                <div className="customer-row-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                  <div style={{ fontSize: 22, fontWeight: 500, color: c.status === 'overdue' ? 'var(--bad)' : c.status === 'due-soon' ? 'var(--warn)' : 'var(--fg)', fontFamily: 'var(--mono)', letterSpacing: '-0.01em' }}>
-                    {fmt(c._balance ?? 0)}
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button className="icon-btn" title="Call" style={{ width: 30, height: 30 }}><PhoneIcon /></button>
-                    <button className="icon-btn" title="WhatsApp" style={{ width: 30, height: 30 }}><WhatsAppMini /></button>
-                    <button onClick={() => setPaymentTarget(c)} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 5 }}>
-                      <CashSmall /> Record payment
-                    </button>
-                  </div>
+                <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  <span>Last sale: {c.last_tab_date ? new Date(c.last_tab_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—'}</span>
+                  <span>Last payment: {c.last_pay_amount ? fmt(c.last_pay_amount) + (c.last_pay_date ? ' · ' + new Date(c.last_pay_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '') : 'none'}</span>
                 </div>
               </div>
-            );
-          })
+              <div className="customer-row-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                <div style={{ fontSize: 22, fontWeight: 500, color: c.status === 'overdue' ? 'var(--bad)' : c.status === 'due-soon' ? 'var(--warn)' : 'var(--fg)', fontFamily: 'var(--mono)', letterSpacing: '-0.01em' }}>
+                  {fmt(c.balance)}
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button className="icon-btn" title="Call" style={{ width: 30, height: 30 }}><PhoneIcon /></button>
+                  <button className="icon-btn" title="WhatsApp" style={{ width: 30, height: 30 }}><WhatsAppMini /></button>
+                  <button onClick={() => setPaymentTarget(c)} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <CashSmall /> Record payment
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
         )}
-        {filtered.length > 0 && (
+        {!loading && filtered.length > 0 && (
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-3)' }}>
-            <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Showing {filtered.length} of {CREDIT_CUSTOMERS.length} customers</span>
+            <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>Showing {filtered.length} customers</span>
             <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
-              Total: <span style={{ color: 'var(--fg-2)' }}>{fmt(filtered.reduce((s, c) => s + (c._balance ?? 0), 0))}</span>
+              Total: <span style={{ color: 'var(--fg-2)' }}>{fmt(filtered.reduce((s, c) => s + c.balance, 0))}</span>
             </span>
           </div>
         )}
       </div>
 
-      <RecordPaymentDrawer open={!!paymentTarget} customer={paymentTarget} onClose={() => setPaymentTarget(null)} />
+      <RecordPaymentDrawer
+        open={!!paymentTarget}
+        customer={paymentTarget}
+        onClose={() => setPaymentTarget(null)}
+        onSuccess={loadDashboard}
+      />
     </AppShell>
   );
 }

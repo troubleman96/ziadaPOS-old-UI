@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
@@ -213,7 +214,9 @@ export default function DiscountsPage() {
               {LARGEST.map((row) => (
                 <tr key={row.txn_number}>
                   <td>
-                    <span className="mono" style={{ fontSize: 12, color: 'var(--accent)' }}>{row.txn_number}</span>
+                    <Link href={`/discounts/${encodeURIComponent(row.txn_number)}`} style={{ textDecoration: 'none' }}>
+                      <span className="mono" style={{ fontSize: 12, color: 'var(--accent)' }}>{row.txn_number}</span>
+                    </Link>
                   </td>
                   <td style={{ fontSize: 13 }}>{row.customer_name}</td>
                   <td className="num">

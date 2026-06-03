@@ -1,19 +1,26 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
-import { fmt, fmtShort, fmtTime, fmtDate } from '../../lib/utils';
-import { TRANSACTIONS } from '../../lib/data';
+import { fmt, fmtShort, fmtTime } from '../../lib/utils';
+import { transactionApi, TransactionListItem } from '../../lib/api';
 
-const TODAY = new Date(2026, 4, 24);
+const SPINNER = (
+  <>
+    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--line-2)', borderTopColor: 'var(--accent)', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
+  </>
+);
 
 function MethodPill({ method }: { method: string }) {
-  const cls: Record<string, string> = { Cash: 'cash', 'M-Pesa': 'mpesa', 'Tigo Pesa': 'tigo', Bank: 'bank', Credit: 'credit' };
-  const initial = method === 'M-Pesa' ? 'M' : method === 'Tigo Pesa' ? 'T' : method[0];
+  const cls: Record<string, string> = { cash: 'cash', 'M-Pesa': 'mpesa', 'Tigo Pesa': 'tigo', bank: 'bank', credit: 'credit' };
+  const normalized = method?.toLowerCase?.() === 'cash' ? 'Cash' : method;
+  const initial = method === 'M-Pesa' ? 'M' : method === 'Tigo Pesa' ? 'T' : (method?.[0] ?? '?');
+  const key = method?.toLowerCase?.() === 'cash' ? 'Cash' : method;
   return (
-    <span className={'method-pill ' + (cls[method] || 'cash')}>
+    <span className={'method-pill ' + (cls[method] || cls[key] || 'cash')}>
       <span className="swatch">{initial}</span>
       {method}
     </span>
@@ -23,19 +30,19 @@ function MethodPill({ method }: { method: string }) {
 function StatusPill({ status }: { status: string }) {
   const map: Record<string, { kind: string; label: string }> = {
     paid:     { kind: 'good', label: 'Paid' },
-    credit:   { kind: 'warn', label: 'On credit' },
+    credit:   { kind: 'warn', label: 'Credit' },
     refunded: { kind: 'bad',  label: 'Refunded' },
     held:     { kind: 'info', label: 'Held' },
     void:     { kind: '',     label: 'Void' },
   };
-  const m = map[status] || map.paid;
+  const m = map[status] || { kind: 'good', label: status };
   return <span className={'pill ' + m.kind}>{m.label}</span>;
 }
 
-function groupByDay(txns: typeof TRANSACTIONS) {
-  const groups = new Map<string, typeof TRANSACTIONS>();
+function groupByDay(txns: TransactionListItem[]) {
+  const groups = new Map<string, TransactionListItem[]>();
   for (const t of txns) {
-    const key = t.ts.toDateString();
+    const key = new Date(t.created_at).toDateString();
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(t);
   }
@@ -43,10 +50,20 @@ function groupByDay(txns: typeof TRANSACTIONS) {
 }
 
 function relativeDayLabel(d: Date) {
-  const diff = Math.round((TODAY.getTime() - d.getTime()) / 86400000);
-  if (diff === 0) return 'Today · ' + d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long' });
-  if (diff === 1) return 'Yesterday · ' + d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long' });
+  const today = new Date();
+  const todayStr = today.toDateString();
+  const yesterday = new Date(today.getTime() - 86400000);
+  if (d.toDateString() === todayStr) return 'Today · ' + d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long' });
+  if (d.toDateString() === yesterday.toDateString()) return 'Yesterday · ' + d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long' });
   return d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long' });
+}
+
+function rangeToDays(r: string): number | null {
+  if (r === 'today') return 0;
+  if (r === '7d') return 7;
+  if (r === '30d') return 30;
+  if (r === '90d') return 90;
+  return null;
 }
 
 export default function TransactionsPage() {
@@ -55,20 +72,57 @@ export default function TransactionsPage() {
   const [status, setStatus] = useState('all');
   const [query, setQuery] = useState('');
 
+  const [transactions, setTransactions] = useState<TransactionListItem[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    const params = new URLSearchParams({ ordering: '-created_at', page_size: '200' });
+    const days = rangeToDays(range);
+    if (days !== null) {
+      const from = new Date();
+      from.setHours(0, 0, 0, 0);
+      if (days > 0) from.setDate(from.getDate() - days);
+      params.set('date_from', from.toISOString().slice(0, 10));
+    }
+    transactionApi.getList(params.toString()).then((res) => {
+      if (cancelled) return;
+      setLoading(false);
+      if (res.success) {
+        const data = res.data as unknown as { results?: TransactionListItem[]; count?: number } | TransactionListItem[];
+        // Handle paginated response
+        if (Array.isArray(data)) {
+          setTransactions(data);
+          setTotalCount(data.length);
+        } else if (data && typeof data === 'object' && 'results' in data && Array.isArray((data as { results: TransactionListItem[] }).results)) {
+          const d = data as { results: TransactionListItem[]; count: number };
+          setTransactions(d.results);
+          setTotalCount(d.count ?? d.results.length);
+        } else {
+          setTransactions([]);
+          setTotalCount(0);
+        }
+      }
+    });
+    return () => { cancelled = true; };
+  }, [range]);
+
   const filtered = useMemo(() => {
-    return TRANSACTIONS.filter((t) => {
-      if (range === 'today' && t.ts.toDateString() !== TODAY.toDateString()) return false;
-      if (range === '7d' && (TODAY.getTime() - t.ts.getTime()) > 7 * 86400000) return false;
-      if (method !== 'all' && t.method !== method) return false;
+    return transactions.filter((t) => {
+      if (method !== 'all' && t.payment_method !== method) return false;
       if (status !== 'all' && t.status !== status) return false;
       if (query) {
         const q = query.toLowerCase();
-        const hit = t.id.toLowerCase().includes(q) || t.customer.name.toLowerCase().includes(q);
+        const hit = t.txn_number.toLowerCase().includes(q) ||
+          t.customer_name.toLowerCase().includes(q) ||
+          (t.payment_reference || '').toLowerCase().includes(q);
         if (!hit) return false;
       }
       return true;
     });
-  }, [range, method, status, query]);
+  }, [transactions, method, status, query]);
 
   const totals = useMemo(() => {
     let inflow = 0, refunds = 0, credit = 0, profit = 0;
@@ -166,9 +220,12 @@ export default function TransactionsPage() {
 
       {/* Mobile card-list */}
       <div className="txn-cards-wrap surface" style={{ overflow: 'hidden', marginBottom: 0 }}>
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={{ padding: 48, textAlign: 'center' }}>{SPINNER}</div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
             <div className="mono" style={{ fontSize: 11 }}>NO RESULTS</div>
+            <div style={{ marginTop: 6, fontSize: 14 }}>No transactions found.</div>
           </div>
         ) : groups.map(([dayKey, txns]) => {
           const dayTotal = txns.reduce((s, t) => s + (t.status === 'refunded' ? -t.total : t.total), 0);
@@ -182,11 +239,11 @@ export default function TransactionsPage() {
                 <Link key={t.id} href={`/transactions/${t.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid var(--line)', color: 'inherit' }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: 500, fontSize: 13.5 }}>{t.customer.name}</span>
+                      <span style={{ fontWeight: 500, fontSize: 13.5 }}>{t.customer_name}</span>
                       <StatusPill status={t.status} />
                     </div>
                     <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 3 }}>
-                      {t.id} · {t.method} · {fmtTime(t.ts)}
+                      {t.txn_number} · {t.payment_method} · {fmtTime(new Date(t.created_at))}
                     </div>
                   </div>
                   <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: t.status === 'refunded' ? 'var(--bad)' : 'var(--fg)', flexShrink: 0 }}>
@@ -201,10 +258,12 @@ export default function TransactionsPage() {
 
       {/* Desktop table */}
       <div className="txn-table-wrap surface" style={{ overflow: 'hidden' }}>
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div style={{ padding: 48, textAlign: 'center' }}>{SPINNER}</div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
             <div className="mono" style={{ fontSize: 11, letterSpacing: '0.06em' }}>NO RESULTS</div>
-            <div style={{ marginTop: 6, fontSize: 14 }}>Try widening the date range or clearing filters.</div>
+            <div style={{ marginTop: 6, fontSize: 14 }}>No transactions found. Try widening the date range or clearing filters.</div>
           </div>
         ) : (
           groups.map(([dayKey, txns]) => {
@@ -237,19 +296,19 @@ export default function TransactionsPage() {
                   <tbody>
                     {txns.map((t) => (
                       <tr key={t.id}>
-                        <td><Link href={`/transactions/${t.id}`} className="mono" style={{ color: 'var(--accent)' }}>{t.id}</Link></td>
-                        <td className="mono" style={{ color: 'var(--fg-3)' }}>{fmtTime(t.ts)}</td>
+                        <td><Link href={`/transactions/${t.id}`} className="mono" style={{ color: 'var(--accent)' }}>{t.txn_number}</Link></td>
+                        <td className="mono" style={{ color: 'var(--fg-3)' }}>{fmtTime(new Date(t.created_at))}</td>
                         <td>
-                          <div>{t.customer.name}</div>
-                          {t.customer.phone && <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 1 }}>{t.customer.phone}</div>}
+                          <div>{t.customer_name}</div>
+                          {t.customer_phone && <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 1 }}>{t.customer_phone}</div>}
                         </td>
                         <td className="num" style={{ color: 'var(--fg-2)' }}>
-                          {t.lines.reduce((s, l) => s + l.qty, 0)}
-                          <span className="mono" style={{ marginLeft: 4, color: 'var(--fg-4)', fontSize: 10.5 }}>· {t.lines.length} SKU</span>
+                          {t.item_count}
+                          <span className="mono" style={{ marginLeft: 4, color: 'var(--fg-4)', fontSize: 10.5 }}>· {t.sku_count} SKU</span>
                         </td>
-                        <td><MethodPill method={t.method} /></td>
+                        <td><MethodPill method={t.payment_method} /></td>
                         <td><StatusPill status={t.status} /></td>
-                        <td className="mono" style={{ color: 'var(--fg-3)', fontSize: 11.5 }}>{t.cashier}</td>
+                        <td className="mono" style={{ color: 'var(--fg-3)', fontSize: 11.5 }}>{t.cashier_name}</td>
                         <td className="num" style={{ color: t.status === 'refunded' ? 'var(--bad)' : 'var(--fg)', fontWeight: 500 }}>
                           {t.status === 'refunded' ? '− ' : ''}{fmt(t.total)}
                         </td>
@@ -265,16 +324,11 @@ export default function TransactionsPage() {
             );
           })
         )}
-        {filtered.length > 0 && (
+        {!loading && filtered.length > 0 && (
           <div style={{ padding: '12px 16px', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-3)' }}>
             <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
-              Showing {filtered.length} of {TRANSACTIONS.length} transactions
+              Showing {filtered.length} of {totalCount} transactions
             </span>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 12 }}>← Prev</button>
-              <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>page 1 of 1</span>
-              <button className="btn btn-ghost" style={{ padding: '4px 10px', fontSize: 12 }}>Next →</button>
-            </div>
           </div>
         )}
       </div>

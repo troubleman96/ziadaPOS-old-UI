@@ -1,11 +1,9 @@
-const CACHE = 'ziada-pos-v1';
+const CACHE = 'ziada-pos-v2';
 const PRECACHE = [
   '/',
   '/dashboard',
   '/pos',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/ziada.PNG',
+  '/ziadaposicon.jpeg',
 ];
 
 self.addEventListener('install', (e) => {

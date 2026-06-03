@@ -79,16 +79,20 @@ export default function ActivatePage() {
   const [checkError, setCheckError] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const checkInFlightRef = useRef(false);
 
   async function checkStatus(silent = false) {
-    const token = getAccessToken();
-    if (!token) { router.replace('/auth/login'); return; }
+    if (checkInFlightRef.current) return;
+    if (!getAccessToken()) { router.replace('/auth/login'); return; }
+
+    checkInFlightRef.current = true;
     if (!silent) setChecking(true);
     setCheckError('');
 
-    const result = await authApi.mySubscription(token);
+    const result = await authApi.mySubscription();
 
     if (!silent) setChecking(false);
+    checkInFlightRef.current = false;
 
     if (result.success) {
       cacheSubscription(result.data);
@@ -211,7 +215,7 @@ export default function ActivatePage() {
 
           {/* Logo */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 4 }}>
-            <img src="/ziada.PNG" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
+            <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
             <span style={{ fontSize: 15, fontWeight: 600 }}>Ziada POS</span>
           </div>
 
