@@ -2,8 +2,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Icons } from './icons';
 import { useTheme, useNotifications } from './app-shell';
+import { clearTokens } from '../lib/auth';
 
 interface Crumb {
   label: string;
@@ -33,6 +35,13 @@ function ThreeDotMenu() {
   const { theme, toggleTheme } = useTheme();
   const { notifications } = useNotifications();
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  function handleLogout() {
+    setOpen(false);
+    clearTokens();
+    router.push('/auth/login');
+  }
 
   const unread = notifications.filter(n => n.unread).length;
 
@@ -210,7 +219,7 @@ function ThreeDotMenu() {
           {menuRow(
             Icons.logout,
             'Log out',
-            () => setOpen(false),
+            handleLogout,
             true,
           )}
 
