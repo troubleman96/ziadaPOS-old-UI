@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Sidenav } from './sidenav';
 import { Topbar } from './topbar';
 import { STORES } from '../lib/data';
-import { isAuthenticated, getCachedSubscription } from '../lib/auth';
+import { isAuthenticated, getCachedSubscription, cacheSubscription, getAccessToken } from '../lib/auth';
+import { authApi } from '../lib/api';
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
@@ -99,6 +100,7 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
+    (async () => {
     // Client-side auth guard — catches the edge case where the session cookie
     // exists but localStorage was cleared (e.g. private-mode tab swap).
     if (!isAuthenticated()) {
@@ -107,12 +109,34 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
       return;
     }
 
-    // Subscription guard — if the cached subscription is not active, send the
-    // user to the activation page before they can use any app feature.
-    const sub = getCachedSubscription();
-    if (sub && (sub.status === 'pending_payment' || sub.is_active_now === false)) {
-      router.replace('/activate');
-      return;
+    // Subscription guard — always verify with the API so a stale cache
+    // (e.g. admin activated the trial while the user was on /activate)
+    // doesn't keep the user stuck forever.
+    const cachedSub = getCachedSubscription();
+    const subLooksInactive =
+      cachedSub && (cachedSub.status === 'pending_payment' || cachedSub.is_active_now === false);
+
+    if (subLooksInactive) {
+      // Cache says inactive — verify with the live API before blocking
+      const token = getAccessToken();
+      if (token) {
+        const result = await authApi.mySubscription(token);
+        if (result.success) {
+          cacheSubscription(result.data);
+          if (!result.data.is_active_now) {
+            router.replace('/activate');
+            return;
+          }
+          // API says active — fall through and let the user in
+        } else {
+          // Can't reach API or 402 — send to activate to be safe
+          router.replace('/activate');
+          return;
+        }
+      } else {
+        router.replace('/activate');
+        return;
+      }
     }
 
     setAuthChecked(true);
@@ -125,6 +149,7 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
     if (storedStore && STORES.some(s => s.id === storedStore)) {
       setActiveStoreIdState(storedStore);
     }
+    })();
   }, [router]);
 
   const toggleTheme = () => {

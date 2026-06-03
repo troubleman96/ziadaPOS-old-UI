@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getCachedUser, getCachedSubscription, isAuthenticated } from '@/lib/auth';
+import { authApi } from '@/lib/api';
+import { getCachedUser, getCachedSubscription, cacheSubscription, isAuthenticated, getAccessToken } from '@/lib/auth';
 
 const AIRTEL_NUMBER    = '0692069230';
 const AIRTEL_NUMBER_WA = '255692069230';   // WhatsApp international format (no +)
@@ -66,14 +67,51 @@ function CopyButton({ text }: { text: string }) {
 }
 
 // ── Main page ──────────────────────────────────────────────────────────────────
+const POLL_INTERVAL = 10; // seconds between auto-checks
+
 export default function ActivatePage() {
   const router = useRouter();
   const [user, setUser] = useState<{ full_name: string; phone: string } | null>(null);
   const [theme, setTheme] = useState('dark');
   const [stepsOpen, setStepsOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [countdown, setCountdown] = useState(POLL_INTERVAL);
+  const [checkError, setCheckError] = useState('');
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  async function checkStatus(silent = false) {
+    const token = getAccessToken();
+    if (!token) { router.replace('/auth/login'); return; }
+    if (!silent) setChecking(true);
+    setCheckError('');
+
+    const result = await authApi.mySubscription(token);
+
+    if (!silent) setChecking(false);
+
+    if (result.success) {
+      cacheSubscription(result.data);
+      if (result.data.is_active_now) {
+        // Activated! clear timers and go to dashboard
+        timerRef.current && clearInterval(timerRef.current);
+        countRef.current && clearInterval(countRef.current);
+        router.replace('/dashboard');
+        return;
+      }
+    } else {
+      // 402 means still pending — that's expected, not an error to show
+      if ((result as { status?: number }).status !== 402 && !silent) {
+        setCheckError('Could not reach the server. Please try again.');
+      }
+    }
+    // Reset countdown after each check
+    setCountdown(POLL_INTERVAL);
+  }
 
   useEffect(() => {
     if (!isAuthenticated()) { router.replace('/auth/login'); return; }
+
     const u = getCachedUser();
     if (u) setUser({ full_name: u.full_name, phone: u.phone });
 
@@ -81,6 +119,22 @@ export default function ActivatePage() {
       const t = localStorage.getItem('ziada-theme');
       if (t === 'light' || t === 'dark') setTheme(t);
     } catch {}
+
+    // Check immediately on mount — if admin already activated, skip this page
+    checkStatus(true);
+
+    // Auto-poll every POLL_INTERVAL seconds
+    timerRef.current = setInterval(() => checkStatus(true), POLL_INTERVAL * 1000);
+
+    // Visible countdown so the user sees something is happening
+    countRef.current = setInterval(() => {
+      setCountdown(c => (c <= 1 ? POLL_INTERVAL : c - 1));
+    }, 1000);
+
+    return () => {
+      timerRef.current && clearInterval(timerRef.current);
+      countRef.current && clearInterval(countRef.current);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -281,10 +335,45 @@ export default function ActivatePage() {
             </p>
           </div>
 
-          {/* Skip */}
-          <div className="skip-link">
-            Already paid?{' '}
-            <Link href="/dashboard">Go to dashboard →</Link>
+          {/* Status checker */}
+          <div style={{ border: '1px solid var(--line)', borderRadius: 10, padding: '14px 16px', background: 'var(--bg-2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>Waiting for activation</div>
+                <div style={{ fontSize: 12, color: 'var(--fg-4)' }}>
+                  Auto-checking in <span style={{ fontFamily: 'var(--mono)', color: 'var(--fg-3)' }}>{countdown}s</span>
+                </div>
+              </div>
+              <button
+                onClick={() => checkStatus(false)}
+                disabled={checking}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 7,
+                  padding: '8px 16px', borderRadius: 7,
+                  border: '1.5px solid var(--accent-line)', background: 'var(--accent-soft)',
+                  color: 'var(--accent)', fontFamily: 'var(--sans)', fontSize: 13, fontWeight: 500,
+                  cursor: checking ? 'not-allowed' : 'pointer', opacity: checking ? 0.6 : 1,
+                  transition: 'opacity 120ms',
+                }}
+              >
+                {checking ? (
+                  <>
+                    <div style={{ width: 13, height: 13, borderRadius: '50%', border: '2px solid var(--accent-line)', borderTopColor: 'var(--accent)', animation: 'spin 0.7s linear infinite' }} />
+                    Checking…
+                  </>
+                ) : (
+                  <>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 4v6h-6M1 20v-6h6" /><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                    </svg>
+                    Check now
+                  </>
+                )}
+              </button>
+            </div>
+            {checkError && (
+              <div style={{ marginTop: 10, fontSize: 12, color: 'var(--bad)' }}>{checkError}</div>
+            )}
           </div>
 
           {/* Theme toggle */}

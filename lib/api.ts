@@ -172,6 +172,10 @@ export const authApi = {
   me(accessToken: string) {
     return apiFetch<MeResponse>('/api/v1/accounts/me/', {}, accessToken);
   },
+
+  mySubscription(accessToken: string) {
+    return apiFetch<SubscriptionInfo>('/api/v1/subscriptions/my-subscription/', {}, accessToken);
+  },
 };
 
 // ── Tanzania constants (mirrored from backend) ─────────────────────────────────
