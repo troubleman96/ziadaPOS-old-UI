@@ -41,7 +41,7 @@ function KPI({ label, value, delta, deltaKind = 'good', subtitle, spark, accent 
   return (
     <div className="surface" style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 10, minHeight: 130 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>{label}</span>
+        <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>{label}</span>
         {delta && (
           <span className={'pill ' + deltaKind} style={{ gap: 3, display: 'flex', alignItems: 'center' }}>
             {deltaKind === 'good' ? Icons.arrowUpRight : deltaKind === 'bad' ? Icons.arrowDownRight : null}
@@ -51,7 +51,7 @@ function KPI({ label, value, delta, deltaKind = 'good', subtitle, spark, accent 
       </div>
       <div>
         <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
-        {subtitle && <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 4 }}>{subtitle}</div>}
+        {subtitle && <div className="mono" style={{ fontSize: 11, fontWeight: 400, color: 'var(--fg-2)', marginTop: 4 }}>{subtitle}</div>}
       </div>
       {spark && (
         <div style={{ height: 32, marginTop: 'auto' }}>
