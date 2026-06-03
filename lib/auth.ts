@@ -2,15 +2,35 @@
  * lib/auth.ts
  *
  * JWT token storage and user session helpers.
- * Tokens are persisted to localStorage under well-known keys.
+ *
+ * Storage strategy:
+ *   - Access + refresh tokens → localStorage (never sent over the wire accidentally)
+ *   - Session presence flag   → cookie `ziada_session=1` (readable by Edge middleware
+ *                               for server-side route protection without exposing the token)
+ *
  * All functions are safe to call in SSR (typeof window guard).
  */
 
 import type { UserProfile } from './api';
 
-const ACCESS_KEY  = 'ziada_access';
-const REFRESH_KEY = 'ziada_refresh';
-const USER_KEY    = 'ziada_user';
+const ACCESS_KEY   = 'ziada_access';
+const REFRESH_KEY  = 'ziada_refresh';
+const USER_KEY     = 'ziada_user';
+const SESSION_COOKIE = 'ziada_session';
+
+// ── Cookie helpers (client-side only) ─────────────────────────────────────────
+
+function setSessionCookie(): void {
+  if (typeof document === 'undefined') return;
+  // 7 days — matches typical refresh token lifetime
+  const maxAge = 60 * 60 * 24 * 7;
+  document.cookie = `${SESSION_COOKIE}=1; path=/; max-age=${maxAge}; SameSite=Lax`;
+}
+
+function clearSessionCookie(): void {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+}
 
 // ── Token storage ──────────────────────────────────────────────────────────────
 
@@ -28,6 +48,7 @@ export function saveTokens(access: string, refresh: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(ACCESS_KEY, access);
   localStorage.setItem(REFRESH_KEY, refresh);
+  setSessionCookie();
 }
 
 export function clearTokens(): void {
@@ -35,6 +56,7 @@ export function clearTokens(): void {
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
   localStorage.removeItem(USER_KEY);
+  clearSessionCookie();
 }
 
 // ── Cached user profile ────────────────────────────────────────────────────────

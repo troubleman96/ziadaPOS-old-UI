@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authApi, TANZANIA_REGIONS, BUSINESS_TYPES } from '@/lib/api';
-import { saveTokens, cacheUser } from '@/lib/auth';
+import { saveTokens, cacheUser, isAuthenticated } from '@/lib/auth';
 
 // ── Eye icon ───────────────────────────────────────────────────────────────────
 function EyeIcon({ open }: { open: boolean }) {
@@ -198,6 +198,11 @@ export default function RegisterPage() {
   const [confirm,     setConfirm]     = useState('');
 
   useEffect(() => {
+    // Already authenticated — skip registration
+    if (isAuthenticated()) {
+      router.replace('/dashboard');
+      return;
+    }
     try {
       const t = localStorage.getItem('ziada-theme');
       if (t === 'light' || t === 'dark') setTheme(t);

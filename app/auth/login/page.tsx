@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
-import { saveTokens, cacheUser } from '@/lib/auth';
+import { saveTokens, cacheUser, isAuthenticated } from '@/lib/auth';
 
 // ── Feature highlight tiles shown on the left panel ───────────────────────────
 const FEATURES = [
@@ -98,6 +98,7 @@ function LeftPanel() {
 // ── Main login page ────────────────────────────────────────────────────────────
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const phoneRef = useRef<HTMLInputElement>(null);
 
   const [phone,    setPhone]    = useState('');
@@ -109,6 +110,11 @@ export default function LoginPage() {
   const [theme, setTheme] = useState('dark');
 
   useEffect(() => {
+    // Already authenticated — skip the login page
+    if (isAuthenticated()) {
+      router.replace('/dashboard');
+      return;
+    }
     try {
       const t = localStorage.getItem('ziada-theme');
       if (t === 'light' || t === 'dark') setTheme(t);
@@ -154,7 +160,8 @@ export default function LoginPage() {
 
     saveTokens(result.data.access, result.data.refresh);
     cacheUser(result.data.user);
-    router.push('/dashboard');
+    const next = searchParams.get('next');
+    router.push(next && next.startsWith('/') ? next : '/dashboard');
   }
 
   return (

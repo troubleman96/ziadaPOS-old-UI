@@ -1,9 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidenav } from './sidenav';
 import { Topbar } from './topbar';
 import { STORES } from '../lib/data';
+import { isAuthenticated } from '../lib/auth';
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
@@ -88,12 +90,24 @@ interface AppShellProps {
 }
 
 export function AppShell({ children, crumbs, actions, search, full = false }: AppShellProps) {
+  const router = useRouter();
   const [theme, setTheme] = useState<Theme>('dark');
   const [navOpen, setNavOpen] = useState(false);
   const [activeStoreId, setActiveStoreIdState] = useState('kariakoo');
   const [notifications, setNotifications] = useState<AppNotification[]>(INITIAL_NOTIFICATIONS);
+  // Guard: hide content while we verify auth to avoid a flash of protected UI
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
+    // Client-side auth guard — catches the edge case where the session cookie
+    // exists but localStorage was cleared (e.g. private-mode tab swap).
+    if (!isAuthenticated()) {
+      const next = encodeURIComponent(window.location.pathname);
+      router.replace(`/auth/login?next=${next}`);
+      return;
+    }
+    setAuthChecked(true);
+
     const stored = localStorage.getItem('ziada-theme') as Theme | null;
     const current = document.documentElement.getAttribute('data-theme') as Theme | null;
     setTheme(current || stored || 'dark');
@@ -102,7 +116,7 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
     if (storedStore && STORES.some(s => s.id === storedStore)) {
       setActiveStoreIdState(storedStore);
     }
-  }, []);
+  }, [router]);
 
   const toggleTheme = () => {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
@@ -122,6 +136,24 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
 
   const openNav  = () => setNavOpen(true);
   const closeNav = () => setNavOpen(false);
+
+  // Don't render the app shell at all until auth is confirmed — prevents flash
+  if (!authChecked) {
+    return (
+      <div style={{
+        display: 'grid', placeItems: 'center',
+        minHeight: '100dvh', background: 'var(--bg)',
+      }}>
+        <div style={{
+          width: 20, height: 20, borderRadius: '50%',
+          border: '2px solid var(--line-2)',
+          borderTopColor: 'var(--accent)',
+          animation: 'spin 0.7s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <NotifContext.Provider value={{ notifications, addNotification }}>
