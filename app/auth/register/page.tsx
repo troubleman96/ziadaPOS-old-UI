@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authApi, TANZANIA_REGIONS, BUSINESS_TYPES } from '@/lib/api';
@@ -26,6 +26,134 @@ function CheckIcon() {
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
       <path d="M2 6.2L4.5 8.7L10 3.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+// ── Region typeahead combobox ──────────────────────────────────────────────────
+interface RegionComboboxProps {
+  value: string;
+  onChange: (val: string) => void;
+  error?: boolean;
+}
+
+function RegionCombobox({ value, onChange, error }: RegionComboboxProps) {
+  const [query,     setQuery]     = useState(value);
+  const [open,      setOpen]      = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef     = useRef<HTMLInputElement>(null);
+
+  // Keep input in sync when parent resets the value externally
+  useEffect(() => { setQuery(value); }, [value]);
+
+  const filtered = TANZANIA_REGIONS.filter(r =>
+    r.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const select = useCallback((r: string) => {
+    onChange(r);
+    setQuery(r);
+    setOpen(false);
+    setHighlight(0);
+  }, [onChange]);
+
+  // Close on outside click
+  useEffect(() => {
+    function onMouseDown(e: MouseEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+        // If nothing valid was committed, clear back to the last committed value
+        setQuery(value);
+      }
+    }
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [value]);
+
+  function handleKey(e: React.KeyboardEvent) {
+    if (!open) { if (e.key === 'ArrowDown' || e.key === 'Enter') setOpen(true); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setHighlight(h => Math.min(h + 1, filtered.length - 1)); }
+    else if (e.key === 'ArrowUp')  { e.preventDefault(); setHighlight(h => Math.max(h - 1, 0)); }
+    else if (e.key === 'Enter')    { e.preventDefault(); if (filtered[highlight]) select(filtered[highlight]); }
+    else if (e.key === 'Escape')   { setOpen(false); setQuery(value); }
+  }
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative' }}>
+      <style>{`
+        .region-drop {
+          position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
+          background: var(--bg-2); border: 1.5px solid var(--accent-line);
+          border-radius: 8px; overflow: hidden;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+          max-height: 220px; overflow-y: auto;
+        }
+        .region-opt {
+          padding: 9px 14px; font-size: 13.5px; cursor: pointer;
+          display: flex; align-items: center; justify-content: space-between;
+          transition: background 80ms;
+        }
+        .region-opt:hover, .region-opt.hi { background: var(--bg-3); }
+        .region-opt.selected { color: var(--accent); }
+        .region-empty { padding: 10px 14px; font-size: 13px; color: var(--fg-4); }
+      `}</style>
+
+      {/* Input */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <input
+          ref={inputRef}
+          className={`auth-input${error ? ' error' : ''}`}
+          style={{ paddingRight: 36 }}
+          type="text"
+          placeholder="Type to search region…"
+          value={query}
+          autoComplete="off"
+          onFocus={() => { setOpen(true); setHighlight(0); }}
+          onChange={e => {
+            setQuery(e.target.value);
+            setOpen(true);
+            setHighlight(0);
+            // Clear committed value while user is still typing
+            if (e.target.value !== value) onChange('');
+          }}
+          onKeyDown={handleKey}
+        />
+        {/* Chevron */}
+        <svg
+          width="12" height="12" viewBox="0 0 12 12"
+          style={{
+            position: 'absolute', right: 14, pointerEvents: 'none',
+            color: 'var(--fg-3)', transition: 'transform 150ms',
+            transform: open ? 'rotate(180deg)' : 'none',
+          }}
+        >
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="region-drop">
+          {filtered.length === 0 ? (
+            <div className="region-empty">No regions match "{query}"</div>
+          ) : filtered.map((r, i) => (
+            <div
+              key={r}
+              className={`region-opt${i === highlight ? ' hi' : ''}${r === value ? ' selected' : ''}`}
+              onMouseDown={e => { e.preventDefault(); select(r); }}
+              onMouseEnter={() => setHighlight(i)}
+            >
+              {r}
+              {r === value && (
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M2.5 7.5L5.5 10.5L11.5 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -576,16 +704,11 @@ export default function RegisterPage() {
                     </Field>
 
                     <Field label="Region" error={fieldErrors.region} required>
-                      <select
-                        className={`auth-select${fieldErrors.region ? ' error' : ''}`}
+                      <RegionCombobox
                         value={region}
-                        onChange={e => { setRegion(e.target.value); clearErr('region'); }}
-                      >
-                        <option value="" disabled>Select region…</option>
-                        {TANZANIA_REGIONS.map(r => (
-                          <option key={r} value={r}>{r}</option>
-                        ))}
-                      </select>
+                        onChange={v => { setRegion(v); if (v) clearErr('region'); }}
+                        error={!!fieldErrors.region}
+                      />
                     </Field>
                   </div>
 
