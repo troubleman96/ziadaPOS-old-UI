@@ -542,9 +542,12 @@ export interface StoreDetail extends StoreItem {
 
 export interface StoreStats {
   total_stores: number;
-  open_stores: number;
-  total_revenue_today: number;
-  total_txns_today: number;
+  open_count: number;
+  closed_count: number;
+  paused_count: number;
+  total_revenue: number;
+  total_txns: number;
+  staff_on_duty: number;
 }
 
 // ── Analytics products types ──────────────────────────────────────────────────
