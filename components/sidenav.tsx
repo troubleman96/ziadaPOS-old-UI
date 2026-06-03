@@ -246,6 +246,7 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
   const insights = [
     { id: 'analytics', label: 'Analytics',  icon: Icons.analytics, href: '/analytics' },
     { id: 'reports',   label: 'Reports',    icon: Icons.reports,   href: '/reports' },
+    { id: 'discounts', label: 'Discounts',  icon: Icons.discount,  href: '/discounts' },
     { id: 'ai',        label: 'Ziada AI',   icon: Icons.ai,        href: '/ai',      badge: 'NEW' },
   ];
   const directory = [

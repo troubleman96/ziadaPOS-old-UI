@@ -72,6 +72,14 @@ const REPORT_CARDS: ReportCard[] = [
     color: 'var(--bad)',
     lastRun: daysAgo(2),
   },
+  {
+    id: 'discounts',
+    icon: Icons.discount,
+    name: 'Discount Analysis',
+    desc: 'All discounts given by cashier, transaction and date range — with revenue impact.',
+    color: 'var(--info)',
+    lastRun: daysAgo(5),
+  },
 ];
 
 const SCHEDULED_REPORTS: ScheduledReport[] = [

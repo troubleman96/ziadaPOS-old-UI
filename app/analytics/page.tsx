@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
 
       <AnalyticsNav />
 
-      {/* KPI strip */}
+      {/* KPI strip — 4 col on wide, 2 col on mobile */}
       <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
         <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -201,6 +201,20 @@ export default function AnalyticsPage() {
           </div>
           <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>1,284</div>
           <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>142 new this month</div>
+        </div>
+        {/* Discount KPI — linked to /discounts */}
+        <div className="surface" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, borderColor: 'var(--info-soft)', background: 'var(--info-soft)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em' }}>DISCOUNTS GIVEN</span>
+            <span className="pill warn">13.8% rate</span>
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--info)' }}>TZS 284K</div>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-2)', marginTop: 2 }}>
+            47 transactions · avg 6.2%
+          </div>
+          <a href="/discounts" style={{ fontSize: 11.5, color: 'var(--info)', marginTop: 'auto', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>
+            View full report →
+          </a>
         </div>
       </div>
 

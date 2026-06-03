@@ -522,10 +522,36 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, color: 'var(--fg-2)' }}>
               <span>Discount</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button className="icon-btn" style={{ width: 22, height: 22, fontSize: 11 }} onClick={() => setDiscount(Math.max(0, discount - 5))}>−</button>
-                <span className="mono" style={{ minWidth: 36, textAlign: 'center', color: discount > 0 ? 'var(--accent)' : 'var(--fg-3)' }}>{discount}%</span>
-                <button className="icon-btn" style={{ width: 22, height: 22, fontSize: 11 }} onClick={() => setDiscount(Math.min(50, discount + 5))}>+</button>
-                <span className="mono" style={{ minWidth: 80, textAlign: 'right', color: 'var(--fg-3)' }}>−{fmt(discountAmt)}</span>
+                {/* Editable % input — type any value 0–100, optional */}
+                <div style={{ display: 'flex', alignItems: 'center', border: `1px solid ${discount > 0 ? 'var(--accent-line)' : 'var(--line-2)'}`, borderRadius: 6, overflow: 'hidden', background: discount > 0 ? 'var(--accent-soft)' : 'var(--bg)' }}>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={discount === 0 ? '' : discount}
+                    placeholder="0"
+                    onChange={e => {
+                      const v = Math.min(100, Math.max(0, Number(e.target.value) || 0));
+                      setDiscount(v);
+                    }}
+                    style={{
+                      width: 44, padding: '3px 6px', border: 0, outline: 0,
+                      background: 'transparent', color: discount > 0 ? 'var(--accent)' : 'var(--fg)',
+                      fontFamily: 'var(--mono)', fontSize: 12.5, textAlign: 'right',
+                    }}
+                  />
+                  <span style={{ paddingRight: 6, fontFamily: 'var(--mono)', fontSize: 12, color: discount > 0 ? 'var(--accent)' : 'var(--fg-3)' }}>%</span>
+                </div>
+                {discount > 0 && (
+                  <>
+                    <span className="mono" style={{ fontSize: 11.5, color: 'var(--accent)' }}>−{fmt(discountAmt)}</span>
+                    <button
+                      onClick={() => setDiscount(0)}
+                      style={{ width: 18, height: 18, borderRadius: 4, border: 0, background: 'var(--bg-3)', cursor: 'pointer', color: 'var(--fg-3)', fontSize: 11, display: 'grid', placeItems: 'center' }}
+                      title="Clear discount"
+                    >×</button>
+                  </>
+                )}
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--fg-2)' }}>

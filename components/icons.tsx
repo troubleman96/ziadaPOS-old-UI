@@ -244,6 +244,13 @@ export const Icons = {
       <path d="M6 8h7.5" />
     </>} />
   ),
+  discount: (
+    <Icon d={<>
+      <path d="M13 3L3 13" />
+      <circle cx="4.5" cy="4.5" r="1.5" />
+      <circle cx="11.5" cy="11.5" r="1.5" />
+    </>} />
+  ),
 };
 
 export type IconName = keyof typeof Icons;
