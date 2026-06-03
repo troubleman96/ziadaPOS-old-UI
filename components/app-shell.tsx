@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Sidenav } from './sidenav';
 import { Topbar } from './topbar';
 import { STORES } from '../lib/data';
-import { isAuthenticated } from '../lib/auth';
+import { isAuthenticated, getCachedSubscription } from '../lib/auth';
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 
@@ -106,6 +106,15 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
       router.replace(`/auth/login?next=${next}`);
       return;
     }
+
+    // Subscription guard — if the cached subscription is not active, send the
+    // user to the activation page before they can use any app feature.
+    const sub = getCachedSubscription();
+    if (sub && (sub.status === 'pending_payment' || sub.is_active_now === false)) {
+      router.replace('/activate');
+      return;
+    }
+
     setAuthChecked(true);
 
     const stored = localStorage.getItem('ziada-theme') as Theme | null;

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
-import { saveTokens, cacheUser, isAuthenticated } from '@/lib/auth';
+import { saveTokens, cacheUser, cacheSubscription, isAuthenticated } from '@/lib/auth';
 
 // ── Feature highlight tiles shown on the left panel ───────────────────────────
 const FEATURES = [
@@ -162,6 +162,16 @@ export default function LoginPage() {
 
     saveTokens(result.data.access, result.data.refresh);
     cacheUser(result.data.user);
+
+    const sub = result.data.subscription;
+    if (sub) cacheSubscription(sub);
+
+    // If subscription isn't active, send them to the activation page first
+    if (!sub || sub.status === 'pending_payment' || sub.is_active_now === false) {
+      router.push('/activate');
+      return;
+    }
+
     const next = searchParams.get('next');
     router.push(next && next.startsWith('/') ? next : '/dashboard');
   }
