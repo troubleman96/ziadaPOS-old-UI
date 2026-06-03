@@ -50,18 +50,17 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={copy}
-      title="Copy"
+      title={copied ? 'Copied!' : 'Copy number'}
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: 5,
-        padding: '4px 9px', borderRadius: 6,
-        border: '1px solid var(--line-2)', background: 'var(--bg-3)',
+        width: 30, height: 30, borderRadius: 7, flexShrink: 0,
+        display: 'grid', placeItems: 'center',
+        border: `1px solid ${copied ? 'rgba(52,211,153,0.35)' : 'var(--line-2)'}`,
+        background: copied ? 'rgba(52,211,153,0.1)' : 'var(--bg-3)',
         color: copied ? 'var(--good)' : 'var(--fg-3)',
-        cursor: 'pointer', fontSize: 12, fontFamily: 'var(--mono)',
-        transition: 'color 120ms, background 120ms',
+        cursor: 'pointer', transition: 'all 150ms',
       }}
     >
       {copied ? <CheckIcon /> : <CopyIcon />}
-      {copied ? 'Copied' : 'Copy'}
     </button>
   );
 }
