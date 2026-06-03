@@ -1,16 +1,17 @@
 /* ─── Design tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --bg: #0a0a0b;
-  --bg-2: #0f0f12;
-  --bg-3: #16161a;
-  --bg-4: #1c1c21;
-  --line: rgba(255,255,255,0.07);
-  --line-2: rgba(255,255,255,0.13);
-  --line-3: rgba(255,255,255,0.2);
-  --fg: #f5f5f7;
-  --fg-2: rgba(245,245,247,0.66);
-  --fg-3: rgba(245,245,247,0.42);
-  --fg-4: rgba(245,245,247,0.26);
+  --bg: #08080a;
+  --bg-2: #0d0d10;
+  --bg-3: #141418;
+  --bg-4: #1a1a20;
+  --line: rgba(255,255,255,0.06);
+  --line-2: rgba(255,255,255,0.11);
+  --line-3: rgba(255,255,255,0.18);
+  /* True white text in dark mode — matches OpenRouter contrast */
+  --fg: #ffffff;
+  --fg-2: rgba(255,255,255,0.68);
+  --fg-3: rgba(255,255,255,0.42);
+  --fg-4: rgba(255,255,255,0.24);
   --accent: #6366f1;
   --accent-fg: #ffffff;
   --accent-soft: rgba(99,102,241,0.14);
@@ -25,33 +26,35 @@
   --info-soft: rgba(96,165,250,0.12);
   --radius: 6px;
   --radius-lg: 10px;
-  --mono: "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --sans: "Geist", ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
-  --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.2);
+  /* Inter as primary, JetBrains Mono for code */
+  --mono: var(--font-mono, "JetBrains Mono"), ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: var(--font-inter, "Inter"), ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset, 0 1px 2px rgba(0,0,0,0.3);
   --nav-w: 248px;
   --topbar-h: 56px;
   --cart-w: 380px;
 }
 
 html[data-theme="light"] {
-  --bg: #fafaf9;
+  --bg: #f8f8f8;
   --bg-2: #ffffff;
-  --bg-3: #f4f4f2;
-  --bg-4: #ebebe8;
-  --line: rgba(10,10,11,0.07);
-  --line-2: rgba(10,10,11,0.13);
-  --line-3: rgba(10,10,11,0.2);
-  --fg: #0a0a0b;
-  --fg-2: rgba(10,10,11,0.66);
-  --fg-3: rgba(10,10,11,0.42);
-  --fg-4: rgba(10,10,11,0.26);
+  --bg-3: #f0f0ef;
+  --bg-4: #e6e6e4;
+  --line: rgba(0,0,0,0.07);
+  --line-2: rgba(0,0,0,0.12);
+  --line-3: rgba(0,0,0,0.18);
+  /* True black text in light mode */
+  --fg: #000000;
+  --fg-2: rgba(0,0,0,0.68);
+  --fg-3: rgba(0,0,0,0.44);
+  --fg-4: rgba(0,0,0,0.26);
   --accent-soft: rgba(99,102,241,0.09);
   --accent-line: rgba(99,102,241,0.28);
   --good-soft: rgba(16,185,129,0.10);
   --warn-soft: rgba(217,119,6,0.10);
   --bad-soft: rgba(244,63,94,0.10);
   --info-soft: rgba(59,130,246,0.10);
-  --shadow-card: 0 1px 2px rgba(10,10,11,0.04);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 0 rgba(0,0,0,0.03);
 }
 
 /* ─── Reset & base ──────────────────────────────────────────────────────────── */
@@ -61,11 +64,13 @@ body {
   font-family: var(--sans);
   background: var(--bg);
   color: var(--fg);
-  font-feature-settings: "ss01","ss02","cv01","cv02";
+  font-feature-settings: "cv01","cv02","cv03","cv04";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   font-size: 14px;
   line-height: 1.5;
+  letter-spacing: -0.006em;
 }
 ::selection { background: var(--accent); color: #fff; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -192,13 +197,17 @@ input, select, textarea { font-family: inherit; }
 .table th, .table td { padding: 12px 16px; text-align: left; font-size: 13px; }
 .table th {
   font-family: var(--mono); font-size: 10px; color: var(--fg-4);
-  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 400;
+  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500;
   border-bottom: 1px solid var(--line);
-  background: var(--bg-3);
+  background: var(--bg-2);
   position: sticky; top: 0;
 }
-.table tbody tr { border-bottom: 1px solid var(--line); cursor: pointer; transition: background 80ms; }
+.table tbody tr {
+  border-bottom: 1px solid var(--line); cursor: pointer;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
 .table tbody tr:hover { background: var(--bg-3); }
+.table tbody tr:hover .hover-show { opacity: 1; transform: translateY(0); }
 .table tbody tr:last-child { border-bottom: 0; }
 .table td.num, .table th.num { text-align: right; font-family: var(--mono); }
 
@@ -207,11 +216,14 @@ input, select, textarea { font-family: inherit; }
 .data-table th, .data-table td { padding: 10px 14px; text-align: left; font-size: 13px; }
 .data-table th {
   font-family: var(--mono); font-size: 10px; color: var(--fg-4);
-  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 400;
-  border-bottom: 1px solid var(--line); background: var(--bg-3);
+  letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500;
+  border-bottom: 1px solid var(--line); background: var(--bg-2);
   position: sticky; top: 0;
 }
-.data-table tbody tr { border-bottom: 1px solid var(--line); transition: background 80ms; }
+.data-table tbody tr {
+  border-bottom: 1px solid var(--line);
+  transition: background 150ms ease;
+}
 .data-table tbody tr:hover { background: var(--bg-3); }
 .data-table tbody tr:last-child { border-bottom: 0; }
 
@@ -1020,3 +1032,62 @@ input, select, textarea { font-family: inherit; }
   .customer-row { padding: 14px; }
   .pill { max-width: 100%; }
 }
+
+/* ─── Hover-reveal system ────────────────────────────────────────────────────
+   Attach .hover-parent to the container (tr, card, row div).
+   Add .hover-show to any child that should appear only on hover.
+   Add .hover-show-right to elements that slide in from the right.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* Child that fades + slides up from hidden → visible on parent hover */
+.hover-show {
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+.hover-parent:hover .hover-show,
+.table tbody tr:hover .hover-show,
+.data-table tbody tr:hover .hover-show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Slide in from the right (for inline action buttons) */
+.hover-show-right {
+  opacity: 0;
+  transform: translateX(6px);
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+.hover-parent:hover .hover-show-right,
+.table tbody tr:hover .hover-show-right,
+.data-table tbody tr:hover .hover-show-right {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+/* Card hover — lift + stronger border */
+.hover-card {
+  transition: box-shadow 200ms ease, border-color 200ms ease, transform 150ms ease;
+}
+.hover-card:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 1px 0 rgba(255,255,255,0.04) inset;
+  border-color: var(--line-2) !important;
+  transform: translateY(-1px);
+}
+html[data-theme="light"] .hover-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+}
+
+/* Row hover — visible accent left border on hover */
+.table tbody tr:hover td:first-child,
+.data-table tbody tr:hover td:first-child {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* data-table hover background (was missing) */
+.data-table tbody tr:hover { background: var(--bg-3); }
+.data-table tbody tr:last-child { border-bottom: 0; }
