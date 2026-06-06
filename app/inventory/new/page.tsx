@@ -188,6 +188,8 @@ interface ProductDraft {
   maxStock: string;
   supplier: string;
   status: 'active' | 'draft';
+  imageFile: File | null;
+  imagePreview: string | null;
   errors: Record<string, string>;
   saved: boolean;
   saving: boolean;
@@ -201,6 +203,7 @@ function makeEmpty(): ProductDraft {
     category: '', barcode: '',
     openStock: '0', minStock: '10', maxStock: '100',
     supplier: '', status: 'active',
+    imageFile: null, imagePreview: null,
     errors: {}, saved: false, saving: false,
   };
 }
@@ -239,7 +242,16 @@ const LABEL = {
 } as const;
 
 function ProductCard({ draft, index, canRemove, onUpdate, onRemove }: ProductCardProps) {
-  const { name, sku, price, cost, category, barcode, openStock, minStock, maxStock, supplier, status, errors, saved, saving } = draft;
+  const { name, sku, price, cost, category, barcode, openStock, minStock, maxStock, supplier, status, imagePreview, errors, saved, saving } = draft;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  function handleImageSelect(file: File) {
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = e => onUpdate({ imageFile: file, imagePreview: e.target?.result as string });
+    reader.readAsDataURL(file);
+  }
 
   const margin = price && cost && +price > 0 && +cost > 0
     ? (((+price - +cost) / +price) * 100).toFixed(1)
@@ -381,6 +393,55 @@ function ProductCard({ draft, index, canRemove, onUpdate, onRemove }: ProductCar
           </div>
         </div>
 
+        {/* Divider */}
+        <div style={{ height: 1, background: 'var(--line)', margin: '0 -20px' }} />
+
+        {/* Image upload */}
+        <div>
+          <label style={{ ...LABEL, marginBottom: 8 }}>
+            PRODUCT IMAGE <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· optional</span>
+          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleImageSelect(f); }}
+          />
+          {imagePreview ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <img src={imagePreview} alt="Preview" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line-2)', flexShrink: 0 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <button onClick={() => fileInputRef.current?.click()}
+                  style={{ padding: '5px 10px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'var(--bg)', color: 'var(--fg-2)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Change
+                </button>
+                <button onClick={() => { onUpdate({ imageFile: null, imagePreview: null }); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                  style={{ padding: '5px 10px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'var(--bg)', color: 'var(--bad)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleImageSelect(f); }}
+              style={{
+                border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--line-2)'}`,
+                borderRadius: 10, padding: '18px 16px', textAlign: 'center',
+                cursor: 'pointer', background: dragOver ? 'var(--accent-soft)' : 'var(--bg)',
+                transition: 'border-color 150ms, background 150ms',
+              }}
+            >
+              <div style={{ fontSize: 22, marginBottom: 6 }}>🖼</div>
+              <div style={{ fontSize: 12.5, fontWeight: 500, marginBottom: 3 }}>Drop image here</div>
+              <div style={{ fontSize: 11.5, color: 'var(--fg-3)' }}>or click to browse · JPG, PNG, WEBP</div>
+            </div>
+          )}
+        </div>
+
         {errors._submit && (
           <div style={{ padding: '9px 12px', borderRadius: 7, background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)', color: 'var(--bad)', fontSize: 12.5 }}>
             {errors._submit}
@@ -444,6 +505,7 @@ export default function NewProductPage() {
       if (draft.maxStock) fd.append('max_stock', draft.maxStock);
       if (draft.supplier) fd.append('supplier', draft.supplier);
       fd.append('status', draft.status);
+      if (draft.imageFile) fd.append('image', draft.imageFile);
 
       try {
         const res = await fetch(`${BASE_URL}/api/v1/inventory/products/`, {
