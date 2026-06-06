@@ -506,6 +506,7 @@ input, select, textarea { font-family: inherit; }
   transition: background 120ms;
 }
 .hamburger:hover { background: var(--bg-3); color: var(--fg); }
+.three-dot-ai-row { display: none; }
 
 .mobile-nav-overlay {
   display: none; position: fixed; inset: 0;
@@ -535,6 +536,7 @@ input, select, textarea { font-family: inherit; }
   .topbar { padding: 0 12px; gap: 8px; min-width: 0; position: sticky; top: 0; }
   .topbar-search { display: none !important; }
   .topbar-ai    { display: none !important; }
+  .three-dot-ai-row { display: block; }
   .topbar-actions .btn { padding-inline: 9px !important; }
 
   .body { padding: 16px 14px 72px; }
@@ -738,6 +740,19 @@ input, select, textarea { font-family: inherit; }
   display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
 }
 @media (max-width: 640px) { .form-grid-2 { grid-template-columns: 1fr; } }
+
+/* Product card: image left on desktop, image top on mobile */
+.product-card-layout {
+  display: grid;
+  grid-template-columns: 176px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 680px) {
+  .product-card-layout {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* ─── Settings sidebar (horizontal on mobile) ───────────────────────────────── */
 .settings-nav-btn {

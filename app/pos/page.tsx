@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
@@ -372,7 +373,7 @@ function ProductsSticky({ query, setQuery, cat, setCat, categories, resultCount,
           </span>
           <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{totalCount} products</span>
           <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12 }}>Open drawer</button>
-          <button className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12 }}>Recent sales</button>
+          <Link href="/transactions" className="btn btn-ghost" style={{ padding: '5px 10px', fontSize: 12, textDecoration: 'none' }}>Recent sales</Link>
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
@@ -742,7 +743,7 @@ export default function POSPage() {
     <AppShell
       full
       crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Point of sale' }]}
-      actions={<button className="btn btn-soft page-sec" style={{ padding: '7px 12px', fontSize: 13 }}>Recent sales</button>}
+      actions={<Link href="/transactions" className="btn btn-soft page-sec" style={{ padding: '7px 12px', fontSize: 13, textDecoration: 'none' }}>Recent sales</Link>}
     >
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 

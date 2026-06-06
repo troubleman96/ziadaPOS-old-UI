@@ -8,7 +8,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Ziada POS — Sign in',
+  title: 'Ziada — Sign in',
 };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {

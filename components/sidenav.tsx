@@ -192,33 +192,6 @@ function NavItem({ icon, label, badge, active, href, onClick }: NavItemProps) {
   );
 }
 
-function NavFooter() {
-  return (
-    <div style={{
-      borderTop: '1px solid var(--line)',
-      padding: 12,
-    }}>
-      <div style={{
-        padding: '10px 12px',
-        border: '1px solid var(--line)',
-        borderRadius: 8,
-        background: 'var(--bg)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>AI CREDITS · MAY</span>
-          <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-2)' }}>2,418 / 5,000</span>
-        </div>
-        <div style={{ height: 4, borderRadius: 999, background: 'var(--bg-3)', overflow: 'hidden' }}>
-          <div style={{ width: '48%', height: '100%', background: 'var(--accent)' }}></div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-          <a href="#" className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>View usage</a>
-          <a href="#" className="mono" style={{ fontSize: 10.5, color: 'var(--accent)' }}>Upgrade</a>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function Sidenav({ navOpen, onClose }: SidenavProps) {
   const pathname = usePathname();
@@ -241,12 +214,12 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
     { id: 'pos',       label: 'Point of Sale',  icon: Icons.pos,        href: '/pos',          badge: '⌘N' },
     { id: 'txn',       label: 'Transactions',   icon: Icons.txn,        href: '/transactions' },
     { id: 'inventory', label: 'Inventory',      icon: Icons.inventory,  href: '/inventory',    badge: { color: 'var(--warn)' } },
+    { id: 'discounts', label: 'Discounts',      icon: Icons.discount,   href: '/discounts' },
     { id: 'credits',   label: 'Credits',        icon: Icons.credit,     href: '/credits',      badge: '14' },
   ];
   const insights = [
     { id: 'analytics', label: 'Analytics',  icon: Icons.analytics, href: '/analytics' },
     { id: 'reports',   label: 'Reports',    icon: Icons.reports,   href: '/reports' },
-    { id: 'discounts', label: 'Discounts',  icon: Icons.discount,  href: '/discounts' },
     { id: 'ai',        label: 'Ziada AI',   icon: Icons.ai,        href: '/ai',      badge: 'NEW' },
   ];
   const directory = [
@@ -265,6 +238,18 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
 
   return (
     <aside className={`sidenav${navOpen ? ' nav-open' : ''}`}>
+      {/* Brand header */}
+      <div style={{ padding: '14px 16px 6px', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <img
+          src="/ziadaposicon.jpeg"
+          alt="Ziada"
+          style={{
+            width: 32, height: 32, borderRadius: 9, objectFit: 'cover', flexShrink: 0,
+            boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.2)',
+          }}
+        />
+        <span style={{ fontSize: 16, fontWeight: 650, letterSpacing: '-0.025em', color: 'var(--fg)' }}>ziada</span>
+      </div>
       <StoreSwitcher onClose={onClose} />
       <div className="sidenav-scroll">
         <div className="nav-section-label">Operate</div>
@@ -288,7 +273,6 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
           <NavItem key={i.id} {...i} active={isActive(i.href)} onClick={onClose} />
         ))}
       </div>
-      <NavFooter />
     </aside>
   );
 }

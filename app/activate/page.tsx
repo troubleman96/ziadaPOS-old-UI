@@ -149,7 +149,7 @@ export default function ActivatePage() {
 
   // Build the pre-filled WhatsApp message
   const waMessage = encodeURIComponent(
-    `Habari Ditrick,\n\nNinataka kulipa TZS 10,000 kwa Ziada POS 7-day trial yangu.\n\nJina langu: ${user?.full_name ?? ''}\nNamba ya simu: ${user?.phone ?? ''}\n\nAsante.`
+    `Habari Ditrick,\n\nNinataka kulipa TZS 10,000 kwa Ziada 7-day trial yangu.\n\nJina langu: ${user?.full_name ?? ''}\nNamba ya simu: ${user?.phone ?? ''}\n\nAsante.`
   );
   const waUrl = `https://wa.me/${AIRTEL_NUMBER_WA}?text=${waMessage}`;
 
@@ -214,9 +214,8 @@ export default function ActivatePage() {
         <div className="act-card">
 
           {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 4 }}>
-            <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
-            <span style={{ fontSize: 15, fontWeight: 600 }}>Ziada POS</span>
+          <div style={{ marginBottom: 4 }}>
+            <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
           </div>
 
           {/* Heading */}

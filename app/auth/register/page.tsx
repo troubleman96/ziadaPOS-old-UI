@@ -201,10 +201,7 @@ function LeftPanel() {
       `}</style>
 
       <div style={{ position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 7, objectFit: 'cover' }} />
-          <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>Ziada POS</span>
-        </div>
+        <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
       </div>
 
       <div style={{ position: 'relative' }}>
@@ -313,7 +310,7 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
 
   // Form state
   const [fullName,    setFullName]    = useState('');
@@ -332,8 +329,10 @@ export default function RegisterPage() {
       return;
     }
     try {
-      const t = localStorage.getItem('ziada-theme');
-      if (t === 'light' || t === 'dark') setTheme(t);
+      const stored = localStorage.getItem('ziada-theme');
+      const effective = stored === 'dark' ? 'dark' : 'light';
+      setTheme(effective);
+      document.documentElement.setAttribute('data-theme', effective);
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -550,9 +549,8 @@ export default function RegisterPage() {
 
             {/* Mobile logo */}
             <style>{`.reg-mobile-logo { display: none !important; } @media (max-width: 900px) { .reg-mobile-logo { display: flex !important; } }`}</style>
-            <div className="reg-mobile-logo" style={{ display: 'none', alignItems: 'center', gap: 9, marginBottom: 28 }}>
-              <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
-              <span style={{ fontSize: 15, fontWeight: 600 }}>Ziada POS</span>
+            <div className="reg-mobile-logo" style={{ display: 'none', marginBottom: 28 }}>
+              <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
             </div>
 
             {/* Progress */}

@@ -100,7 +100,7 @@ export default function StoresPage() {
             All locations for your enterprise.
             {stats && (
               <span className="mono" style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span className="dot-s" style={{ background: 'var(--good)' }}></span> {stats.open_stores} open now
+                <span className="dot-s" style={{ background: 'var(--good)' }}></span> {stats.open_count} open now
               </span>
             )}
           </p>
@@ -113,10 +113,10 @@ export default function StoresPage() {
       {/* KPI strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 20 }}>
         {[
-          { label: 'STORES OPEN', value: stats ? `${stats.open_stores} / ${stats.total_stores}` : '—', sub: 'open stores', color: 'var(--good)' },
-          { label: 'TODAY REVENUE', value: stats ? fmtShort(stats.total_revenue_today) : '—', sub: 'across open stores', color: 'var(--fg)' },
-          { label: 'TODAY TRANSACTIONS', value: stats ? stats.total_txns_today.toString() : '—', sub: 'cash + mobile combined', color: 'var(--fg)' },
-          { label: 'STAFF ON DUTY', value: stores.reduce((s, st) => s + (st.staff_on_duty || 0), 0).toString(), sub: 'across open locations', color: 'var(--fg)' },
+          { label: 'STORES OPEN', value: stats ? `${stats.open_count} / ${stats.total_stores}` : '—', sub: 'open stores', color: 'var(--good)' },
+          { label: 'TODAY REVENUE', value: stats ? fmtShort(stats.total_revenue) : '—', sub: 'across open stores', color: 'var(--fg)' },
+          { label: 'TODAY TRANSACTIONS', value: stats ? String(stats.total_txns) : '—', sub: 'cash + mobile combined', color: 'var(--fg)' },
+          { label: 'STAFF ON DUTY', value: stats ? String(stats.staff_on_duty) : String(stores.reduce((s, st) => s + (st.staff_on_duty || 0), 0)), sub: 'across open locations', color: 'var(--fg)' },
         ].map((k) => (
           <div key={k.label} className="surface stat-card">
             <span className="label">{k.label}</span>

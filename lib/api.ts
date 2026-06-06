@@ -272,6 +272,13 @@ export interface BulkUploadResult {
   errors: { row: number; message: string }[];
 }
 
+export interface BulkCreateResult {
+  created: number;
+  failed: number;
+  products: InventoryProduct[];
+  errors: { index: number; name: string; errors: Record<string, string | string[]> }[];
+}
+
 // Minimal product shape returned by ?minimal=true — used on POS
 export interface POSProduct {
   id: string;
@@ -369,6 +376,30 @@ export const inventoryApi = {
       {},
       token ?? undefined,
     );
+  },
+
+  async bulkCreate(products: Record<string, unknown>[]): Promise<ApiResult<BulkCreateResult>> {
+    const token = await getUsableAccessToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const res = await fetch(`${BASE_URL}/api/v1/inventory/products/bulk-create/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(products),
+      });
+      const json = await res.json() as Record<string, unknown>;
+      if (!res.ok) {
+        return {
+          success: false,
+          status: res.status,
+          message: (json.message ?? json.detail ?? 'Bulk create failed.') as string,
+        };
+      }
+      return { success: true, message: (json.message ?? '') as string, data: json.data as BulkCreateResult };
+    } catch {
+      return { success: false, message: 'Network error. Please check your connection.' };
+    }
   },
 
   async bulkUpload(file: File): Promise<ApiResult<BulkUploadResult>> {
@@ -542,9 +573,12 @@ export interface StoreDetail extends StoreItem {
 
 export interface StoreStats {
   total_stores: number;
-  open_stores: number;
-  total_revenue_today: number;
-  total_txns_today: number;
+  open_count: number;
+  closed_count: number;
+  paused_count: number;
+  total_revenue: number;
+  total_txns: number;
+  staff_on_duty: number;
 }
 
 // ── Analytics products types ──────────────────────────────────────────────────
@@ -801,6 +835,10 @@ export const staffApi = {
     const token = await getUsableAccessToken();
     const qs = params ? `?${params}` : '';
     return apiFetch<StaffMember[]>(`/api/v1/staff/${qs}`, {}, token ?? undefined);
+  },
+  async getDetail(id: string): Promise<ApiResult<StaffMember>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<StaffMember>(`/api/v1/staff/${id}/`, {}, token ?? undefined);
   },
   async getKPIs(): Promise<ApiResult<StaffKPIs>> {
     const token = await getUsableAccessToken();
