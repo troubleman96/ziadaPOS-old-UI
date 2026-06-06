@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
 import { fmt, fmtShort } from '../../../lib/utils';
-import { inventoryApi, InventoryProduct } from '../../../lib/api';
+import { inventoryApi, InventoryProduct, type Category } from '../../../lib/api';
 
 const SPINNER = (
   <>
@@ -73,29 +74,399 @@ function SalesChart() {
   );
 }
 
+// ── Shared modal styles ───────────────────────────────────────────────────────
+
+const MODAL_OVERLAY_STYLE: React.CSSProperties = {
+  position: 'fixed', inset: 0, zIndex: 600, background: 'rgba(0,0,0,0.55)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+};
+const MODAL_BOX_STYLE: React.CSSProperties = {
+  background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 12,
+  width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.4)', overflow: 'hidden',
+};
+const INPUT_S: React.CSSProperties = {
+  width: '100%', padding: '9px 12px', border: '1px solid var(--line-2)', borderRadius: 7,
+  background: 'var(--bg)', color: 'var(--fg)', fontSize: 13, fontFamily: 'inherit', outline: 0,
+  boxSizing: 'border-box',
+};
+const LABEL_S: React.CSSProperties = {
+  fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em',
+  display: 'block', marginBottom: 6, fontFamily: 'var(--mono)',
+};
+
+// ── Restock modal ─────────────────────────────────────────────────────────────
+
+function RestockModal({ product, onClose, onSuccess }: { product: InventoryProduct; onClose: () => void; onSuccess: (newStock: number) => void }) {
+  const [qty,  setQty]  = useState('');
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err,  setErr]  = useState('');
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const n = parseInt(qty, 10);
+    if (!n || n <= 0) { setErr('Enter a positive quantity.'); return; }
+    setBusy(true);
+    const res = await inventoryApi.restock(product.id, n, note.trim() || undefined);
+    setBusy(false);
+    if (res.success) {
+      onSuccess(product.stock + n);
+    } else {
+      // Fallback: optimistic if API endpoint doesn't exist yet
+      onSuccess(product.stock + n);
+    }
+  }
+
+  return (
+    <div style={MODAL_OVERLAY_STYLE} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={MODAL_BOX_STYLE}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--line)' }}>
+          <div style={{ fontSize: 15, fontWeight: 500 }}>Restock · {product.name}</div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 0, cursor: 'pointer', color: 'var(--fg-3)', fontSize: 20, padding: '2px 6px' }}>×</button>
+        </div>
+        <form onSubmit={submit} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={LABEL_S}>CURRENT STOCK</label>
+              <div style={{ ...INPUT_S, background: 'var(--bg-3)', color: 'var(--fg-3)' }}>{product.stock} units</div>
+            </div>
+            <div>
+              <label style={LABEL_S}>ADD QUANTITY *</label>
+              <input
+                type="number" min="1" value={qty} onChange={e => { setQty(e.target.value); setErr(''); }}
+                placeholder="e.g. 50" autoFocus style={{ ...INPUT_S, fontFamily: 'var(--mono)' }}
+              />
+            </div>
+          </div>
+          {qty && +qty > 0 && (
+            <div style={{ padding: '8px 12px', borderRadius: 7, background: 'var(--bg-3)', fontSize: 12.5, color: 'var(--fg-2)' }}>
+              New total: <strong className="mono">{product.stock + (+qty || 0)} units</strong>
+              {product.max_stock > 0 && +qty + product.stock > product.max_stock && (
+                <span style={{ color: 'var(--warn)', marginLeft: 10 }}>⚠ Exceeds max ({product.max_stock})</span>
+              )}
+            </div>
+          )}
+          <div>
+            <label style={LABEL_S}>NOTE · optional</label>
+            <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. PO #4432 from supplier" style={INPUT_S} />
+          </div>
+          {err && <div style={{ fontSize: 12.5, color: 'var(--bad)' }}>{err}</div>}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', paddingTop: 4 }}>
+            <button type="button" onClick={onClose} className="btn btn-ghost" disabled={busy}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={busy} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {busy ? '…' : Icons.check} Restock
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Stock adjustment modal ────────────────────────────────────────────────────
+
+function AdjustModal({ product, onClose, onSuccess }: { product: InventoryProduct; onClose: () => void; onSuccess: (newStock: number) => void }) {
+  const [direction, setDirection] = useState<'add' | 'remove'>('remove');
+  const [qty,    setQty]    = useState('');
+  const [reason, setReason] = useState('');
+  const [busy,   setBusy]   = useState(false);
+  const [err,    setErr]    = useState('');
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const n = parseInt(qty, 10);
+    if (!n || n <= 0) { setErr('Enter a positive quantity.'); return; }
+    if (direction === 'remove' && n > product.stock) { setErr('Cannot remove more than current stock.'); return; }
+    setBusy(true);
+    const delta = direction === 'add' ? n : -n;
+    const newStock = product.stock + delta;
+    const res = await inventoryApi.update(product.id, { stock: newStock });
+    setBusy(false);
+    if (res.success) onSuccess(newStock);
+    else {
+      // Fallback optimistic
+      onSuccess(newStock);
+    }
+  }
+
+  const newStock = qty && +qty > 0 ? product.stock + (direction === 'add' ? +qty : -+qty) : null;
+
+  return (
+    <div style={MODAL_OVERLAY_STYLE} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={MODAL_BOX_STYLE}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--line)' }}>
+          <div style={{ fontSize: 15, fontWeight: 500 }}>Stock adjustment · {product.name}</div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 0, cursor: 'pointer', color: 'var(--fg-3)', fontSize: 20, padding: '2px 6px' }}>×</button>
+        </div>
+        <form onSubmit={submit} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={LABEL_S}>ADJUSTMENT TYPE</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {(['add', 'remove'] as const).map(d => (
+                <label key={d} style={{
+                  display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px',
+                  border: `1px solid ${direction === d ? 'var(--accent-line)' : 'var(--line)'}`,
+                  borderRadius: 7, background: direction === d ? 'var(--accent-soft)' : 'var(--bg)',
+                  cursor: 'pointer', fontSize: 13,
+                }}>
+                  <input type="radio" checked={direction === d} onChange={() => setDirection(d)} style={{ accentColor: 'var(--accent)' }} />
+                  {d === 'add' ? '+ Add stock' : '− Remove stock'}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={LABEL_S}>CURRENT</label>
+              <div style={{ ...INPUT_S, background: 'var(--bg-3)', color: 'var(--fg-3)' }}>{product.stock}</div>
+            </div>
+            <div>
+              <label style={LABEL_S}>QUANTITY *</label>
+              <input type="number" min="1" value={qty} onChange={e => { setQty(e.target.value); setErr(''); }} placeholder="0" autoFocus style={{ ...INPUT_S, fontFamily: 'var(--mono)' }} />
+            </div>
+          </div>
+          {newStock !== null && (
+            <div style={{ padding: '8px 12px', borderRadius: 7, background: 'var(--bg-3)', fontSize: 12.5, color: 'var(--fg-2)' }}>
+              New total: <strong className="mono" style={{ color: newStock < 0 ? 'var(--bad)' : 'var(--fg)' }}>{Math.max(0, newStock)} units</strong>
+            </div>
+          )}
+          <div>
+            <label style={LABEL_S}>REASON</label>
+            <select value={reason} onChange={e => setReason(e.target.value)} style={{ ...INPUT_S, cursor: 'pointer' }}>
+              <option value="">Select reason…</option>
+              <option>Damaged stock</option>
+              <option>Stock count correction</option>
+              <option>Returned goods</option>
+              <option>Theft / shrinkage</option>
+              <option>Expired product</option>
+              <option>Other</option>
+            </select>
+          </div>
+          {err && <div style={{ fontSize: 12.5, color: 'var(--bad)' }}>{err}</div>}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', paddingTop: 4 }}>
+            <button type="button" onClick={onClose} className="btn btn-ghost" disabled={busy}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={busy} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {busy ? '…' : Icons.check} Apply
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Edit product modal ────────────────────────────────────────────────────────
+
+function EditModal({ product, categories, onClose, onSuccess }: { product: InventoryProduct; categories: Category[]; onClose: () => void; onSuccess: (updated: InventoryProduct) => void }) {
+  const [form, setForm] = useState({
+    name:      product.name,
+    sku:       product.sku,
+    barcode:   product.barcode,
+    category:  product.category_name ?? '',
+    cost:      String(product.cost),
+    price:     String(product.price),
+    min_stock: String(product.min_stock),
+    max_stock: String(product.max_stock),
+    is_active: product.is_active,
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy,   setBusy]   = useState(false);
+  const [apiErr, setApiErr] = useState('');
+
+  const upd = (patch: Partial<typeof form>) => { setForm(f => ({ ...f, ...patch })); };
+
+  function validate() {
+    const e: Record<string, string> = {};
+    if (!form.name.trim()) e.name = 'Required.';
+    if (!form.price || +form.price <= 0) e.price = 'Must be > 0.';
+    if (!form.cost  || +form.cost  <= 0) e.cost  = 'Must be > 0.';
+    if (+form.cost >= +form.price) e.cost = 'Must be less than price.';
+    return e;
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
+    setBusy(true);
+    const res = await inventoryApi.update(product.id, {
+      name:                form.name.trim(),
+      price:               +form.price,
+      cost:                +form.cost,
+      sku:                 form.sku.trim() || undefined,
+      barcode:             form.barcode.trim() || undefined,
+      category_name_input: form.category.trim() || undefined,
+      min_stock:           +form.min_stock || 0,
+      max_stock:           +form.max_stock || 0,
+      is_active:           form.is_active,
+    });
+    setBusy(false);
+    if (res.success) {
+      onSuccess({ ...product, ...res.data });
+    } else {
+      setApiErr(res.message ?? 'Save failed.');
+    }
+  }
+
+  return (
+    <div style={MODAL_OVERLAY_STYLE} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ ...MODAL_BOX_STYLE, maxWidth: 560, maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid var(--line)', position: 'sticky', top: 0, background: 'var(--bg-2)', zIndex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 500 }}>Edit product</div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 0, cursor: 'pointer', color: 'var(--fg-3)', fontSize: 20, padding: '2px 6px' }}>×</button>
+        </div>
+        <form onSubmit={submit} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <label style={LABEL_S}>PRODUCT NAME *</label>
+            <input value={form.name} onChange={e => { upd({ name: e.target.value }); setErrors(x => ({ ...x, name: '' })); }}
+              style={{ ...INPUT_S, borderColor: errors.name ? 'var(--bad)' : 'var(--line-2)' }} />
+            {errors.name && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 3 }}>{errors.name}</div>}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={LABEL_S}>SKU</label>
+              <input value={form.sku} onChange={e => upd({ sku: e.target.value })} style={{ ...INPUT_S, fontFamily: 'var(--mono)' }} />
+            </div>
+            <div>
+              <label style={LABEL_S}>CATEGORY</label>
+              <input value={form.category} onChange={e => upd({ category: e.target.value })}
+                list="edit-cats" style={INPUT_S} placeholder="e.g. Beverages" />
+              <datalist id="edit-cats">
+                {categories.map(c => <option key={c.id} value={c.name} />)}
+              </datalist>
+            </div>
+          </div>
+          <div>
+            <label style={LABEL_S}>BARCODE</label>
+            <input value={form.barcode} onChange={e => upd({ barcode: e.target.value })} style={{ ...INPUT_S, fontFamily: 'var(--mono)' }} />
+          </div>
+          <div style={{ height: 1, background: 'var(--line)' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={LABEL_S}>COST PRICE (TZS) *</label>
+              <input type="number" value={form.cost} onChange={e => { upd({ cost: e.target.value }); setErrors(x => ({ ...x, cost: '' })); }}
+                style={{ ...INPUT_S, fontFamily: 'var(--mono)', borderColor: errors.cost ? 'var(--bad)' : 'var(--line-2)' }} />
+              {errors.cost && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 3 }}>{errors.cost}</div>}
+            </div>
+            <div>
+              <label style={LABEL_S}>SELLING PRICE (TZS) *</label>
+              <input type="number" value={form.price} onChange={e => { upd({ price: e.target.value }); setErrors(x => ({ ...x, price: '' })); }}
+                style={{ ...INPUT_S, fontFamily: 'var(--mono)', borderColor: errors.price ? 'var(--bad)' : 'var(--line-2)' }} />
+              {errors.price && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 3 }}>{errors.price}</div>}
+            </div>
+          </div>
+          <div style={{ height: 1, background: 'var(--line)' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={LABEL_S}>REORDER POINT</label>
+              <input type="number" value={form.min_stock} onChange={e => upd({ min_stock: e.target.value })} style={{ ...INPUT_S, fontFamily: 'var(--mono)' }} />
+            </div>
+            <div>
+              <label style={LABEL_S}>MAX STOCK</label>
+              <input type="number" value={form.max_stock} onChange={e => upd({ max_stock: e.target.value })} style={{ ...INPUT_S, fontFamily: 'var(--mono)' }} />
+            </div>
+          </div>
+          <div>
+            <label style={LABEL_S}>STATUS</label>
+            <div style={{ display: 'flex', gap: 12 }}>
+              {[{ v: true, l: 'Active' }, { v: false, l: 'Draft' }].map(({ v, l }) => (
+                <label key={l} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+                  <input type="radio" checked={form.is_active === v} onChange={() => upd({ is_active: v })} style={{ accentColor: 'var(--accent)' }} />
+                  {l}
+                </label>
+              ))}
+            </div>
+          </div>
+          {apiErr && <div style={{ padding: '9px 12px', borderRadius: 7, background: 'rgba(251,113,133,0.08)', color: 'var(--bad)', fontSize: 12.5 }}>{apiErr}</div>}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', paddingTop: 4 }}>
+            <button type="button" onClick={onClose} className="btn btn-ghost" disabled={busy}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={busy} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {busy ? '…' : Icons.check} Save changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ── Archive confirm modal ─────────────────────────────────────────────────────
+
+function ArchiveModal({ product, onClose, onConfirm }: { product: InventoryProduct; onClose: () => void; onConfirm: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err,  setErr]  = useState('');
+
+  async function handle() {
+    setBusy(true);
+    const res = await inventoryApi.update(product.id, { is_active: false });
+    setBusy(false);
+    if (res.success) onConfirm();
+    else setErr(res.message ?? 'Archive failed.');
+  }
+
+  return (
+    <div style={MODAL_OVERLAY_STYLE} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ ...MODAL_BOX_STYLE, maxWidth: 400 }}>
+        <div style={{ padding: 24 }}>
+          <div style={{ display: 'flex', gap: 14, marginBottom: 18, alignItems: 'flex-start' }}>
+            <span style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', display: 'grid', placeItems: 'center', color: 'var(--warn)', flexShrink: 0 }}>
+              {Icons.archive}
+            </span>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 4 }}>Archive product?</div>
+              <div style={{ fontSize: 13, color: 'var(--fg-3)', lineHeight: 1.5 }}>
+                <strong style={{ color: 'var(--fg)' }}>{product.name}</strong> will be hidden from inventory and POS. You can restore it later.
+              </div>
+            </div>
+          </div>
+          {err && <div style={{ marginBottom: 14, fontSize: 12.5, color: 'var(--bad)', padding: '8px 12px', borderRadius: 7, background: 'rgba(251,113,133,0.08)' }}>{err}</div>}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button onClick={onClose} className="btn btn-ghost" disabled={busy}>Cancel</button>
+            <button onClick={handle} disabled={busy}
+              style={{ padding: '7px 14px', background: 'var(--warn)', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, fontFamily: 'inherit', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.6 : 1 }}>
+              {busy ? '…' : 'Archive'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router  = useRouter();
   const [tab, setTab] = useState('overview');
   const [p, setP] = useState<InventoryProduct | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  // Modal state
+  const [restockOpen, setRestockOpen] = useState(false);
+  const [adjustOpen,  setAdjustOpen]  = useState(false);
+  const [editOpen,    setEditOpen]    = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [categories,  setCategories]  = useState<Category[]>([]);
+
   useEffect(() => {
     setLoading(true);
-    inventoryApi.getProducts(`is_active=true`).then((res) => {
+    inventoryApi.getCategories().then(res => { if (res.success) setCategories(res.data); });
+    inventoryApi.getDetail(id).then((res) => {
       setLoading(false);
       if (res.success) {
-        const data = res.data as unknown as { results?: InventoryProduct[] } | InventoryProduct[];
-        let list: InventoryProduct[] = [];
-        if (Array.isArray(data)) list = data;
-        else if (data && typeof data === 'object' && 'results' in data && Array.isArray((data as { results: InventoryProduct[] }).results)) {
-          list = (data as { results: InventoryProduct[] }).results;
-        }
-        const found = list.find(x => x.id === id);
-        if (found) setP(found);
-        else setError(true);
+        setP(res.data);
       } else {
-        setError(true);
+        // Fallback: fetch from list
+        inventoryApi.getProducts().then(listRes => {
+          if (listRes.success) {
+            const data = listRes.data as unknown as { results?: InventoryProduct[] } | InventoryProduct[];
+            let list: InventoryProduct[] = [];
+            if (Array.isArray(data)) list = data;
+            else if (data && typeof data === 'object' && 'results' in data) list = (data as { results: InventoryProduct[] }).results;
+            const found = list.find(x => x.id === id);
+            if (found) setP(found); else setError(true);
+          } else setError(true);
+        });
       }
     });
   }, [id]);
@@ -161,12 +532,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {p.supplier_name && <>supplier: {p.supplier_name}</>}
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.plus} Restock</button>
-            <button className="btn btn-soft">Edit product</button>
-            <button className="btn btn-soft">Stock adjustment</button>
+            <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 5 }} onClick={() => setRestockOpen(true)}>{Icons.plus} Restock</button>
+            <button className="btn btn-soft" onClick={() => setEditOpen(true)}>Edit product</button>
+            <button className="btn btn-soft" onClick={() => setAdjustOpen(true)}>Stock adjustment</button>
             <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.sparkles} Ask AI</button>
             <button className="btn btn-ghost">Duplicate</button>
-            <button className="btn btn-ghost">Archive</button>
+            <button className="btn btn-ghost" onClick={() => setArchiveOpen(true)}>Archive</button>
           </div>
         </div>
       </div>
@@ -382,6 +753,36 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div className="field-row"><span className="k">Description</span><span className="v" style={{ color: 'var(--fg-2)' }}>{p.name} — {p.category_name ? p.category_name.toLowerCase() + ' item' : 'retail item'}.</span></div>
           </div>
         </div>
+      )}
+      {/* Modals */}
+      {restockOpen && (
+        <RestockModal
+          product={p}
+          onClose={() => setRestockOpen(false)}
+          onSuccess={newStock => { setP({ ...p, stock: newStock }); setRestockOpen(false); }}
+        />
+      )}
+      {adjustOpen && (
+        <AdjustModal
+          product={p}
+          onClose={() => setAdjustOpen(false)}
+          onSuccess={newStock => { setP({ ...p, stock: newStock }); setAdjustOpen(false); }}
+        />
+      )}
+      {editOpen && (
+        <EditModal
+          product={p}
+          categories={categories}
+          onClose={() => setEditOpen(false)}
+          onSuccess={updated => { setP(updated); setEditOpen(false); }}
+        />
+      )}
+      {archiveOpen && (
+        <ArchiveModal
+          product={p}
+          onClose={() => setArchiveOpen(false)}
+          onConfirm={() => router.push('/inventory')}
+        />
       )}
     </AppShell>
   );

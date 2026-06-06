@@ -428,6 +428,35 @@ export const inventoryApi = {
       return { success: false, message: 'Network error. Please check your connection.' };
     }
   },
+
+  async getDetail(id: string): Promise<ApiResult<InventoryProduct>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<InventoryProduct>(`/api/v1/inventory/products/${id}/`, {}, token ?? undefined);
+  },
+
+  async update(id: string, payload: Record<string, unknown>): Promise<ApiResult<InventoryProduct>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<InventoryProduct>(`/api/v1/inventory/products/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) }, token ?? undefined);
+  },
+
+  async delete(id: string): Promise<ApiResult<null>> {
+    const token = await getUsableAccessToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const res = await fetch(`${BASE_URL}/api/v1/inventory/products/${id}/`, { method: 'DELETE', headers });
+      if (res.status === 204 || res.ok) return { success: true, message: 'Product deleted.', data: null };
+      const json = await res.json() as Record<string, unknown>;
+      return { success: false, status: res.status, message: (json.message ?? json.detail ?? 'Delete failed.') as string };
+    } catch {
+      return { success: false, message: 'Network error. Please check your connection.' };
+    }
+  },
+
+  async restock(id: string, qty: number, note?: string): Promise<ApiResult<InventoryProduct>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<InventoryProduct>(`/api/v1/inventory/products/${id}/restock/`, { method: 'POST', body: JSON.stringify({ qty, note }) }, token ?? undefined);
+  },
 };
 
 // ── Analytics types ────────────────────────────────────────────────────────────

@@ -252,6 +252,19 @@ export const Icons = {
       <circle cx="11.5" cy="11.5" r="1.5" />
     </>} />
   ),
+  copy: (
+    <Icon d={<>
+      <rect x="5.5" y="5.5" width="8" height="9" rx="1" />
+      <path d="M5.5 10.5H3a.5.5 0 0 1-.5-.5V3A.5.5 0 0 1 3 2.5h7a.5.5 0 0 1 .5.5v3" />
+    </>} />
+  ),
+  archive: (
+    <Icon d={<>
+      <rect x="2" y="2" width="12" height="3.5" rx="1" />
+      <path d="M2.5 5.5v7.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V5.5" />
+      <path d="M6 9.5h4" />
+    </>} />
+  ),
 };
 
 export type IconName = keyof typeof Icons;

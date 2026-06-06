@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
@@ -140,6 +140,116 @@ function BulkUploadModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ── Row action menu (fixed-positioned to escape table overflow clipping) ───────
+
+interface MenuState {
+  product: InventoryProduct;
+  pos: { top: number; right: number };
+}
+
+function RowMenu({
+  state,
+  onClose,
+  onArchive,
+  onDelete,
+}: {
+  state: MenuState;
+  onClose: () => void;
+  onArchive: () => void;
+  onDelete: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) onClose(); };
+    const s = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('mousedown', h);
+    document.addEventListener('keydown', s);
+    return () => { document.removeEventListener('mousedown', h); document.removeEventListener('keydown', s); };
+  }, [onClose]);
+
+  return (
+    <>
+      <style>{`
+        .rmenu-item { display:flex;align-items:center;gap:9px;width:100%;padding:9px 14px;background:transparent;border:none;color:var(--fg-2);font-size:13px;font-family:inherit;cursor:pointer;text-align:left;text-decoration:none;white-space:nowrap; }
+        .rmenu-item:hover { background:var(--bg-3);color:var(--fg); }
+        .rmenu-item.danger { color:var(--fg-2); }
+        .rmenu-item.danger:hover { background:rgba(251,113,133,0.08);color:var(--bad); }
+        .rmenu-sep { height:1px;background:var(--line);margin:4px 0; }
+      `}</style>
+      <div
+        ref={ref}
+        style={{
+          position: 'fixed',
+          top: state.pos.top,
+          right: state.pos.right,
+          zIndex: 900,
+          minWidth: 196,
+          background: 'var(--bg-2)',
+          border: '1px solid var(--line)',
+          borderRadius: 10,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.28)',
+          overflow: 'hidden',
+        }}
+      >
+        <Link href={`/inventory/${state.product.id}`} className="rmenu-item" onClick={onClose} style={{ color: 'var(--fg-2)' }}>
+          {Icons.chevRight} View details
+        </Link>
+        <button className="rmenu-item" onClick={() => { onArchive(); onClose(); }}>
+          {Icons.archive} Archive
+        </button>
+        <button className="rmenu-item" onClick={onClose}>
+          {Icons.copy} Duplicate
+        </button>
+        <div className="rmenu-sep" />
+        <button className="rmenu-item danger" onClick={() => { onDelete(); onClose(); }}>
+          {Icons.trash} Delete product
+        </button>
+      </div>
+    </>
+  );
+}
+
+// ── Delete confirm modal ──────────────────────────────────────────────────────
+
+function DeleteModal({ product, onCancel, onConfirm }: { product: InventoryProduct; onCancel: () => void; onConfirm: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err,  setErr]  = useState('');
+
+  async function handleDelete() {
+    setBusy(true);
+    const res = await inventoryApi.delete(product.id);
+    setBusy(false);
+    if (res.success) onConfirm();
+    else setErr(res.message ?? 'Delete failed.');
+  }
+
+  return (
+    <div className="bulk-overlay" onMouseDown={e => { if (e.target === e.currentTarget) onCancel(); }}>
+      <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 12, width: '100%', maxWidth: 420, padding: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+        <div style={{ display: 'flex', gap: 14, marginBottom: 18, alignItems: 'flex-start' }}>
+          <span style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(251,113,133,0.1)', border: '1px solid rgba(251,113,133,0.25)', display: 'grid', placeItems: 'center', color: 'var(--bad)', flexShrink: 0 }}>
+            {Icons.warning}
+          </span>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 4 }}>Delete product?</div>
+            <div style={{ fontSize: 13, color: 'var(--fg-3)', lineHeight: 1.5 }}>
+              <strong style={{ color: 'var(--fg)' }}>{product.name}</strong> will be permanently deleted. This cannot be undone.
+            </div>
+          </div>
+        </div>
+        {err && <div style={{ marginBottom: 14, fontSize: 12.5, color: 'var(--bad)', padding: '8px 12px', borderRadius: 7, background: 'rgba(251,113,133,0.08)' }}>{err}</div>}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onCancel} className="btn btn-ghost" style={{ padding: '7px 14px' }} disabled={busy}>Cancel</button>
+          <button onClick={handleDelete} disabled={busy}
+            style={{ padding: '7px 14px', background: 'var(--bad)', color: '#fff', border: 'none', borderRadius: 7, fontSize: 13, fontFamily: 'inherit', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.6 : 1 }}>
+            {busy ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const TableViewIcon = () => <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" strokeWidth="1.4"><rect x="2" y="3" width="12" height="10" rx="1"/><path d="M2 6.5h12M2 10h12"/></g></svg>;
 const GridViewIcon  = () => <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" strokeWidth="1.4"><rect x="2" y="2" width="5" height="5" rx="0.5"/><rect x="9" y="2" width="5" height="5" rx="0.5"/><rect x="2" y="9" width="5" height="5" rx="0.5"/><rect x="9" y="9" width="5" height="5" rx="0.5"/></g></svg>;
 
@@ -152,10 +262,19 @@ export default function InventoryPage() {
   const [view,         setView]         = useState<'table' | 'grid'>('table');
   const [showBulkModal, setShowBulkModal] = useState(false);
 
+  // Row menu + delete modal
+  const [menuState,    setMenuState]    = useState<MenuState | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<InventoryProduct | null>(null);
+
   // Live data
   const [products,  setProducts]  = useState<InventoryProduct[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [loadError, setLoadError] = useState('');
+
+  const handleArchive = useCallback(async (product: InventoryProduct) => {
+    const res = await inventoryApi.update(product.id, { is_active: false });
+    if (res.success) setProducts(prev => prev.filter(p => p.id !== product.id));
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -392,7 +511,16 @@ export default function InventoryPage() {
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        <button className="icon-btn" style={{ width: 26, height: 26, fontSize: 13 }}>⋯</button>
+                        <button
+                          className="icon-btn"
+                          style={{ width: 26, height: 26, fontSize: 13 }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (menuState?.product.id === p.id) { setMenuState(null); return; }
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setMenuState({ product: p, pos: { top: rect.bottom + 4, right: window.innerWidth - rect.right } });
+                          }}
+                        >⋯</button>
                       </td>
                     </tr>
                   );
@@ -439,6 +567,24 @@ export default function InventoryPage() {
       )}
 
       {showBulkModal && <BulkUploadModal onClose={() => setShowBulkModal(false)} />}
+      {menuState && (
+        <RowMenu
+          state={menuState}
+          onClose={() => setMenuState(null)}
+          onArchive={() => handleArchive(menuState.product)}
+          onDelete={() => setDeleteTarget(menuState.product)}
+        />
+      )}
+      {deleteTarget && (
+        <DeleteModal
+          product={deleteTarget}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={() => {
+            setProducts(prev => prev.filter(p => p.id !== deleteTarget.id));
+            setDeleteTarget(null);
+          }}
+        />
+      )}
     </AppShell>
   );
 }
