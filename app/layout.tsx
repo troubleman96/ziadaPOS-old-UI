@@ -24,48 +24,48 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Ziada POS',
+  title: 'Ziada',
   description: 'Retail operating system for East African traders. Manage sales, inventory, customers and credits from one place.',
-  applicationName: 'Ziada POS',
+  applicationName: 'Ziada',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.ziadapos.com'),
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
-    title: 'Ziada POS',
+    title: 'Ziada',
     statusBarStyle: 'black-translucent',
   },
   icons: {
     icon: [
-      { url: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg' },
+      { url: '/ziada-logo.jpeg', sizes: '1080x1080', type: 'image/jpeg' },
     ],
     apple: [
-      { url: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg' },
+      { url: '/ziada-logo.jpeg', sizes: '1080x1080', type: 'image/jpeg' },
     ],
-    shortcut: '/ziadaposicon.jpeg',
+    shortcut: '/ziada-logo.jpeg',
   },
   openGraph: {
     type: 'website',
-    title: 'Ziada POS',
+    title: 'Ziada',
     description: 'Retail operating system for East African traders.',
-    siteName: 'Ziada POS',
-    images: [{ url: '/ziadaposicon.jpeg', width: 1200, height: 1200, alt: 'Ziada POS' }],
+    siteName: 'Ziada',
+    images: [{ url: '/ziada-logo.jpeg', width: 1200, height: 1200, alt: 'Ziada' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ziada POS',
+    title: 'Ziada',
     description: 'Retail operating system for East African traders.',
-    images: ['/ziadaposicon.jpeg'],
+    images: ['/ziada-logo.jpeg'],
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
+    <html lang="en" data-theme="light" suppressHydrationWarning>
       <head>
         {/* Theme initialiser — runs before paint to prevent flash */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('ziada-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
+            __html: `(function(){try{var t=localStorage.getItem('ziada-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();`,
           }}
         />
         {/* Service worker registration */}
@@ -75,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileImage" content="/ziadaposicon.jpeg" />
+        <meta name="msapplication-TileImage" content="/ziada-logo.jpeg" />
         <meta name="msapplication-TileColor" content="#4f46e5" />
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>

@@ -192,33 +192,6 @@ function NavItem({ icon, label, badge, active, href, onClick }: NavItemProps) {
   );
 }
 
-function NavFooter() {
-  return (
-    <div style={{
-      borderTop: '1px solid var(--line)',
-      padding: 12,
-    }}>
-      <div style={{
-        padding: '10px 12px',
-        border: '1px solid var(--line)',
-        borderRadius: 8,
-        background: 'var(--bg)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>AI CREDITS · MAY</span>
-          <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-2)' }}>2,418 / 5,000</span>
-        </div>
-        <div style={{ height: 4, borderRadius: 999, background: 'var(--bg-3)', overflow: 'hidden' }}>
-          <div style={{ width: '48%', height: '100%', background: 'var(--accent)' }}></div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-          <a href="#" className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>View usage</a>
-          <a href="#" className="mono" style={{ fontSize: 10.5, color: 'var(--accent)' }}>Upgrade</a>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function Sidenav({ navOpen, onClose }: SidenavProps) {
   const pathname = usePathname();
@@ -288,7 +261,6 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
           <NavItem key={i.id} {...i} active={isActive(i.href)} onClick={onClose} />
         ))}
       </div>
-      <NavFooter />
     </aside>
   );
 }

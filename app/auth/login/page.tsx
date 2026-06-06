@@ -57,9 +57,8 @@ function LeftPanel() {
 
       {/* Logo */}
       <div style={{ position: 'relative' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 7, objectFit: 'cover' }} />
-          <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em' }}>Ziada POS</span>
+        <div>
+          <img src="/ziada-logo.jpeg" alt="Ziada" style={{ height: 30, width: 'auto', borderRadius: 4 }} />
         </div>
       </div>
 
@@ -109,7 +108,7 @@ function LoginPageContent() {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     // Already authenticated — skip the login page
@@ -118,10 +117,11 @@ function LoginPageContent() {
       return;
     }
     try {
-      const t = localStorage.getItem('ziada-theme');
-      if (t === 'light' || t === 'dark') setTheme(t);
+      const stored = localStorage.getItem('ziada-theme');
+      const effective = stored === 'dark' ? 'dark' : 'light';
+      setTheme(effective);
+      document.documentElement.setAttribute('data-theme', effective);
     } catch {}
-    document.documentElement.setAttribute('data-theme', theme);
     phoneRef.current?.focus();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -281,9 +281,8 @@ function LoginPageContent() {
           <div className="auth-card">
 
             {/* Mobile-only logo */}
-            <div style={{ display: 'none', alignItems: 'center', gap: 9, marginBottom: 32 }} className="auth-mobile-logo">
-              <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover' }} />
-              <span style={{ fontSize: 15, fontWeight: 600 }}>Ziada POS</span>
+            <div style={{ display: 'none', marginBottom: 32 }} className="auth-mobile-logo">
+              <img src="/ziada-logo.jpeg" alt="Ziada" style={{ height: 28, width: 'auto', borderRadius: 4 }} />
             </div>
             <style>{`.auth-mobile-logo { display: none !important; } @media (max-width: 768px) { .auth-mobile-logo { display: flex !important; } }`}</style>
 

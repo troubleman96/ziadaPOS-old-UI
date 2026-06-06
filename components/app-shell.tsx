@@ -19,7 +19,7 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'dark',
+  theme: 'light',
   toggleTheme: () => {},
 });
 
@@ -93,7 +93,7 @@ interface AppShellProps {
 
 export function AppShell({ children, crumbs, actions, search, full = false }: AppShellProps) {
   const router = useRouter();
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>('light');
   const [navOpen, setNavOpen] = useState(false);
   const [activeStoreId, setActiveStoreIdState] = useState('kariakoo');
   const [notifications, setNotifications] = useState<AppNotification[]>(INITIAL_NOTIFICATIONS);
@@ -144,7 +144,7 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
 
     const stored = localStorage.getItem('ziada-theme') as Theme | null;
     const current = document.documentElement.getAttribute('data-theme') as Theme | null;
-    setTheme(current || stored || 'dark');
+    setTheme(current || stored || 'light');
 
     const storedStore = localStorage.getItem('ziada-store');
     if (storedStore && STORES.some(s => s.id === storedStore)) {

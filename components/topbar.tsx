@@ -189,6 +189,24 @@ function ThreeDotMenu() {
 
           {divider()}
 
+          {/* ── AI Credits ── */}
+          {sectionLabel('AI CREDITS · JUN')}
+          <div style={{ padding: '2px 14px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Usage this month</span>
+              <span className="mono" style={{ fontSize: 12, color: 'var(--fg)', fontWeight: 600 }}>2,418 <span style={{ color: 'var(--fg-4)', fontWeight: 400 }}>/ 5,000</span></span>
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: 'var(--bg-3)', overflow: 'hidden', marginBottom: 9 }}>
+              <div style={{ width: '48%', height: '100%', background: 'var(--accent)', borderRadius: 999 }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <a href="#" className="mono" onClick={() => setOpen(false)} style={{ fontSize: 11, color: 'var(--fg-3)', textDecoration: 'none' }}>View usage</a>
+              <a href="#" className="mono" onClick={() => setOpen(false)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#fff', textDecoration: 'none', background: 'var(--accent)', padding: '3px 9px', borderRadius: 5, fontWeight: 500 }}>Upgrade →</a>
+            </div>
+          </div>
+
+          {divider()}
+
           {/* ── Profile ── */}
           {sectionLabel('PROFILE')}
           <Link

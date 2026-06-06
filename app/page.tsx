@@ -221,9 +221,8 @@ function Header({ theme, onToggleTheme }: { theme: string; onToggleTheme: () => 
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 50, borderBottom: '1px solid var(--line)', backdropFilter: 'blur(16px) saturate(140%)', background: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', height: 56, gap: 24 }}>
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', color: 'inherit' }}>
-          <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
-          <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.005em' }}>Ziada POS</span>
+        <a href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+          <img src="/ziada-logo.jpeg" alt="Ziada" style={{ height: 30, width: 'auto', borderRadius: 4 }} />
         </a>
         {/* Desktop nav */}
         <nav style={{ display: 'flex', gap: 20, marginLeft: 8 }} className="landing-nav">
@@ -235,10 +234,7 @@ function Header({ theme, onToggleTheme }: { theme: string; onToggleTheme: () => 
         <button onClick={onToggleTheme} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--line)', background: 'var(--bg-2)', cursor: 'pointer', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-2)' }} className="landing-nav">
           {theme === 'dark' ? '◐ dark' : '◑ light'}
         </button>
-        <Link href="/auth/login" style={{ fontSize: 13, color: 'var(--fg-2)', textDecoration: 'none' }} className="landing-nav">Sign in</Link>
-        <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 13px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 500, textDecoration: 'none' }}>
-          Start trial <span style={{ opacity: 0.8 }}>→</span>
-        </Link>
+        <Link href="/auth/login" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 13px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 13, fontWeight: 500, textDecoration: 'none' }} className="landing-nav">Sign in</Link>
         {/* Mobile hamburger */}
         <button onClick={() => setMenuOpen(!menuOpen)} className="landing-ham" style={{ display: 'none', width: 36, height: 36, border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg-2)', cursor: 'pointer', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
           <span style={{ width: 16, height: 1.5, background: 'var(--fg-2)', borderRadius: 2, display: 'block' }} />
@@ -252,7 +248,7 @@ function Header({ theme, onToggleTheme }: { theme: string; onToggleTheme: () => 
           {[['Product','#features'],['Ziada AI','#ai'],['Pricing','#'],['Docs','#']].map(([l,h]) => (
             <a key={l} href={h} style={{ fontSize: 14, color: 'var(--fg-2)', textDecoration: 'none' }} onClick={() => setMenuOpen(false)}>{l}</a>
           ))}
-          <Link href="/auth/login" style={{ fontSize: 14, color: 'var(--fg-2)', textDecoration: 'none' }} onClick={() => setMenuOpen(false)}>Sign in</Link>
+          <Link href="/auth/login" onClick={() => setMenuOpen(false)} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '9px 14px', borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>Sign in</Link>
           <button onClick={onToggleTheme} style={{ padding: '8px 0', border: 0, background: 'transparent', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--fg-3)', cursor: 'pointer', textAlign: 'left' }}>
             {theme === 'dark' ? '◐ Switch to light mode' : '◑ Switch to dark mode'}
           </button>
@@ -519,9 +515,8 @@ function Footer() {
     <footer style={{ borderTop: '1px solid var(--line)', background: 'var(--bg-2)' }}>
       <div className="footer-grid" style={{ maxWidth: 1240, margin: '0 auto', padding: '44px 24px 28px', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1fr', gap: 28 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
-            <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 26, height: 26, borderRadius: 6, objectFit: 'cover' }} />
-            <span style={{ fontSize: 14, fontWeight: 600 }}>Ziada POS</span>
+          <div style={{ marginBottom: 12 }}>
+            <img src="/ziada-logo.jpeg" alt="Ziada" style={{ height: 28, width: 'auto', borderRadius: 4 }} />
           </div>
           <p style={{ fontSize: 12.5, color: 'var(--fg-3)', maxWidth: 240, margin: 0, lineHeight: 1.6 }}>The operating system for retail. Built in Dar es Salaam, made for any counter on the continent.</p>
         </div>
