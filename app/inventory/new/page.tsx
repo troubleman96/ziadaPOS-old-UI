@@ -285,55 +285,7 @@ function ProductCard({ draft, index, canRemove, onUpdate, onRemove }: ProductCar
       <div style={{ padding: '16px 20px' }}>
         <div className="product-card-layout">
 
-          {/* ── Left / Top: Image upload ────────────────────────────────── */}
-          <div>
-            <label style={{ ...LABEL, marginBottom: 8 }}>
-              PRODUCT IMAGE <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· optional</span>
-            </label>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleImageSelect(f); }}
-            />
-            {imagePreview ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <img src={imagePreview} alt="Preview" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 10, border: '1px solid var(--line-2)' }} />
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => fileInputRef.current?.click()}
-                    style={{ flex: 1, padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'var(--bg)', color: 'var(--fg-2)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    Change
-                  </button>
-                  <button onClick={() => { onUpdate({ imageFile: null, imagePreview: null }); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                    style={{ flex: 1, padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'var(--bg)', color: 'var(--bad)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleImageSelect(f); }}
-                style={{
-                  border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--line-2)'}`,
-                  borderRadius: 10, padding: '28px 12px', textAlign: 'center',
-                  cursor: 'pointer', background: dragOver ? 'var(--accent-soft)' : 'var(--bg)',
-                  transition: 'border-color 150ms, background 150ms',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
-                }}
-              >
-                <div style={{ fontSize: 26 }}>🖼</div>
-                <div style={{ fontSize: 12, fontWeight: 500, marginTop: 4 }}>Drop image here</div>
-                <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>or click to browse</div>
-                <div style={{ fontSize: 10, color: 'var(--fg-4)' }}>JPG, PNG, WEBP</div>
-              </div>
-            )}
-          </div>
-
-          {/* ── Right / Bottom: Form fields ─────────────────────────────── */}
+          {/* ── Left: Form fields ───────────────────────────────────────── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* Name */}
@@ -448,6 +400,54 @@ function ProductCard({ draft, index, canRemove, onUpdate, onRemove }: ProductCar
             {errors._submit && (
               <div style={{ padding: '9px 12px', borderRadius: 7, background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)', color: 'var(--bad)', fontSize: 12.5 }}>
                 {errors._submit}
+              </div>
+            )}
+          </div>
+
+          {/* ── Right on desktop / Top on mobile: Image upload ──────────── */}
+          <div className="product-card-img">
+            <label style={{ ...LABEL, marginBottom: 8 }}>
+              PRODUCT IMAGE <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· optional</span>
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleImageSelect(f); }}
+            />
+            {imagePreview ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <img src={imagePreview} alt="Preview" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 10, border: '1px solid var(--line-2)' }} />
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={() => fileInputRef.current?.click()}
+                    style={{ flex: 1, padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'var(--bg)', color: 'var(--fg-2)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Change
+                  </button>
+                  <button onClick={() => { onUpdate({ imageFile: null, imagePreview: null }); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                    style={{ flex: 1, padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'var(--bg)', color: 'var(--bad)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleImageSelect(f); }}
+                style={{
+                  border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--line-2)'}`,
+                  borderRadius: 10, padding: '28px 12px', textAlign: 'center',
+                  cursor: 'pointer', background: dragOver ? 'var(--accent-soft)' : 'var(--bg)',
+                  transition: 'border-color 150ms, background 150ms',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+                }}
+              >
+                <div style={{ fontSize: 26 }}>🖼</div>
+                <div style={{ fontSize: 12, fontWeight: 500, marginTop: 4 }}>Drop image here</div>
+                <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>or click to browse</div>
+                <div style={{ fontSize: 10, color: 'var(--fg-4)' }}>JPG, PNG, WEBP</div>
               </div>
             )}
           </div>

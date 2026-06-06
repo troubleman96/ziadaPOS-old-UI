@@ -741,10 +741,10 @@ input, select, textarea { font-family: inherit; }
 }
 @media (max-width: 640px) { .form-grid-2 { grid-template-columns: 1fr; } }
 
-/* Product card: image left on desktop, image top on mobile */
+/* Product card: fields left, image right on desktop; image top on mobile */
 .product-card-layout {
   display: grid;
-  grid-template-columns: 176px 1fr;
+  grid-template-columns: 1fr 176px;
   gap: 20px;
   align-items: start;
 }
@@ -752,6 +752,7 @@ input, select, textarea { font-family: inherit; }
   .product-card-layout {
     grid-template-columns: 1fr;
   }
+  .product-card-img { order: -1; }
 }
 
 /* ─── Settings sidebar (horizontal on mobile) ───────────────────────────────── */
