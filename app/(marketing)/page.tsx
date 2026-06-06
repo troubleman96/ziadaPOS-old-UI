@@ -87,7 +87,7 @@ function DashboardMockup({ accent }: { accent: string }) {
   ];
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '136px 1fr', background: 'var(--bg)', color: 'var(--fg)' }}>
+    <div className="dash-main-grid" style={{ display: 'grid', gridTemplateColumns: '136px 1fr', background: 'var(--bg)', color: 'var(--fg)' }}>
       {/* Sidebar */}
       <div className="dash-sidebar" style={{ borderRight: '1px solid var(--line)', padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0 4px', marginBottom: 12 }}>
@@ -129,7 +129,7 @@ function DashboardMockup({ accent }: { accent: string }) {
         </div>
 
         {/* KPI cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+        <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
           {kpis.map((k) => (
             <div key={k.label} style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '7px 9px', background: 'var(--bg-2)', display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
               <div style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)', letterSpacing: '0.05em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{k.label}</div>
@@ -145,7 +145,7 @@ function DashboardMockup({ accent }: { accent: string }) {
         </div>
 
         {/* Sales chart + Payment mix */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 6 }}>
+        <div className="dash-mid-grid" style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 6 }}>
           <div style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '8px 10px', background: 'var(--bg-2)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
               <span style={{ fontSize: 10.5, fontWeight: 500 }}>Sales by hour</span>
@@ -199,8 +199,8 @@ function DashboardMockup({ accent }: { accent: string }) {
         </div>
 
         {/* Recent txns + Top products */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 6 }}>
-          <div style={{ border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg-2)', overflow: 'hidden' }}>
+        <div className="dash-bot-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 6 }}>
+          <div className="dash-txn-table" style={{ border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg-2)', overflow: 'hidden' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.7fr 1.3fr 0.9fr', gap: 4, padding: '5px 10px', fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)', letterSpacing: '0.05em', borderBottom: '1px solid var(--line)', background: 'var(--bg-3)' }}>
               <span>TXN</span><span>TIME</span><span>AMOUNT</span><span>VIA</span>
             </div>
@@ -351,16 +351,15 @@ function AIChatMini({ accent }: { accent: string }) {
 // ── Hero ───────────────────────────────────────────────────────────────────────
 function Hero({ accent }: { accent: string }) {
   return (
-    <section style={{ position: 'relative', paddingTop: 80, paddingBottom: 88, overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px)', backgroundSize: '64px 64px', maskImage: 'radial-gradient(ellipse 80% 65% at 50% 30%, #000 30%, transparent 80%)' }} />
-      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', position: 'relative' }}>
+    <section className="hero-section" style={{ paddingTop: 80, paddingBottom: 88 }}>
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px 4px 8px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.04em', color: 'var(--fg-2)', background: 'var(--bg-2)', marginBottom: 28 }}>
             <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--accent)', boxShadow: '0 0 0 3px var(--accent-soft)', display: 'inline-block' }} />
             Ziada AI · now in every store
             <span style={{ color: 'var(--fg-4)' }}>→</span>
           </span>
-          <h1 style={{ margin: 0, fontSize: 'clamp(38px, 5.6vw, 72px)', lineHeight: 1.03, fontWeight: 500, letterSpacing: '-0.03em', fontFamily: 'var(--display, var(--sans))' }}>
+          <h1 className="hero-h1" style={{ margin: 0, fontSize: 'clamp(44px, 5.6vw, 72px)', lineHeight: 1.03, fontWeight: 500, letterSpacing: '-0.03em', fontFamily: 'var(--display, var(--sans))' }}>
             The operating system<br />for your shop.
           </h1>
           <p style={{ margin: '24px auto 0', fontSize: 17, lineHeight: 1.6, color: 'var(--fg-2)', maxWidth: 540 }}>
@@ -383,7 +382,7 @@ function Hero({ accent }: { accent: string }) {
             ))}
           </div>
         </div>
-        <div style={{ maxWidth: 1040, margin: '56px auto 0', position: 'relative' }}>
+        <div className="hero-mock-wrap" style={{ maxWidth: 1040, margin: '56px auto 0', position: 'relative' }}>
           <div style={{ position: 'absolute', bottom: -40, left: '15%', right: '15%', height: 80, background: `${accent}`, filter: 'blur(60px)', opacity: 0.18, borderRadius: '50%', pointerEvents: 'none' }} />
           <WindowChrome url="app.ziadapos.com/dashboard">
             <DashboardMockup accent={accent} />
@@ -771,9 +770,8 @@ function FAQSection() {
 // ── CTA ────────────────────────────────────────────────────────────────────────
 function CTA() {
   return (
-    <section style={{ padding: '100px 0 88px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px)', backgroundSize: '64px 64px', maskImage: 'radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 80%)' }} />
-      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', position: 'relative', textAlign: 'center' }}>
+    <section style={{ padding: '100px 0 88px' }}>
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.08em' }}>§ 05 · GET ZIADA</div>
         <h2 style={{ margin: '16px 0 18px', fontSize: 'clamp(32px, 4.5vw, 52px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05, fontFamily: 'var(--display, var(--sans))' }}>
           Run your shop on calm software.
@@ -812,9 +810,27 @@ export default function LandingPage() {
         .stats-grid > div { border-left-color: var(--line); }
         article.feat-card { transition: box-shadow 180ms, border-color 180ms, transform 180ms; }
         article.feat-card:hover { border-color: var(--line-2) !important; box-shadow: 0 8px 32px -8px rgba(0,0,0,0.18); transform: translateY(-2px); }
+
+        /* ── Dashboard mockup responsive ── */
         @media (max-width: 900px) {
           .dash-sidebar { display: none !important; }
+          .dash-main-grid { grid-template-columns: 1fr !important; }
         }
+        @media (max-width: 600px) {
+          .dash-kpi-grid { grid-template-columns: repeat(2,1fr) !important; }
+          .dash-mid-grid { grid-template-columns: 1fr !important; }
+          .dash-bot-grid { grid-template-columns: 1fr !important; }
+          .dash-txn-table { display: none !important; }
+        }
+
+        /* ── Hero ── */
+        @media (max-width: 640px) {
+          .hero-h1 { font-size: 48px !important; letter-spacing: -0.03em !important; }
+          .hero-section { padding-top: 56px !important; padding-bottom: 56px !important; }
+          .hero-mock-wrap { margin-top: 36px !important; }
+        }
+
+        /* ── Section grids ── */
         @media (max-width: 768px) {
           .stats-grid { grid-template-columns: repeat(3, minmax(140px, 1fr)) !important; }
           .stats-grid > div { border-left: 0 !important; border-bottom: 1px solid var(--line); }
