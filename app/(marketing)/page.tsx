@@ -40,70 +40,201 @@ function WindowChrome({ url, children }: { url: string; children: React.ReactNod
 
 // ── Dashboard mockup ───────────────────────────────────────────────────────────
 function DashboardMockup({ accent }: { accent: string }) {
-  const stats = [
-    { label: "TODAY'S SALES", v: 'TZS 1,240,000', delta: '+18%', spark: [3, 4, 3, 5, 4, 6, 5, 7, 8, 7, 9, 10, 9, 11, 12] },
-    { label: 'PROFIT',        v: 'TZS 272,000',   delta: '+12%', spark: [2, 3, 2, 4, 3, 4, 5, 4, 6, 5, 7, 6, 8, 7, 9] },
-    { label: 'STOCK VALUE',   v: 'TZS 4.82M',     delta: '+6%',  spark: [5, 5, 6, 5, 6, 7, 6, 7, 7, 8, 7, 8, 9, 8, 10] },
-    { label: 'LOW STOCK',     v: '3', delta: 'alerts', deltaColor: 'var(--warn)', spark: null },
+  const kpis = [
+    { label: "TODAY'S SALES", value: 'TZS 1,240,000', delta: '+18%', good: true,  spark: [3,4,5,4,6,5,7,6,8,7,9,8,10,9,11,12,11,13,12,14] },
+    { label: 'PROFIT',        value: 'TZS 272,000',   delta: '+12%', good: true,  spark: [2,3,2,4,3,4,5,4,6,5,6,7,6,8,7,8,9,8,9,10] },
+    { label: 'TICKETS',       value: '48',            delta: '+9',   good: true,  spark: [3,4,3,5,4,5,6,5,7,6,7,6,8,7,9,8,9,8,10,9] },
+    { label: 'CREDIT OUT',    value: 'TZS 184,500',   delta: '14',   good: false, spark: [8,8,9,8,9,10,9,10,11,10,11,10,9,10,9,10,9,10,9,8] },
   ];
-  const bars = [42, 58, 70, 52, 88, 100, 74];
+
+  // Sales by hour (6am–6pm, 13 points, thousands)
+  const hourly = [12, 28, 45, 72, 95, 120, 158, 210, 175, 230, 280, 195, 145];
+  const maxH = Math.max(...hourly);
+  const SVG_W = 200, SVG_H = 48;
+  const hPts = hourly.map((v, i) => [
+    (i / (hourly.length - 1)) * SVG_W,
+    SVG_H - (v / maxH) * (SVG_H - 6) - 3,
+  ]);
+  const hLine = hPts.map(([x, y], i) => (i === 0 ? `M${x.toFixed(1)},${y.toFixed(1)}` : `L${x.toFixed(1)},${y.toFixed(1)}`)).join(' ');
+  const hFill = `${hLine} L${SVG_W},${SVG_H} L0,${SVG_H} Z`;
+
+  // Payment mix donut
+  const methods = [
+    { label: 'M-Pesa', pct: 52, color: '#10b981' },
+    { label: 'Cash',   pct: 28, color: accent },
+    { label: 'Tigo',   pct: 12, color: '#f59e0b' },
+    { label: 'Bank',   pct:  8, color: '#60a5fa' },
+  ];
+  const DONUT_R = 22, DONUT_STROKE = 9, DONUT_CX = 26, DONUT_CY = 26;
+  const circ = 2 * Math.PI * DONUT_R;
+  let cumPct = 0;
+  const arcs = methods.map(m => {
+    const start = cumPct;
+    cumPct += m.pct;
+    return { ...m, dashLen: (m.pct / 100) * circ - 0.8, offset: circ * 0.25 - (start / 100) * circ };
+  });
+
+  const txns = [
+    { id: 'TXN-2042', time: '14:32', amount: '142,000', method: 'M-Pesa', mpesa: true },
+    { id: 'TXN-2041', time: '14:18', amount: '48,500',  method: 'Cash',   mpesa: false },
+    { id: 'TXN-2040', time: '13:55', amount: '217,000', method: 'M-Pesa', mpesa: true },
+  ];
+
+  const topProds = [
+    { name: 'Unga wa Sembe 10kg', pct: 100, rev: '1.42M' },
+    { name: 'Mafuta Cooking 5L',  pct: 81,  rev: '1.15M' },
+    { name: 'Sabuni OMO 1kg',     pct: 38,  rev: '540K' },
+  ];
+
   return (
-    <div style={{ padding: 20, display: 'grid', gridTemplateColumns: '160px 1fr', gap: 16, background: 'var(--bg)', color: 'var(--fg)' }}>
-      <div style={{ borderRight: '1px solid var(--line)', paddingRight: 14, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <span style={{ width: 22, height: 22, borderRadius: 6, background: accent, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 600 }}>Z</span>
-          <span style={{ fontWeight: 500, fontSize: 13 }}>Ziada</span>
+    <div style={{ display: 'grid', gridTemplateColumns: '136px 1fr', background: 'var(--bg)', color: 'var(--fg)' }}>
+      {/* Sidebar */}
+      <div className="dash-sidebar" style={{ borderRight: '1px solid var(--line)', padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0 4px', marginBottom: 12 }}>
+          <span style={{ width: 22, height: 22, borderRadius: 6, background: accent, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>Z</span>
+          <div>
+            <div style={{ fontSize: 11.5, fontWeight: 600 }}>Ziada</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-4)', marginTop: 1 }}>Duka Kuu · DSM</div>
+          </div>
         </div>
-        {[['Dashboard', true], ['Point of Sale', false], ['Transactions', false], ['Inventory', false], ['Credits', false]].map(([l, a]) => (
-          <div key={l as string} style={{ padding: '5px 8px', borderRadius: 5, fontSize: 11.5, color: a ? 'var(--fg)' : 'var(--fg-3)', background: a ? `${accent}22` : 'transparent', borderLeft: `2px solid ${a ? accent : 'transparent'}` }}>{l}</div>
+        {[
+          ['Dashboard',    true ],
+          ['Point of Sale',false],
+          ['Inventory',    false],
+          ['Transactions', false],
+          ['Credits',      false],
+          ['Analytics',    false],
+          ['Ziada AI',     false],
+        ].map(([label, active]) => (
+          <div key={label as string} style={{ padding: '5px 8px', borderRadius: 5, fontSize: 10.5, color: active ? 'var(--fg)' : 'var(--fg-3)', background: active ? `${accent}18` : 'transparent', borderLeft: `2px solid ${active ? accent : 'transparent'}` }}>
+            {label}
+          </div>
         ))}
       </div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 14, fontWeight: 500 }}>Dashboard</span>
-          <span style={{ fontFamily: 'monospace', fontSize: 9.5, color: 'var(--fg-4)', display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--good)', display: 'inline-block' }} /> live
-          </span>
+
+      {/* Main */}
+      <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 9, overflow: 'hidden', minWidth: 0 }}>
+        {/* Topbar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 12.5, fontWeight: 600 }}>Dashboard</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-4)', marginTop: 1 }}>Jumanne, 3 Juni 2026</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '3px 8px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-3)', background: 'var(--bg-2)' }}>
+              <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--good)', display: 'inline-block', boxShadow: '0 0 0 2px rgba(52,211,153,0.2)' }} /> live
+            </span>
+            <span style={{ width: 24, height: 24, borderRadius: 999, background: `${accent}22`, border: `1px solid ${accent}44`, display: 'grid', placeItems: 'center', fontSize: 10, color: accent, fontWeight: 700 }}>E</span>
+          </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 7, marginBottom: 10 }}>
-          {stats.map((s) => (
-            <div key={s.label} style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '8px 10px', background: 'var(--bg-2)' }}>
-              <div style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>{s.label}</div>
-              <div style={{ fontSize: 12.5, fontWeight: 500, marginTop: 3 }}>{s.v}</div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 5 }}>
-                <span style={{ fontFamily: 'monospace', fontSize: 9, color: s.deltaColor || 'var(--good)' }}>{s.delta}</span>
-                {s.spark && <div style={{ width: 44, height: 14 }}><Sparkline data={s.spark} color={accent} strokeWidth={1.2} height={14} /></div>}
+
+        {/* KPI cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
+          {kpis.map((k) => (
+            <div key={k.label} style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '7px 9px', background: 'var(--bg-2)', display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+              <div style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)', letterSpacing: '0.05em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{k.label}</div>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{k.value}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                <span style={{ fontFamily: 'monospace', fontSize: 8, padding: '1px 5px', borderRadius: 999, color: k.good ? 'var(--good)' : 'var(--warn)', background: k.good ? 'rgba(52,211,153,0.08)' : 'rgba(251,191,36,0.08)', border: `1px solid ${k.good ? 'rgba(52,211,153,0.25)' : 'rgba(251,191,36,0.25)'}`, flexShrink: 0 }}>{k.delta}</span>
+                <div style={{ flex: 1, height: 16, minWidth: 0 }}>
+                  <Sparkline data={k.spark} color={k.good ? accent : '#f59e0b'} height={16} fill strokeWidth={1.2} />
+                </div>
               </div>
             </div>
           ))}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 8 }}>
-          <div style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '9px 11px', background: 'var(--bg-2)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 10.5, fontWeight: 500 }}>Sales this week</span>
-              <span style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'var(--fg-4)' }}>7D</span>
+
+        {/* Sales chart + Payment mix */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 6 }}>
+          <div style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '8px 10px', background: 'var(--bg-2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+              <span style={{ fontSize: 10.5, fontWeight: 500 }}>Sales by hour</span>
+              <span style={{ fontFamily: 'monospace', fontSize: 8, color: 'var(--fg-4)' }}>TODAY</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, alignItems: 'end', height: 52 }}>
-              {bars.map((h, i) => (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                  <div style={{ width: '100%', height: `${h}%`, background: i === 5 ? accent : `${accent}55`, borderRadius: 2 }} />
-                  <span style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)' }}>{'MTWTFSS'[i]}</span>
-                </div>
+            <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} preserveAspectRatio="none" style={{ width: '100%', height: SVG_H, display: 'block' }}>
+              <defs>
+                <linearGradient id="mkt-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={accent} stopOpacity="0.22" />
+                  <stop offset="100%" stopColor={accent} stopOpacity="0.01" />
+                </linearGradient>
+              </defs>
+              <path d={hFill} fill="url(#mkt-grad)" />
+              <path d={hLine} fill="none" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+            </svg>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+              {['6am','8','10','12','2pm','4','6'].map(t => (
+                <span key={t} style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)' }}>{t}</span>
               ))}
             </div>
           </div>
-          <div style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '9px 11px', background: 'var(--bg-2)' }}>
-            <div style={{ fontSize: 10.5, fontWeight: 500, marginBottom: 8 }}>Top products</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              {[['Unga wa Sembe 10kg', '1.42M'], ['Mafuta Cooking 5L', '1.15M'], ['Sabuni OMO 1kg', '260K'], ['Sukari 2kg', '182K']].map(([n, v], i) => (
-                <div key={n} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10 }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
-                    <span style={{ fontFamily: 'monospace', color: 'var(--fg-4)', width: 10 }}>{i + 1}</span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n}</span>
-                  </span>
-                  <span style={{ fontFamily: 'monospace', color: 'var(--fg-2)', flexShrink: 0 }}>{v}</span>
+
+          <div style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '8px 10px', background: 'var(--bg-2)' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 500, marginBottom: 6 }}>Payment mix</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="52" height="52" viewBox="0 0 52 52" style={{ flexShrink: 0 }}>
+                {arcs.map((arc, i) => (
+                  <circle key={i}
+                    cx={DONUT_CX} cy={DONUT_CY} r={DONUT_R}
+                    fill="none"
+                    stroke={arc.color}
+                    strokeWidth={DONUT_STROKE}
+                    strokeDasharray={`${arc.dashLen} ${circ}`}
+                    strokeDashoffset={arc.offset}
+                  />
+                ))}
+              </svg>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
+                {methods.map(m => (
+                  <div key={m.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9.5, color: 'var(--fg-2)' }}>
+                      <span style={{ width: 5, height: 5, borderRadius: 999, background: m.color, display: 'inline-block', flexShrink: 0 }} />
+                      {m.label}
+                    </span>
+                    <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-3)' }}>{m.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent txns + Top products */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 6 }}>
+          <div style={{ border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg-2)', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.7fr 1.3fr 0.9fr', gap: 4, padding: '5px 10px', fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)', letterSpacing: '0.05em', borderBottom: '1px solid var(--line)', background: 'var(--bg-3)' }}>
+              <span>TXN</span><span>TIME</span><span>AMOUNT</span><span>VIA</span>
+            </div>
+            {txns.map((t, i) => (
+              <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.7fr 1.3fr 0.9fr', gap: 4, padding: '5px 10px', fontSize: 9.5, alignItems: 'center', borderBottom: i < txns.length - 1 ? '1px solid var(--line)' : 0 }}>
+                <span style={{ fontFamily: 'monospace', color: accent, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.id}</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--fg-4)', fontSize: 8.5 }}>{t.time}</span>
+                <span style={{ fontFamily: 'monospace', fontWeight: 500, fontSize: 9.5 }}>TZS {t.amount}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: 8, padding: '1px 5px', borderRadius: 999, background: t.mpesa ? 'rgba(16,185,129,0.08)' : 'var(--bg-3)', color: t.mpesa ? '#10b981' : 'var(--fg-3)', border: `1px solid ${t.mpesa ? 'rgba(16,185,129,0.22)' : 'var(--line)'}`, textAlign: 'center' }}>{t.method}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '8px 10px', background: 'var(--bg-2)' }}>
+            <div style={{ fontSize: 10.5, fontWeight: 500, marginBottom: 7 }}>Top products</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {topProds.map((p, i) => (
+                <div key={p.name}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+                      <span style={{ fontFamily: 'monospace', fontSize: 8, color: 'var(--fg-4)', width: 10 }}>{i + 1}</span>
+                      <span style={{ fontSize: 9.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--fg-2)' }}>{p.name}</span>
+                    </span>
+                    <span style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'var(--fg-3)', flexShrink: 0, marginLeft: 6 }}>{p.rev}</span>
+                  </div>
+                  <div style={{ height: 3, borderRadius: 999, background: 'var(--bg-3)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 999, background: `${accent}aa`, width: `${p.pct}%`, transition: 'width 0.3s' }} />
+                  </div>
                 </div>
               ))}
+            </div>
+            <div style={{ marginTop: 10, padding: '5px 8px', borderRadius: 5, background: `${accent}10`, border: `1px solid ${accent}30`, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 14, height: 14, borderRadius: 4, background: `${accent}22`, color: accent, display: 'grid', placeItems: 'center', fontSize: 9, flexShrink: 0 }}>✦</span>
+              <span style={{ fontSize: 9, color: 'var(--fg-3)', lineHeight: 1.3 }}>Sabuni OMO below reorder point</span>
             </div>
           </div>
         </div>
@@ -252,7 +383,8 @@ function Hero({ accent }: { accent: string }) {
             ))}
           </div>
         </div>
-        <div style={{ maxWidth: 1000, margin: '56px auto 0' }}>
+        <div style={{ maxWidth: 1040, margin: '56px auto 0', position: 'relative' }}>
+          <div style={{ position: 'absolute', bottom: -40, left: '15%', right: '15%', height: 80, background: `${accent}`, filter: 'blur(60px)', opacity: 0.18, borderRadius: '50%', pointerEvents: 'none' }} />
           <WindowChrome url="app.ziadapos.com/dashboard">
             <DashboardMockup accent={accent} />
           </WindowChrome>
@@ -359,7 +491,7 @@ function FeatureCard({ f, accent }: { f: typeof FEATURES[0]; accent: string }) {
     f.id === 'credits'   ? <CreditsMini accent={accent} /> :
                            <AIChatMini accent={accent} />;
   return (
-    <article style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--bg-2)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <article className="feat-card" style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--bg-2)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>{f.n} · {f.id.toUpperCase()}</span>
@@ -678,6 +810,11 @@ export default function LandingPage() {
     <>
       <style>{`
         .stats-grid > div { border-left-color: var(--line); }
+        article.feat-card { transition: box-shadow 180ms, border-color 180ms, transform 180ms; }
+        article.feat-card:hover { border-color: var(--line-2) !important; box-shadow: 0 8px 32px -8px rgba(0,0,0,0.18); transform: translateY(-2px); }
+        @media (max-width: 900px) {
+          .dash-sidebar { display: none !important; }
+        }
         @media (max-width: 768px) {
           .stats-grid { grid-template-columns: repeat(3, minmax(140px, 1fr)) !important; }
           .stats-grid > div { border-left: 0 !important; border-bottom: 1px solid var(--line); }
