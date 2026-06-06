@@ -116,6 +116,16 @@ function ThreeDotMenu() {
           zIndex: 300, overflow: 'hidden',
         }}>
 
+          {/* ── Ziada AI — mobile only (hidden on desktop via topbar-ai CSS) ── */}
+          <div className="three-dot-ai-row">
+            {menuRow(
+              <span style={{ color: 'var(--accent)' }}>{Icons.sparkles}</span>,
+              'Ask Ziada AI',
+              () => { router.push('/ai'); setOpen(false); },
+            )}
+            {divider()}
+          </div>
+
           {/* ── Appearance ── */}
           {sectionLabel('APPEARANCE')}
           {menuRow(
@@ -289,9 +299,9 @@ export function Topbar({ crumbs, actions, search = true, onMenuToggle }: TopbarP
         </div>
       )}
 
-      <button className="btn btn-soft topbar-ai" style={{ padding: '6px 10px', fontSize: 12.5 }}>
+      <Link href="/ai" className="btn btn-soft topbar-ai" style={{ padding: '6px 10px', fontSize: 12.5, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ color: 'var(--accent)' }}>{Icons.sparkles}</span> Ask Ziada AI
-      </button>
+      </Link>
 
       <div className="topbar-actions">
         {actions !== undefined ? actions : (

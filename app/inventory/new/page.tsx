@@ -21,21 +21,18 @@ function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
   const containerRef  = useRef<HTMLDivElement>(null);
   const inputRef      = useRef<HTMLInputElement>(null);
 
-  // Fetch all categories once on mount
   useEffect(() => {
     inventoryApi.getCategories().then(res => {
       if (res.success) setCategories(res.data);
     });
   }, []);
 
-  // Keep input text in sync when parent resets value
   useEffect(() => { setQuery(value); }, [value]);
 
   const filtered = categories.filter(c =>
     c.name.toLowerCase().includes(query.toLowerCase())
   );
 
-  // Whether the current query exactly matches an existing category name
   const exactMatch = categories.some(c => c.name.toLowerCase() === query.toLowerCase());
 
   const select = useCallback((name: string) => {
@@ -45,12 +42,10 @@ function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
     setHighlight(0);
   }, [onChange]);
 
-  // Close on outside click
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
       if (!containerRef.current?.contains(e.target as Node)) {
         setOpen(false);
-        // Commit whatever is typed (free-form is allowed)
         onChange(query.trim());
       }
     }
@@ -74,15 +69,12 @@ function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
       if (filtered[highlight]) {
         select(filtered[highlight].name);
       } else if (!exactMatch && query.trim()) {
-        // Create new: just commit the typed text
         select(query.trim());
       }
     } else if (e.key === 'Escape') {
       setOpen(false);
     }
   }
-
-  const dropItems = [...filtered];
 
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
@@ -120,7 +112,6 @@ function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
         }
       `}</style>
 
-      {/* Input */}
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
         <input
           ref={inputRef}
@@ -133,7 +124,6 @@ function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
             setQuery(e.target.value);
             setOpen(true);
             setHighlight(0);
-            // Pass through the raw typed value immediately
             onChange(e.target.value);
           }}
           onKeyDown={handleKey}
@@ -145,26 +135,19 @@ function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
             boxSizing: 'border-box',
           }}
         />
-        {/* Chevron */}
-        <svg
-          width="11" height="11" viewBox="0 0 12 12"
-          style={{
-            position: 'absolute', right: 11, pointerEvents: 'none',
-            color: 'var(--fg-3)', transition: 'transform 150ms',
-            transform: open ? 'rotate(180deg)' : 'none',
-          }}
+        <svg width="11" height="11" viewBox="0 0 12 12"
+          style={{ position: 'absolute', right: 11, pointerEvents: 'none', color: 'var(--fg-3)', transition: 'transform 150ms', transform: open ? 'rotate(180deg)' : 'none' }}
         >
           <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
 
-      {/* Dropdown */}
       {open && (
         <div className="cat-drop">
-          {dropItems.length === 0 && !query.trim() ? (
+          {filtered.length === 0 && !query.trim() ? (
             <div className="cat-empty">Start typing to search categories…</div>
-          ) : dropItems.length === 0 ? null : (
-            dropItems.map((c, i) => (
+          ) : filtered.length === 0 ? null : (
+            filtered.map((c, i) => (
               <div
                 key={c.id}
                 className={`cat-opt${i === highlight ? ' hi' : ''}${c.name === value ? ' selected' : ''}`}
@@ -179,17 +162,10 @@ function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
               </div>
             ))
           )}
-          {/* "Create new" option when typed value doesn't match anything */}
           {query.trim() && !exactMatch && (
-            <div
-              className="cat-new"
-              onMouseDown={e => { e.preventDefault(); select(query.trim()); }}
-            >
+            <div className="cat-new" onMouseDown={e => { e.preventDefault(); select(query.trim()); }}>
               {Icons.plus} Create &ldquo;{query.trim()}&rdquo;
             </div>
-          )}
-          {!query.trim() && dropItems.length === 0 && categories.length === 0 && (
-            <div className="cat-empty">Loading categories…</div>
           )}
         </div>
       )}
@@ -197,104 +173,308 @@ function CategoryCombobox({ value, onChange }: CategoryComboboxProps) {
   );
 }
 
+// ── Product draft ──────────────────────────────────────────────────────────────
 
-// ── New Product Page ───────────────────────────────────────────────────────────
+interface ProductDraft {
+  id: string;
+  name: string;
+  sku: string;
+  price: string;
+  cost: string;
+  category: string;
+  barcode: string;
+  openStock: string;
+  minStock: string;
+  maxStock: string;
+  supplier: string;
+  status: 'active' | 'draft';
+  errors: Record<string, string>;
+  saved: boolean;
+  saving: boolean;
+}
+
+let _uid = 0;
+function makeEmpty(): ProductDraft {
+  return {
+    id: String(++_uid),
+    name: '', sku: '', price: '', cost: '',
+    category: '', barcode: '',
+    openStock: '0', minStock: '10', maxStock: '100',
+    supplier: '', status: 'active',
+    errors: {}, saved: false, saving: false,
+  };
+}
+
+function validate(d: ProductDraft): Record<string, string> {
+  const e: Record<string, string> = {};
+  if (!d.name.trim()) e.name = 'Product name is required.';
+  if (!d.price || +d.price <= 0) e.price = 'Selling price must be > 0.';
+  if (!d.cost || +d.cost <= 0) e.cost = 'Cost must be > 0.';
+  if (d.price && d.cost && +d.cost >= +d.price) e.cost = 'Cost must be less than selling price.';
+  return e;
+}
+
+// ── Product card ───────────────────────────────────────────────────────────────
+
+interface ProductCardProps {
+  draft: ProductDraft;
+  index: number;
+  canRemove: boolean;
+  onUpdate: (patch: Partial<ProductDraft>) => void;
+  onRemove: () => void;
+}
+
+const INPUT = {
+  width: '100%', padding: '9px 12px',
+  border: '1px solid var(--line-2)', borderRadius: 7,
+  background: 'var(--bg)', color: 'var(--fg)',
+  fontSize: 13, fontFamily: 'inherit', outline: 0,
+  boxSizing: 'border-box' as const,
+};
+
+const LABEL = {
+  fontSize: 10.5, color: 'var(--fg-4)',
+  letterSpacing: '0.06em', display: 'block', marginBottom: 6,
+  fontFamily: 'var(--mono)',
+} as const;
+
+function ProductCard({ draft, index, canRemove, onUpdate, onRemove }: ProductCardProps) {
+  const { name, sku, price, cost, category, barcode, openStock, minStock, maxStock, supplier, status, errors, saved, saving } = draft;
+
+  const margin = price && cost && +price > 0 && +cost > 0
+    ? (((+price - +cost) / +price) * 100).toFixed(1)
+    : null;
+
+  const clrErr = (field: string) => {
+    if (errors[field]) onUpdate({ errors: { ...errors, [field]: '' } });
+  };
+
+  const borderColor = saved ? 'var(--good)' : errors._submit ? 'var(--bad)' : 'var(--line)';
+
+  return (
+    <div className="surface" style={{ marginBottom: 14, border: `1px solid ${borderColor}`, transition: 'border-color 200ms', opacity: saved ? 0.75 : 1 }}>
+      {/* Card header */}
+      <div className="card-head" style={{ display: 'flex', alignItems: 'center' }}>
+        <span className="card-title" style={{ flex: 1 }}>
+          Product {index + 1}
+          {saving && <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginLeft: 10 }}>Saving…</span>}
+          {saved && <span className="mono" style={{ fontSize: 10.5, color: 'var(--good)', marginLeft: 10 }}>✓ Saved</span>}
+        </span>
+        {canRemove && !saved && (
+          <button
+            onClick={onRemove}
+            style={{ padding: '4px 8px', border: '1px solid var(--line)', borderRadius: 6, background: 'transparent', color: 'var(--fg-3)', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}
+          >
+            Remove
+          </button>
+        )}
+      </div>
+
+      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+        {/* Name */}
+        <div>
+          <label style={LABEL}>PRODUCT NAME *</label>
+          <input
+            value={name}
+            onChange={e => { onUpdate({ name: e.target.value }); clrErr('name'); }}
+            placeholder="e.g. Unga wa Sembe 10kg"
+            style={{ ...INPUT, borderColor: errors.name ? 'var(--bad)' : 'var(--line-2)' }}
+            disabled={saved}
+          />
+          {errors.name && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.name}</div>}
+        </div>
+
+        {/* SKU + Category */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={LABEL}>SKU</label>
+            <input value={sku} onChange={e => onUpdate({ sku: e.target.value })} placeholder="e.g. UWS-10"
+              style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+          </div>
+          <div>
+            <label style={LABEL}>CATEGORY</label>
+            <CategoryCombobox value={category} onChange={v => onUpdate({ category: v })} />
+          </div>
+        </div>
+
+        {/* Barcode */}
+        <div>
+          <label style={LABEL}>BARCODE <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· optional</span></label>
+          <input value={barcode} onChange={e => onUpdate({ barcode: e.target.value })} placeholder="Scan or type EAN-13 barcode"
+            style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: 'var(--line)', margin: '0 -20px' }} />
+
+        {/* Cost + Price */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={LABEL}>COST PRICE (TZS) *</label>
+            <input type="number" value={cost} onChange={e => { onUpdate({ cost: e.target.value }); clrErr('cost'); }} placeholder="0"
+              style={{ ...INPUT, fontFamily: 'var(--mono)', borderColor: errors.cost ? 'var(--bad)' : 'var(--line-2)' }} disabled={saved} />
+            {errors.cost && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.cost}</div>}
+          </div>
+          <div>
+            <label style={LABEL}>SELLING PRICE (TZS) *</label>
+            <input type="number" value={price} onChange={e => { onUpdate({ price: e.target.value }); clrErr('price'); }} placeholder="0"
+              style={{ ...INPUT, fontFamily: 'var(--mono)', borderColor: errors.price ? 'var(--bad)' : 'var(--line-2)' }} disabled={saved} />
+            {errors.price && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.price}</div>}
+          </div>
+        </div>
+
+        {/* Margin strip */}
+        {margin && (
+          <div style={{ padding: '8px 12px', borderRadius: 7, background: 'var(--bg-3)', border: '1px solid var(--line)', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Margin: <span className="mono" style={{ color: +margin > 15 ? 'var(--good)' : 'var(--warn)' }}>{margin}%</span></span>
+            <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Markup: <span className="mono">{(((+price - +cost) / +cost) * 100).toFixed(0)}%</span></span>
+            <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Profit/unit: <span className="mono" style={{ color: 'var(--good)' }}>TZS {(+price - +cost).toLocaleString()}</span></span>
+          </div>
+        )}
+
+        {/* Divider */}
+        <div style={{ height: 1, background: 'var(--line)', margin: '0 -20px' }} />
+
+        {/* Stock */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+          <div>
+            <label style={LABEL}>OPENING STOCK</label>
+            <input type="number" value={openStock} onChange={e => onUpdate({ openStock: e.target.value })} placeholder="0"
+              style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+          </div>
+          <div>
+            <label style={LABEL}>REORDER POINT</label>
+            <input type="number" value={minStock} onChange={e => onUpdate({ minStock: e.target.value })} placeholder="10"
+              style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+          </div>
+          <div>
+            <label style={LABEL}>MAX STOCK</label>
+            <input type="number" value={maxStock} onChange={e => onUpdate({ maxStock: e.target.value })} placeholder="100"
+              style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+          </div>
+        </div>
+
+        {/* Supplier + Status */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center' }}>
+          <div>
+            <label style={LABEL}>SUPPLIER</label>
+            <select value={supplier} onChange={e => onUpdate({ supplier: e.target.value })}
+              style={{ ...INPUT, cursor: 'pointer' }} disabled={saved}>
+              <option value="">Select supplier</option>
+              {['Aziz Wholesalers', 'Karibu Foods Ltd', 'Hassan Suppliers', 'Mpaji Distributors'].map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={LABEL}>STATUS</label>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', paddingTop: 4 }}>
+              {(['active', 'draft'] as const).map(s => (
+                <label key={s} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+                  <input type="radio" name={`status-${draft.id}`} checked={status === s} onChange={() => onUpdate({ status: s })}
+                    style={{ accentColor: 'var(--accent)' }} disabled={saved} />
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {errors._submit && (
+          <div style={{ padding: '9px 12px', borderRadius: 7, background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)', color: 'var(--bad)', fontSize: 12.5 }}>
+            {errors._submit}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function NewProductPage() {
-  const [name,       setName]       = useState('');
-  const [sku,        setSku]        = useState('');
-  const [price,      setPrice]      = useState('');
-  const [cost,       setCost]       = useState('');
-  const [category,   setCategory]   = useState('');
-  const [barcode,    setBarcode]    = useState('');
-  const [openStock,  setOpenStock]  = useState('');
-  const [minStock,   setMinStock]   = useState('');
-  const [maxStock,   setMaxStock]   = useState('');
-  const [imageFile,  setImageFile]  = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [dragOver,   setDragOver]   = useState(false);
-  const [saving,     setSaving]     = useState(false);
-  const [errors,     setErrors]     = useState<Record<string, string>>({});
-  const [success,    setSuccess]    = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [products, setProducts] = useState<ProductDraft[]>([makeEmpty()]);
+  const [savingAll, setSavingAll] = useState(false);
 
-  function handleImageSelect(file: File) {
-    if (!file.type.startsWith('image/')) return;
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = e => setImagePreview(e.target?.result as string);
-    reader.readAsDataURL(file);
+  function update(id: string, patch: Partial<ProductDraft>) {
+    setProducts(p => p.map(d => d.id === id ? { ...d, ...patch } : d));
   }
 
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleImageSelect(file);
+  function addProduct() {
+    setProducts(p => [...p, makeEmpty()]);
   }
 
-  const margin = price && cost ? (((+price - +cost) / +price) * 100).toFixed(1) : null;
+  function removeProduct(id: string) {
+    setProducts(p => p.filter(d => d.id !== id));
+  }
 
-  async function handleSave(e: React.FormEvent) {
+  async function saveAll(e: React.FormEvent) {
     e.preventDefault();
-    setErrors({});
-    setSuccess('');
 
-    const errs: Record<string, string> = {};
-    if (!name.trim()) errs.name = 'Product name is required.';
-    if (!price || +price <= 0) errs.price = 'Selling price must be greater than zero.';
-    if (!cost || +cost <= 0) errs.cost = 'Cost must be greater than zero.';
-    if (price && cost && +cost >= +price) errs.cost = 'Cost must be less than the selling price.';
+    // Validate all unsaved products
+    let hasErrors = false;
+    setProducts(p => p.map(d => {
+      if (d.saved) return d;
+      const errors = validate(d);
+      if (Object.keys(errors).length) { hasErrors = true; return { ...d, errors }; }
+      return { ...d, errors: {} };
+    }));
+    if (hasErrors) return;
 
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-
+    setSavingAll(true);
     const { getAccessToken } = await import('../../../lib/auth');
     const token = getAccessToken();
+    const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 
-    const formData = new FormData();
-    formData.append('name', name.trim());
-    formData.append('price', price);
-    formData.append('cost', cost);
-    if (sku.trim()) formData.append('sku', sku.trim());
-    if (category.trim()) formData.append('category_name_input', category.trim());
-    if (barcode.trim()) formData.append('barcode', barcode.trim());
-    if (openStock) formData.append('stock', openStock);
-    if (minStock) formData.append('min_stock', minStock);
-    if (maxStock) formData.append('max_stock', maxStock);
-    if (imageFile) formData.append('image', imageFile);
+    for (const draft of products) {
+      if (draft.saved) continue;
 
-    setSaving(true);
-    try {
-      const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
-      const res = await fetch(`${BASE_URL}/api/v1/inventory/products/`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      const json = await res.json() as Record<string, unknown>;
-      if (!res.ok) {
-        if (json.errors) {
+      update(draft.id, { saving: true });
+
+      const fd = new FormData();
+      fd.append('name', draft.name.trim());
+      fd.append('price', draft.price);
+      fd.append('cost', draft.cost);
+      if (draft.sku.trim()) fd.append('sku', draft.sku.trim());
+      if (draft.category.trim()) fd.append('category_name_input', draft.category.trim());
+      if (draft.barcode.trim()) fd.append('barcode', draft.barcode.trim());
+      if (draft.openStock) fd.append('stock', draft.openStock);
+      if (draft.minStock) fd.append('min_stock', draft.minStock);
+      if (draft.maxStock) fd.append('max_stock', draft.maxStock);
+      if (draft.supplier) fd.append('supplier', draft.supplier);
+      fd.append('status', draft.status);
+
+      try {
+        const res = await fetch(`${BASE_URL}/api/v1/inventory/products/`, {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: fd,
+        });
+        const json = await res.json() as Record<string, unknown>;
+        if (!res.ok) {
           const flat: Record<string, string> = {};
-          for (const [k, v] of Object.entries(json.errors as Record<string, unknown>)) {
-            flat[k] = Array.isArray(v) ? (v as string[])[0] : String(v);
+          if (json.errors) {
+            for (const [k, v] of Object.entries(json.errors as Record<string, unknown>)) {
+              flat[k] = Array.isArray(v) ? (v as string[])[0] : String(v);
+            }
+          } else {
+            flat._submit = (json.message as string) ?? 'Save failed.';
           }
-          setErrors(flat);
+          update(draft.id, { saving: false, errors: flat });
         } else {
-          setErrors({ _global: (json.message as string) ?? 'Save failed.' });
+          update(draft.id, { saving: false, saved: true, errors: {} });
         }
-      } else {
-        setSuccess('Product saved successfully.');
-        // Reset form
-        setName(''); setSku(''); setPrice(''); setCost(''); setCategory('');
-        setBarcode(''); setOpenStock(''); setMinStock(''); setMaxStock('');
-        setImageFile(null); setImagePreview(null);
+      } catch {
+        update(draft.id, { saving: false, errors: { _submit: 'Network error. Please try again.' } });
       }
-    } catch {
-      setErrors({ _global: 'Network error. Please try again.' });
-    } finally {
-      setSaving(false);
     }
+
+    setSavingAll(false);
   }
+
+  const unsaved = products.filter(d => !d.saved).length;
+  const allSaved = unsaved === 0;
 
   return (
     <AppShell
@@ -302,18 +482,23 @@ export default function NewProductPage() {
       actions={
         <div style={{ display: 'flex', gap: 8 }}>
           <Link href="/inventory" className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }}>Cancel</Link>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="btn btn-primary"
-            style={{ padding: '7px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, opacity: saving ? 0.6 : 1 }}
-          >
-            {saving ? '…' : Icons.check} Save product
-          </button>
+          {allSaved ? (
+            <Link href="/inventory" className="btn btn-primary" style={{ padding: '7px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
+              {Icons.check} Done
+            </Link>
+          ) : (
+            <button
+              onClick={saveAll}
+              disabled={savingAll}
+              className="btn btn-primary"
+              style={{ padding: '7px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, opacity: savingAll ? 0.6 : 1 }}
+            >
+              {savingAll ? '…' : Icons.check} Save {unsaved > 1 ? `${unsaved} products` : 'product'}
+            </button>
+          )}
         </div>
       }
     >
-      {/* Back */}
       <div style={{ marginBottom: 14, fontSize: 13, color: 'var(--fg-3)' }}>
         <Link href="/inventory" style={{ color: 'var(--fg-3)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
           <span style={{ transform: 'rotate(180deg)', display: 'inline-block' }}>{Icons.chevRight}</span>
@@ -321,199 +506,48 @@ export default function NewProductPage() {
         </Link>
       </div>
 
-      <h1 style={{ margin: '0 0 24px', fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>New product</h1>
-
-      {errors._global && (
-        <div style={{ padding: '11px 14px', borderRadius: 8, background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)', color: 'var(--bad)', fontSize: 13, marginBottom: 16 }}>
-          {errors._global}
-        </div>
-      )}
-      {success && (
-        <div style={{ padding: '11px 14px', borderRadius: 8, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.25)', color: 'var(--good)', fontSize: 13, marginBottom: 16 }}>
-          {success}
-        </div>
-      )}
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-detail)', gap: 16, alignItems: 'start' }}>
-        {/* Left */}
-        <div>
-          {/* Basic info */}
-          <div className="surface" style={{ marginBottom: 14 }}>
-            <div className="card-head"><span className="card-title">Basic information</span></div>
-            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>PRODUCT NAME *</label>
-                <input
-                  value={name}
-                  onChange={e => { setName(e.target.value); if (errors.name) setErrors(p => ({...p, name: ''})); }}
-                  placeholder="e.g. Unga wa Sembe 10kg"
-                  style={{ width: '100%', padding: '9px 12px', border: `1px solid ${errors.name ? 'var(--bad)' : 'var(--line-2)'}`, borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 13.5, fontFamily: 'inherit', outline: 0, boxSizing: 'border-box' }}
-                />
-                {errors.name && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.name}</div>}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>SKU</label>
-                  <input value={sku} onChange={e => setSku(e.target.value)} placeholder="e.g. UWS-10" style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 13, fontFamily: 'var(--mono)', outline: 0, boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>CATEGORY</label>
-                  <CategoryCombobox value={category} onChange={setCategory} />
-                </div>
-              </div>
-              <div>
-                <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>BARCODE <span style={{ fontWeight: 400, color: 'var(--fg-4)', textTransform: 'none', letterSpacing: 0 }}>· optional</span></label>
-                <input value={barcode} onChange={e => setBarcode(e.target.value)} placeholder="Scan or type EAN-13 barcode" style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 13, fontFamily: 'var(--mono)', outline: 0, boxSizing: 'border-box' }} />
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing */}
-          <div className="surface" style={{ marginBottom: 14 }}>
-            <div className="card-head"><span className="card-title">Pricing</span></div>
-            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>COST PRICE (TZS) *</label>
-                  <input
-                    type="number"
-                    value={cost}
-                    onChange={e => { setCost(e.target.value); if (errors.cost) setErrors(p => ({...p, cost: ''})); }}
-                    placeholder="0"
-                    style={{ width: '100%', padding: '9px 12px', border: `1px solid ${errors.cost ? 'var(--bad)' : 'var(--line-2)'}`, borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 13, fontFamily: 'var(--mono)', outline: 0, boxSizing: 'border-box' }}
-                  />
-                  {errors.cost && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.cost}</div>}
-                </div>
-                <div>
-                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>SELLING PRICE (TZS) *</label>
-                  <input
-                    type="number"
-                    value={price}
-                    onChange={e => { setPrice(e.target.value); if (errors.price) setErrors(p => ({...p, price: ''})); }}
-                    placeholder="0"
-                    style={{ width: '100%', padding: '9px 12px', border: `1px solid ${errors.price ? 'var(--bad)' : 'var(--line-2)'}`, borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 13, fontFamily: 'var(--mono)', outline: 0, boxSizing: 'border-box' }}
-                  />
-                  {errors.price && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.price}</div>}
-                </div>
-              </div>
-              {margin && (
-                <div style={{ padding: '10px 12px', borderRadius: 7, background: 'var(--bg-3)', border: '1px solid var(--line)', display: 'flex', gap: 20 }}>
-                  <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Margin: <span className="mono" style={{ color: +margin > 15 ? 'var(--good)' : 'var(--warn)' }}>{margin}%</span></span>
-                  <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Markup: <span className="mono">{(((+price - +cost) / +cost) * 100).toFixed(0)}%</span></span>
-                  <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Profit / unit: <span className="mono" style={{ color: 'var(--good)' }}>TZS {(+price - +cost).toLocaleString()}</span></span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Stock */}
-          <div className="surface">
-            <div className="card-head"><span className="card-title">Stock settings</span></div>
-            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                <div>
-                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>OPENING STOCK</label>
-                  <input type="number" value={openStock} onChange={e => setOpenStock(e.target.value)} placeholder="0" style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 13, fontFamily: 'var(--mono)', outline: 0, boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>REORDER POINT</label>
-                  <input type="number" value={minStock} onChange={e => setMinStock(e.target.value)} placeholder="10" style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 13, fontFamily: 'var(--mono)', outline: 0, boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>MAX STOCK</label>
-                  <input type="number" value={maxStock} onChange={e => setMaxStock(e.target.value)} placeholder="100" style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 13, fontFamily: 'var(--mono)', outline: 0, boxSizing: 'border-box' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right sidebar */}
-        <div>
-          {/* Product image */}
-          <div className="surface" style={{ marginBottom: 14 }}>
-            <div className="card-head">
-              <span className="card-title">Product image</span>
-              <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>optional</span>
-            </div>
-            <div style={{ padding: '14px 16px' }}>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={e => { const f = e.target.files?.[0]; if (f) handleImageSelect(f); }}
-              />
-
-              {imagePreview ? (
-                <div style={{ position: 'relative' }}>
-                  <img
-                    src={imagePreview}
-                    alt="Product preview"
-                    style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line-2)', display: 'block' }}
-                  />
-                  <button
-                    onClick={() => { setImageFile(null); setImagePreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                    style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 6, background: 'rgba(0,0,0,0.6)', border: 0, cursor: 'pointer', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 14 }}
-                    title="Remove image"
-                  >×</button>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    style={{ width: '100%', marginTop: 8, padding: '7px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg-2)', fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
-                  >
-                    Change image
-                  </button>
-                </div>
-              ) : (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={handleDrop}
-                  style={{ border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--line-2)'}`, borderRadius: 10, padding: '28px 16px', textAlign: 'center', cursor: 'pointer', background: dragOver ? 'var(--accent-soft)' : 'var(--bg)', transition: 'border-color 150ms, background 150ms' }}
-                >
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>🖼</div>
-                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Drop image here</div>
-                  <div style={{ fontSize: 12, color: 'var(--fg-3)' }}>or click to browse · JPG, PNG, WEBP</div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="surface" style={{ marginBottom: 14 }}>
-            <div className="card-head"><span className="card-title">AI assist</span></div>
-            <div style={{ padding: '14px 16px' }}>
-              <button className="btn btn-soft" style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 6, padding: '10px 12px', fontSize: 13 }}>
-                {Icons.sparkles} Suggest price & reorder
-              </button>
-            </div>
-          </div>
-
-          <div className="surface" style={{ marginBottom: 14 }}>
-            <div className="card-head"><span className="card-title">Supplier</span></div>
-            <div style={{ padding: '14px 16px' }}>
-              <select style={{ width: '100%', padding: '9px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 13, fontFamily: 'inherit', outline: 0 }}>
-                <option value="">Select supplier</option>
-                {['Aziz Wholesalers','Karibu Foods Ltd','Hassan Suppliers','Mpaji Distributors'].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div className="surface">
-            <div className="card-head"><span className="card-title">Status</span></div>
-            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-                <input type="radio" name="status" defaultChecked style={{ accentColor: 'var(--accent)' }} />
-                <span style={{ fontSize: 13 }}>Active</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-                <input type="radio" name="status" style={{ accentColor: 'var(--accent)' }} />
-                <span style={{ fontSize: 13 }}>Draft</span>
-              </label>
-            </div>
-          </div>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24 }}>
+        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>New product</h1>
+        {products.length > 1 && (
+          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>
+            {products.filter(d => d.saved).length} / {products.length} saved
+          </span>
+        )}
       </div>
+
+      {products.map((draft, idx) => (
+        <ProductCard
+          key={draft.id}
+          draft={draft}
+          index={idx}
+          canRemove={products.length > 1}
+          onUpdate={patch => update(draft.id, patch)}
+          onRemove={() => removeProduct(draft.id)}
+        />
+      ))}
+
+      {/* Add another product */}
+      {!allSaved && (
+        <button
+          onClick={addProduct}
+          style={{
+            width: '100%', padding: '13px 16px',
+            border: '2px dashed var(--line-2)', borderRadius: 10,
+            background: 'transparent', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            color: 'var(--fg-3)', fontSize: 13, fontFamily: 'inherit',
+            transition: 'border-color 150ms, color 150ms, background 150ms',
+            marginBottom: 32,
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--accent-soft)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line-2)'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--fg-3)'; (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          Add another product
+        </button>
+      )}
     </AppShell>
   );
 }
