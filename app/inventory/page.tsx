@@ -334,8 +334,19 @@ export default function InventoryPage() {
         </div>
       </div>
 
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .inv-kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:14px; }
+        @media (min-width:640px) { .inv-kpi-grid { grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; } }
+        @media (max-width: 768px) {
+          .inv-filter-bar { flex-direction: column !important; align-items: stretch !important; }
+          .inv-filter-bar > span { display: none; }
+          .inv-filter-bar > div:first-child { min-width: unset !important; }
+          .inv-filter-bar-controls { display: flex; gap: 6px; }
+        }
+      `}</style>
       {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
+      <div className="inv-kpi-grid">
         <div className="surface stat-card">
           <span className="label">PRODUCTS</span>
           <span className="value">{products.length}</span>
@@ -375,31 +386,33 @@ export default function InventoryPage() {
       )}
 
       {/* Filter bar */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', marginBottom: 14, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 240, padding: '0 10px 0 12px', height: 32, border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg)' }}>
+      <div className="inv-filter-bar" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', marginBottom: 14, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 240, padding: '0 10px 0 12px', height: 36, border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg)' }}>
           {Icons.search}
-          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search…" style={{ flex: 1, background: 'transparent', border: 0, outline: 0, color: 'var(--fg)', fontSize: 13, fontFamily: 'inherit' }} />
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search products…" style={{ flex: 1, background: 'transparent', border: 0, outline: 0, color: 'var(--fg)', fontSize: 13, fontFamily: 'inherit' }} />
           {query && <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{filtered.length}</span>}
         </div>
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
-          <button onClick={() => setCat('all')} style={{ padding: '5px 11px', borderRadius: 999, border: '1px solid ' + (cat === 'all' ? 'var(--accent-line)' : 'var(--line)'), background: cat === 'all' ? 'var(--accent-soft)' : 'var(--bg-2)', color: cat === 'all' ? 'var(--fg)' : 'var(--fg-2)', fontSize: 12.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}>
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+          <button onClick={() => setCat('all')} style={{ padding: '5px 11px', borderRadius: 999, border: '1px solid ' + (cat === 'all' ? 'var(--accent-line)' : 'var(--line)'), background: cat === 'all' ? 'var(--accent-soft)' : 'var(--bg-2)', color: cat === 'all' ? 'var(--fg)' : 'var(--fg-2)', fontSize: 12.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap', flexShrink: 0 }}>
             All <span className="mono" style={{ fontSize: 10, color: cat === 'all' ? 'var(--accent)' : 'var(--fg-4)' }}>{products.length}</span>
           </button>
           {liveCats.map(c => (
-            <button key={c.id} onClick={() => setCat(c.name)} style={{ padding: '5px 11px', borderRadius: 999, border: '1px solid ' + (cat === c.name ? 'var(--accent-line)' : 'var(--line)'), background: cat === c.name ? 'var(--accent-soft)' : 'var(--bg-2)', color: cat === c.name ? 'var(--fg)' : 'var(--fg-2)', fontSize: 12.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap' }}>
+            <button key={c.id} onClick={() => setCat(c.name)} style={{ padding: '5px 11px', borderRadius: 999, border: '1px solid ' + (cat === c.name ? 'var(--accent-line)' : 'var(--line)'), background: cat === c.name ? 'var(--accent-soft)' : 'var(--bg-2)', color: cat === c.name ? 'var(--fg)' : 'var(--fg-2)', fontSize: 12.5, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap', flexShrink: 0 }}>
               {c.name}<span className="mono" style={{ fontSize: 10, color: cat === c.name ? 'var(--accent)' : 'var(--fg-4)' }}>{c.count}</span>
             </button>
           ))}
         </div>
-        <span style={{ width: 1, height: 22, background: 'var(--line)', margin: '0 4px' }}></span>
-        <div style={{ display: 'inline-flex', border: '1px solid var(--line)', borderRadius: 7, overflow: 'hidden', background: 'var(--bg)' }}>
-          {[['all','All'],['low','Low'],['out','Out']].map(([k,l]) => (
-            <button key={k} onClick={() => setStatusFilter(k)} style={{ padding: '6px 11px', fontSize: 12.5, border: 0, borderRight: '1px solid var(--line)', background: statusFilter === k ? 'var(--bg-3)' : 'transparent', color: statusFilter === k ? 'var(--fg)' : 'var(--fg-3)', cursor: 'pointer' }}>{l}</button>
-          ))}
-        </div>
-        <div style={{ display: 'inline-flex', border: '1px solid var(--line)', borderRadius: 7, overflow: 'hidden', background: 'var(--bg)' }}>
-          <button onClick={() => setView('table')} style={{ padding: '6px 9px', border: 0, background: view === 'table' ? 'var(--bg-3)' : 'transparent', color: view === 'table' ? 'var(--fg)' : 'var(--fg-3)', cursor: 'pointer' }}><TableViewIcon /></button>
-          <button onClick={() => setView('grid')}  style={{ padding: '6px 9px', border: 0, background: view === 'grid'  ? 'var(--bg-3)' : 'transparent', color: view === 'grid'  ? 'var(--fg)' : 'var(--fg-3)', cursor: 'pointer' }}><GridViewIcon /></button>
+        <div className="inv-filter-bar-controls" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ width: 1, height: 22, background: 'var(--line)' }}></span>
+          <div style={{ display: 'inline-flex', border: '1px solid var(--line)', borderRadius: 7, overflow: 'hidden', background: 'var(--bg)' }}>
+            {[['all','All'],['low','Low'],['out','Out']].map(([k,l]) => (
+              <button key={k} onClick={() => setStatusFilter(k)} style={{ padding: '6px 11px', fontSize: 12.5, border: 0, borderRight: '1px solid var(--line)', background: statusFilter === k ? 'var(--bg-3)' : 'transparent', color: statusFilter === k ? 'var(--fg)' : 'var(--fg-3)', cursor: 'pointer' }}>{l}</button>
+            ))}
+          </div>
+          <div style={{ display: 'inline-flex', border: '1px solid var(--line)', borderRadius: 7, overflow: 'hidden', background: 'var(--bg)' }}>
+            <button onClick={() => setView('table')} style={{ padding: '6px 9px', border: 0, background: view === 'table' ? 'var(--bg-3)' : 'transparent', color: view === 'table' ? 'var(--fg)' : 'var(--fg-3)', cursor: 'pointer' }}><TableViewIcon /></button>
+            <button onClick={() => setView('grid')}  style={{ padding: '6px 9px', border: 0, background: view === 'grid'  ? 'var(--bg-3)' : 'transparent', color: view === 'grid'  ? 'var(--fg)' : 'var(--fg-3)', cursor: 'pointer' }}><GridViewIcon /></button>
+          </div>
         </div>
       </div>
 
@@ -407,7 +420,6 @@ export default function InventoryPage() {
       {loading && (
         <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--fg-4)' }}>
           <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--line-2)', borderTopColor: 'var(--accent)', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       )}
       {!loading && loadError && (
@@ -422,20 +434,32 @@ export default function InventoryPage() {
           ) : filtered.map((p, i) => {
             const status = statusFor(p);
             return (
-              <Link key={p.id} href={`/inventory/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', textDecoration: 'none', color: 'inherit', borderBottom: i < filtered.length - 1 ? '1px solid var(--line)' : 'none' }}>
-                <ProductThumb name={p.name} color={p.color} imageUrl={p.image_url} size={44} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                  <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 2 }}>{p.sku}</div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div className="mono" style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>{fmt(p.price)}</div>
-                  <span className={'pill ' + status.kind} style={{ fontSize: 9.5 }}>
-                    <span className="dot-s" style={{ background: status.kind === 'good' ? 'var(--good)' : status.kind === 'warn' ? 'var(--warn)' : 'var(--bad)' }} />
-                    {p.stock} {status.label}
-                  </span>
-                </div>
-              </Link>
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderBottom: i < filtered.length - 1 ? '1px solid var(--line)' : 'none' }}>
+                <Link href={`/inventory/${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, textDecoration: 'none', color: 'inherit' }}>
+                  <ProductThumb name={p.name} color={p.color} imageUrl={p.image_url} size={44} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 2 }}>{p.sku}</div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0, marginRight: 4 }}>
+                    <div className="mono" style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>{fmt(p.price)}</div>
+                    <span className={'pill ' + status.kind} style={{ fontSize: 9.5 }}>
+                      <span className="dot-s" style={{ background: status.kind === 'good' ? 'var(--good)' : status.kind === 'warn' ? 'var(--warn)' : 'var(--bad)' }} />
+                      {p.stock} {status.label}
+                    </span>
+                  </div>
+                </Link>
+                <button
+                  className="icon-btn"
+                  style={{ width: 30, height: 30, fontSize: 14, flexShrink: 0 }}
+                  onClick={e => {
+                    e.stopPropagation();
+                    if (menuState?.product.id === p.id) { setMenuState(null); return; }
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setMenuState({ product: p, pos: { top: rect.bottom + 4, right: window.innerWidth - rect.right } });
+                  }}
+                >⋯</button>
+              </div>
             );
           })}
           <div style={{ padding: '10px 14px', borderTop: '1px solid var(--line)', background: 'var(--bg-3)', display: 'flex', justifyContent: 'space-between' }}>

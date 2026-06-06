@@ -139,6 +139,11 @@ export default function TransactionsPage() {
 
   return (
     <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Transactions' }]}>
+      <style>{`
+        .txn-kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px; }
+        @media (min-width:640px) { .txn-kpi-grid { grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; } }
+        @media (max-width: 640px) { .txn-filter-row { width: 100%; } }
+      `}</style>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
         <div>
@@ -148,12 +153,12 @@ export default function TransactionsPage() {
           </h1>
           <p style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--fg-3)' }}>
             Every sale, refund and credit, across your stores.
-            <span className="mono" style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <span className="desktop-only mono" style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
               <span className="dot-s" style={{ background: 'var(--good)' }}></span> live · updated 4s ago
             </span>
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="txn-filter-row" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <div className="seg">
             {[['Today','today'],['7D','7d'],['30D','30d'],['90D','90d'],['Custom','custom']].map(([l,k]) => (
               <button key={k} className={range === k ? 'active' : ''} onClick={() => setRange(k)}>{l}</button>
@@ -165,7 +170,7 @@ export default function TransactionsPage() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 20 }}>
+      <div className="txn-kpi-grid">
         {[
           { label: 'TOTAL INFLOW', value: fmtShort(totals.inflow), sub: `${totals.count} transactions · avg ${totals.count ? fmtShort(Math.round(totals.inflow/totals.count)) : 'TZS 0'}`, color: 'var(--good)', pill: <span className="pill good">↗ +18%</span> },
           { label: 'GROSS PROFIT', value: fmtShort(totals.profit), sub: `${totals.inflow ? (totals.profit/totals.inflow*100).toFixed(1) : '0'}% margin`, pill: <span className="pill good">↗ +12%</span> },

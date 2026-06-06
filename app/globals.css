@@ -1144,4 +1144,53 @@ html[data-theme="light"] .hover-card:hover {
 
 /* data-table hover background (was missing) */
 .data-table tbody tr:hover { background: var(--bg-3); }
+
+/* ─── Marketing pages ───────────────────────────────────────────────────────── */
+:root {
+  --display: var(--font-display, 'Georgia', serif);
+  --dm: var(--font-dm, var(--sans));
+}
+
+/* Testimonials grid */
+.mkt-testimonials-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 900px) { .mkt-testimonials-grid { grid-template-columns: 1fr 1fr !important; } }
+@media (max-width: 600px) { .mkt-testimonials-grid { grid-template-columns: 1fr !important; } }
+
+/* Pricing teaser grid */
+.mkt-pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 900px) { .mkt-pricing-grid { grid-template-columns: 1fr !important; } }
+
+/* About page grids */
+.mkt-founders-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .mkt-founders-grid { grid-template-columns: 1fr !important; } }
+.mkt-values-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 768px) { .mkt-values-grid { grid-template-columns: 1fr !important; } }
+.mkt-companies-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 640px) { .mkt-companies-grid { grid-template-columns: 1fr !important; } }
+
+/* Pricing page */
+.mkt-plan-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 900px) { .mkt-plan-cards { grid-template-columns: 1fr !important; } }
+.mkt-feature-matrix { width: 100%; border-collapse: collapse; }
+.mkt-feature-matrix th { text-align: left; padding: 12px 16px; font-size: 12px; font-family: var(--mono); letter-spacing: 0.07em; color: var(--fg-4); border-bottom: 1px solid var(--line); }
+.mkt-feature-matrix td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--line); }
+.mkt-feature-matrix tr:last-child td { border-bottom: none; }
+.mkt-feature-matrix tbody tr:hover td { background: var(--bg-3); }
+
+/* Contact page */
+.mkt-contact-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 768px) { .mkt-contact-grid { grid-template-columns: 1fr !important; } }
+
+/* Marketing footer */
+.mkt-footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 32px; }
+@media (max-width: 900px) { .mkt-footer-grid { grid-template-columns: 1fr 1fr !important; } }
+@media (max-width: 480px) { .mkt-footer-grid { grid-template-columns: 1fr !important; } }
+
+/* Marketing nav */
+.mkt-nav-links { display: flex; align-items: center; gap: 20px; }
+.mkt-ham { display: none !important; }
+@media (max-width: 768px) {
+  .mkt-nav-links { display: none !important; }
+  .mkt-ham { display: flex !important; }
+}
 .data-table tbody tr:last-child { border-bottom: 0; }

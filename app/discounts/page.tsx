@@ -115,8 +115,12 @@ export default function DiscountsPage() {
         </div>
       ) : (
         <>
+          <style>{`
+            .disc-kpi-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:14px; }
+            @media (min-width:640px) { .disc-kpi-grid { grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; } }
+          `}</style>
           {/* KPI strip */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-4)', gap: 12, marginBottom: 16 }}>
+          <div className="disc-kpi-grid">
 
             <div className="surface" style={{ padding: '18px 20px' }}>
               <div className="mono" style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--fg-2)', letterSpacing: '0.07em', marginBottom: 8 }}>TOTAL DISCOUNTS</div>

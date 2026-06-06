@@ -267,10 +267,12 @@ function CartBottomBar({ lines, count, subtotal, onOpen }: {
 
 // ── Mobile cart sheet ─────────────────────────────────────────────────────────
 
-function MobileCartSheet({ cart, setCart, payment, setPayment, onClose }: {
+function MobileCartSheet({ cart, setCart, payment, setPayment, onClose, onCompleteSale, completing }: {
   cart: Cart; setCart: React.Dispatch<React.SetStateAction<Cart>>;
   payment: string; setPayment: (p: string) => void;
   onClose: () => void;
+  onCompleteSale: () => void;
+  completing: boolean;
 }) {
   const lines    = Object.values(cart);
   const subtotal = lines.reduce((s, l) => s + l.qty * l.product.price, 0);
@@ -321,13 +323,18 @@ function MobileCartSheet({ cart, setCart, payment, setPayment, onClose }: {
           <span style={{ fontSize: 13, color: 'var(--fg-2)' }}>Total</span>
           <span className="mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.02em' }}>{fmt(total)}</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginTop: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginTop: 4 }}>
           {['Cash', 'M-Pesa', 'Bank', 'Credit'].map(m => (
-            <button key={m} onClick={() => setPayment(m)} style={{ padding: '8px 4px', borderRadius: 7, fontSize: 12, fontWeight: 500, border: '1px solid ' + (payment === m ? 'var(--accent-line)' : 'var(--line)'), background: payment === m ? 'var(--accent-soft)' : 'var(--bg)', color: payment === m ? 'var(--fg)' : 'var(--fg-2)', cursor: 'pointer', transition: 'all 120ms' }}>{m}</button>
+            <button key={m} onClick={() => setPayment(m)} style={{ padding: '10px 4px', borderRadius: 7, fontSize: 13, fontWeight: 500, border: '1px solid ' + (payment === m ? 'var(--accent-line)' : 'var(--line)'), background: payment === m ? 'var(--accent-soft)' : 'var(--bg)', color: payment === m ? 'var(--fg)' : 'var(--fg-2)', cursor: 'pointer', transition: 'all 120ms' }}>{m}</button>
           ))}
         </div>
-        <button disabled={lines.length === 0} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', padding: '12px', fontSize: 14, opacity: lines.length === 0 ? 0.4 : 1 }}>
-          Pay {fmt(total)} →
+        <button
+          disabled={lines.length === 0 || completing}
+          onClick={onCompleteSale}
+          className="btn btn-primary"
+          style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', padding: '14px', fontSize: 15, fontWeight: 600, opacity: (lines.length === 0 || completing) ? 0.4 : 1 }}
+        >
+          {completing ? 'Processing…' : lines.length > 0 ? `Pay ${fmt(total)}` : 'Pay'}
         </button>
       </div>
     </>
@@ -338,14 +345,14 @@ function MobileCartSheet({ cart, setCart, payment, setPayment, onClose }: {
 
 function TrialBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
-    <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--line)', background: 'linear-gradient(90deg, rgba(251,191,36,0.08), transparent 60%)', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-      <span className="pill warn page-sec" style={{ fontSize: 10 }}>TRIAL</span>
-      <span className="page-sec" style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>
-        Trial ends in <strong style={{ color: 'var(--fg)' }}>5 days</strong>.
+    <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--line)', background: 'linear-gradient(90deg, rgba(251,191,36,0.08), transparent 60%)', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, minWidth: 0 }}>
+      <span className="pill warn" style={{ fontSize: 10, flexShrink: 0 }}>TRIAL</span>
+      <span style={{ fontSize: 12.5, color: 'var(--fg-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+        <span className="desktop-only">Trial ends in </span><strong style={{ color: 'var(--fg)' }}>5 days</strong><span className="desktop-only"> left.</span><span className="mobile-only" style={{ color: 'var(--fg-3)' }}> left</span>
       </span>
       <div style={{ flex: 1 }} />
-      <button className="btn btn-primary" style={{ padding: '5px 10px', fontSize: 12 }}>Upgrade</button>
-      <button onClick={onDismiss} className="icon-btn page-sec" style={{ width: 24, height: 24, fontSize: 16 }}>×</button>
+      <button className="btn btn-primary" style={{ padding: '5px 10px', fontSize: 12, flexShrink: 0 }}>Upgrade</button>
+      <button onClick={onDismiss} className="icon-btn" style={{ width: 28, height: 28, fontSize: 18, flexShrink: 0 }}>×</button>
     </div>
   );
 }
@@ -790,7 +797,7 @@ export default function POSPage() {
 
       <div className={'cart-sheet-backdrop' + (cartOpen ? ' open' : '')} onClick={() => setCartOpen(false)} />
       <div className={'cart-sheet' + (cartOpen ? ' open' : '')}>
-        <MobileCartSheet cart={cart} setCart={setCart} payment={payment} setPayment={setPayment} onClose={() => setCartOpen(false)} />
+        <MobileCartSheet cart={cart} setCart={setCart} payment={payment} setPayment={setPayment} onClose={() => setCartOpen(false)} onCompleteSale={handleCompleteSale} completing={completing} />
       </div>
 
       {custPickerOpen && (

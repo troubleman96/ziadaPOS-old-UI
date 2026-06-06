@@ -161,8 +161,8 @@ function SalesChart({ hourly }: { hourly: { hour: number; label: string; revenue
   const tipY = Math.max(yScale(rawMax) - tipH - 8, pad.t);
 
   return (
-    <div style={{ padding: '8px 16px 16px' }}>
-      <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
+    <div className="sales-chart-container" style={{ padding: '8px 16px 16px' }}>
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
         <defs>
           <linearGradient id="salesFill" x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%"   stopColor="var(--accent)" stopOpacity="0.20" />
@@ -554,21 +554,27 @@ export default function DashboardPage() {
 
   return (
     <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '#' }, { label: 'Dashboard' }]}>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 640px) {
+          .dash-filter-row { width: 100%; }
+          .sales-chart-container svg { height: 180px; }
+        }
+      `}</style>
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>{greeting()}, {firstName}.</h1>
-            <p style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <p className="desktop-only" style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span className="dot-s" style={{ background: 'var(--good)', flexShrink: 0 }}></span> live
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="dash-filter-row" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <div className="date-seg-wrap">
               {['Today', '7D', '30D', '90D', 'YTD'].map((l, i) => (
-                <button key={l} onClick={() => setRange(i)} style={{ padding: '6px 12px', fontSize: 12.5, background: range === i ? 'var(--bg-3)' : 'transparent', color: range === i ? 'var(--fg)' : 'var(--fg-3)', border: 0, borderRight: i < 4 ? '1px solid var(--line)' : 0, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+                <button key={l} onClick={() => setRange(i)} className={range === i ? 'range-active' : ''} style={{ padding: '6px 12px', fontSize: 12.5, background: range === i ? 'var(--bg-3)' : 'transparent', color: range === i ? 'var(--fg)' : 'var(--fg-3)', border: 0, borderRight: i < 4 ? '1px solid var(--line)' : 0, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
               ))}
             </div>
             <button className="btn btn-ghost desktop-only" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{Icons.download} Export</button>

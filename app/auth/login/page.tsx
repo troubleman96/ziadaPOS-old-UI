@@ -330,7 +330,7 @@ function LoginPageContent() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
                   <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-2)' }}>Password</label>
-                  <a href="#" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>Forgot password?</a>
+                  <Link href="/auth/forgot-password" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>Forgot password?</Link>
                 </div>
                 <div className="auth-input-wrap">
                   <input
