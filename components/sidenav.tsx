@@ -214,12 +214,12 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
     { id: 'pos',       label: 'Point of Sale',  icon: Icons.pos,        href: '/pos',          badge: '⌘N' },
     { id: 'txn',       label: 'Transactions',   icon: Icons.txn,        href: '/transactions' },
     { id: 'inventory', label: 'Inventory',      icon: Icons.inventory,  href: '/inventory',    badge: { color: 'var(--warn)' } },
+    { id: 'discounts', label: 'Discounts',      icon: Icons.discount,   href: '/discounts' },
     { id: 'credits',   label: 'Credits',        icon: Icons.credit,     href: '/credits',      badge: '14' },
   ];
   const insights = [
     { id: 'analytics', label: 'Analytics',  icon: Icons.analytics, href: '/analytics' },
     { id: 'reports',   label: 'Reports',    icon: Icons.reports,   href: '/reports' },
-    { id: 'discounts', label: 'Discounts',  icon: Icons.discount,  href: '/discounts' },
     { id: 'ai',        label: 'Ziada AI',   icon: Icons.ai,        href: '/ai',      badge: 'NEW' },
   ];
   const directory = [
