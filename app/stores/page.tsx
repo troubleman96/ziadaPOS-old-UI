@@ -100,7 +100,7 @@ export default function StoresPage() {
             All locations for your enterprise.
             {stats && (
               <span className="mono" style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                <span className="dot-s" style={{ background: 'var(--good)' }}></span> {stats.open_stores} open now
+                <span className="dot-s" style={{ background: 'var(--good)' }}></span> {stats.open_count} open now
               </span>
             )}
           </p>

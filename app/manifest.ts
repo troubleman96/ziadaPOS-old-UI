@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#4f46e5',
     categories: ['business', 'finance', 'productivity'],
     icons: [
-      { src: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg', purpose: 'any maskable' },
+      { src: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg', purpose: 'maskable' },
     ],
     shortcuts: [
       {
