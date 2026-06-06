@@ -238,6 +238,18 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
 
   return (
     <aside className={`sidenav${navOpen ? ' nav-open' : ''}`}>
+      {/* Brand header */}
+      <div style={{ padding: '14px 16px 6px', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <img
+          src="/ziadaposicon.jpeg"
+          alt="Ziada"
+          style={{
+            width: 32, height: 32, borderRadius: 9, objectFit: 'cover', flexShrink: 0,
+            boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.2)',
+          }}
+        />
+        <span style={{ fontSize: 16, fontWeight: 650, letterSpacing: '-0.025em', color: 'var(--fg)' }}>ziada</span>
+      </div>
       <StoreSwitcher onClose={onClose} />
       <div className="sidenav-scroll">
         <div className="nav-section-label">Operate</div>

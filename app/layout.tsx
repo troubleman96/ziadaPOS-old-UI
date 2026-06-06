@@ -36,25 +36,25 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/ziada-logo.jpeg', sizes: '1080x1080', type: 'image/jpeg' },
+      { url: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg' },
     ],
     apple: [
-      { url: '/ziada-logo.jpeg', sizes: '1080x1080', type: 'image/jpeg' },
+      { url: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg' },
     ],
-    shortcut: '/ziada-logo.jpeg',
+    shortcut: '/ziadaposicon.jpeg',
   },
   openGraph: {
     type: 'website',
     title: 'Ziada',
     description: 'Retail operating system for East African traders.',
     siteName: 'Ziada',
-    images: [{ url: '/ziada-logo.jpeg', width: 1200, height: 1200, alt: 'Ziada' }],
+    images: [{ url: '/ziadaposicon.jpeg', width: 1200, height: 1200, alt: 'Ziada' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Ziada',
     description: 'Retail operating system for East African traders.',
-    images: ['/ziada-logo.jpeg'],
+    images: ['/ziadaposicon.jpeg'],
   },
 };
 
@@ -75,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileImage" content="/ziada-logo.jpeg" />
+        <meta name="msapplication-TileImage" content="/ziadaposicon.jpeg" />
         <meta name="msapplication-TileColor" content="#4f46e5" />
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable}`}>

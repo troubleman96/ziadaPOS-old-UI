@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
-import { inventoryApi, type Category } from '../../../lib/api';
+import { inventoryApi, type Category, type BulkCreateResult } from '../../../lib/api';
 
 // ── Category Combobox ──────────────────────────────────────────────────────────
 
@@ -478,63 +478,116 @@ export default function NewProductPage() {
   async function saveAll(e: React.FormEvent) {
     e.preventDefault();
 
-    // Validate all unsaved products
+    // Validate all unsaved products first
     let hasErrors = false;
     setProducts(p => p.map(d => {
       if (d.saved) return d;
-      const errors = validate(d);
-      if (Object.keys(errors).length) { hasErrors = true; return { ...d, errors }; }
+      const errs = validate(d);
+      if (Object.keys(errs).length) { hasErrors = true; return { ...d, errors: errs }; }
       return { ...d, errors: {} };
     }));
     if (hasErrors) return;
 
     setSavingAll(true);
-    const { getAccessToken } = await import('../../../lib/auth');
-    const token = getAccessToken();
-    const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 
-    for (const draft of products) {
-      if (draft.saved) continue;
+    // Snapshot unsaved products before any async state changes
+    const unsaved = products.filter(d => !d.saved);
+    const withImages    = unsaved.filter(d => d.imageFile !== null);
+    const withoutImages = unsaved.filter(d => d.imageFile === null);
 
-      update(draft.id, { saving: true });
+    // Mark all unsaved as saving
+    setProducts(p => p.map(d => d.saved ? d : { ...d, saving: true }));
 
-      const fd = new FormData();
-      fd.append('name', draft.name.trim());
-      fd.append('price', draft.price);
-      fd.append('cost', draft.cost);
-      if (draft.sku.trim()) fd.append('sku', draft.sku.trim());
-      if (draft.category.trim()) fd.append('category_name_input', draft.category.trim());
-      if (draft.barcode.trim()) fd.append('barcode', draft.barcode.trim());
-      if (draft.openStock) fd.append('stock', draft.openStock);
-      if (draft.minStock) fd.append('min_stock', draft.minStock);
-      if (draft.maxStock) fd.append('max_stock', draft.maxStock);
-      if (draft.supplier) fd.append('supplier', draft.supplier);
-      fd.append('status', draft.status);
-      if (draft.imageFile) fd.append('image', draft.imageFile);
+    // ── 1. Bulk JSON create for products without images ───────────────────────
+    if (withoutImages.length > 0) {
+      const payload = withoutImages.map(d => ({
+        name:               d.name.trim(),
+        price:              Number(d.price),
+        cost:               Number(d.cost),
+        ...(d.sku.trim()      && { sku: d.sku.trim() }),
+        ...(d.category.trim() && { category_name_input: d.category.trim() }),
+        ...(d.barcode.trim()  && { barcode: d.barcode.trim() }),
+        stock:     Number(d.openStock) || 0,
+        min_stock: Number(d.minStock)  || 0,
+        max_stock: Number(d.maxStock)  || 100,
+        is_active: d.status === 'active',
+      }));
 
-      try {
-        const res = await fetch(`${BASE_URL}/api/v1/inventory/products/`, {
-          method: 'POST',
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          body: fd,
-        });
-        const json = await res.json() as Record<string, unknown>;
-        if (!res.ok) {
+      const res = await inventoryApi.bulkCreate(payload as Record<string, unknown>[]);
+
+      if (!res.success) {
+        // Whole request failed — mark all no-image products as errored
+        setProducts(p => p.map(d => {
+          if (d.saved || d.imageFile !== null) return d;
+          return { ...d, saving: false, errors: { _submit: res.message ?? 'Save failed.' } };
+        }));
+      } else {
+        const result = res.data as BulkCreateResult;
+        // Map per-item errors by their index in the submitted array
+        const errorsByIndex: Record<number, Record<string, string>> = {};
+        for (const e of (result.errors ?? [])) {
           const flat: Record<string, string> = {};
-          if (json.errors) {
-            for (const [k, v] of Object.entries(json.errors as Record<string, unknown>)) {
-              flat[k] = Array.isArray(v) ? (v as string[])[0] : String(v);
-            }
-          } else {
-            flat._submit = (json.message as string) ?? 'Save failed.';
+          for (const [k, v] of Object.entries(e.errors)) {
+            flat[k] = Array.isArray(v) ? v[0] : String(v);
           }
-          update(draft.id, { saving: false, errors: flat });
-        } else {
-          update(draft.id, { saving: false, saved: true, errors: {} });
+          errorsByIndex[e.index] = flat;
         }
-      } catch {
-        update(draft.id, { saving: false, errors: { _submit: 'Network error. Please try again.' } });
+
+        // Walk products in order, counting only no-image unsaved ones
+        let noImgIdx = 0;
+        setProducts(p => p.map(d => {
+          if (d.saved || d.imageFile !== null) return d;
+          const idx = noImgIdx++;
+          if (errorsByIndex[idx]) return { ...d, saving: false, errors: errorsByIndex[idx] };
+          return { ...d, saving: false, saved: true, errors: {} };
+        }));
       }
+    }
+
+    // ── 2. Products with images — parallel individual FormData POSTs ──────────
+    if (withImages.length > 0) {
+      const token = (await import('../../../lib/auth')).getAccessToken();
+      const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
+      const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+      await Promise.all(withImages.map(async (draft) => {
+        const fd = new FormData();
+        fd.append('name',     draft.name.trim());
+        fd.append('price',    draft.price);
+        fd.append('cost',     draft.cost);
+        fd.append('is_active', String(draft.status === 'active'));
+        if (draft.sku.trim())      fd.append('sku',               draft.sku.trim());
+        if (draft.category.trim()) fd.append('category_name_input', draft.category.trim());
+        if (draft.barcode.trim())  fd.append('barcode',            draft.barcode.trim());
+        if (draft.openStock)       fd.append('stock',              draft.openStock);
+        if (draft.minStock)        fd.append('min_stock',          draft.minStock);
+        if (draft.maxStock)        fd.append('max_stock',          draft.maxStock);
+        fd.append('image', draft.imageFile!);
+
+        try {
+          const res  = await fetch(`${BASE_URL}/api/v1/inventory/products/`, {
+            method: 'POST',
+            headers: authHeader,
+            body: fd,
+          });
+          const json = await res.json() as Record<string, unknown>;
+          if (!res.ok) {
+            const flat: Record<string, string> = {};
+            if (json.errors) {
+              for (const [k, v] of Object.entries(json.errors as Record<string, unknown>)) {
+                flat[k] = Array.isArray(v) ? (v as string[])[0] : String(v);
+              }
+            } else {
+              flat._submit = (json.message as string) ?? 'Save failed.';
+            }
+            update(draft.id, { saving: false, errors: flat });
+          } else {
+            update(draft.id, { saving: false, saved: true, errors: {} });
+          }
+        } catch {
+          update(draft.id, { saving: false, errors: { _submit: 'Network error. Please try again.' } });
+        }
+      }));
     }
 
     setSavingAll(false);

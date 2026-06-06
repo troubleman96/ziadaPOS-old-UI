@@ -222,7 +222,7 @@ function Header({ theme, onToggleTheme }: { theme: string; onToggleTheme: () => 
     <header style={{ position: 'sticky', top: 0, zIndex: 50, borderBottom: '1px solid var(--line)', backdropFilter: 'blur(16px) saturate(140%)', background: 'color-mix(in oklab, var(--bg) 70%, transparent)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', height: 56, gap: 24 }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-          <img src="/ziada-logo.jpeg" alt="Ziada" style={{ height: 30, width: 'auto', borderRadius: 4 }} />
+          <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
         </a>
         {/* Desktop nav */}
         <nav style={{ display: 'flex', gap: 20, marginLeft: 8 }} className="landing-nav">
@@ -516,7 +516,7 @@ function Footer() {
       <div className="footer-grid" style={{ maxWidth: 1240, margin: '0 auto', padding: '44px 24px 28px', display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1fr', gap: 28 }}>
         <div>
           <div style={{ marginBottom: 12 }}>
-            <img src="/ziada-logo.jpeg" alt="Ziada" style={{ height: 28, width: 'auto', borderRadius: 4 }} />
+            <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
           </div>
           <p style={{ fontSize: 12.5, color: 'var(--fg-3)', maxWidth: 240, margin: 0, lineHeight: 1.6 }}>The operating system for retail. Built in Dar es Salaam, made for any counter on the continent.</p>
         </div>

@@ -12,20 +12,20 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: '#4f46e5',
     categories: ['business', 'finance', 'productivity'],
     icons: [
-      { src: '/ziada-logo.jpeg', sizes: '1080x1080', type: 'image/jpeg', purpose: 'any maskable' },
+      { src: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg', purpose: 'any maskable' },
     ],
     shortcuts: [
       {
         name: 'Point of Sale',
         short_name: 'POS',
         url: '/pos',
-        icons: [{ src: '/ziada-logo.jpeg', sizes: '1080x1080', type: 'image/jpeg' }],
+        icons: [{ src: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg' }],
       },
       {
         name: 'Dashboard',
         short_name: 'Dashboard',
         url: '/dashboard',
-        icons: [{ src: '/ziada-logo.jpeg', sizes: '1080x1080', type: 'image/jpeg' }],
+        icons: [{ src: '/ziadaposicon.jpeg', sizes: '1080x1080', type: 'image/jpeg' }],
       },
     ],
   };

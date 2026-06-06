@@ -58,7 +58,7 @@ function LeftPanel() {
       {/* Logo */}
       <div style={{ position: 'relative' }}>
         <div>
-          <img src="/ziada-logo.jpeg" alt="Ziada" style={{ height: 30, width: 'auto', borderRadius: 4 }} />
+          <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
         </div>
       </div>
 
@@ -282,7 +282,7 @@ function LoginPageContent() {
 
             {/* Mobile-only logo */}
             <div style={{ display: 'none', marginBottom: 32 }} className="auth-mobile-logo">
-              <img src="/ziada-logo.jpeg" alt="Ziada" style={{ height: 28, width: 'auto', borderRadius: 4 }} />
+              <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
             </div>
             <style>{`.auth-mobile-logo { display: none !important; } @media (max-width: 768px) { .auth-mobile-logo { display: flex !important; } }`}</style>
 
