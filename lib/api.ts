@@ -805,6 +805,10 @@ export const staffApi = {
     const qs = params ? `?${params}` : '';
     return apiFetch<StaffMember[]>(`/api/v1/staff/${qs}`, {}, token ?? undefined);
   },
+  async getDetail(id: string): Promise<ApiResult<StaffMember>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<StaffMember>(`/api/v1/staff/${id}/`, {}, token ?? undefined);
+  },
   async getKPIs(): Promise<ApiResult<StaffKPIs>> {
     const token = await getUsableAccessToken();
     return apiFetch<StaffKPIs>('/api/v1/staff/kpis/', {}, token ?? undefined);

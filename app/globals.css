@@ -741,6 +741,19 @@ input, select, textarea { font-family: inherit; }
 }
 @media (max-width: 640px) { .form-grid-2 { grid-template-columns: 1fr; } }
 
+/* Product card: image left on desktop, image top on mobile */
+.product-card-layout {
+  display: grid;
+  grid-template-columns: 176px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 680px) {
+  .product-card-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ─── Settings sidebar (horizontal on mobile) ───────────────────────────────── */
 .settings-nav-btn {
   border-left: 2px solid transparent; transition: background 100ms, color 100ms;

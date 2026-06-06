@@ -282,171 +282,176 @@ function ProductCard({ draft, index, canRemove, onUpdate, onRemove }: ProductCar
         )}
       </div>
 
-      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ padding: '16px 20px' }}>
+        <div className="product-card-layout">
 
-        {/* Name */}
-        <div>
-          <label style={LABEL}>PRODUCT NAME *</label>
-          <input
-            value={name}
-            onChange={e => { onUpdate({ name: e.target.value }); clrErr('name'); }}
-            placeholder="e.g. Unga wa Sembe 10kg"
-            style={{ ...INPUT, borderColor: errors.name ? 'var(--bad)' : 'var(--line-2)' }}
-            disabled={saved}
-          />
-          {errors.name && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.name}</div>}
-        </div>
+          {/* ── Left / Top: Image upload ────────────────────────────────── */}
+          <div>
+            <label style={{ ...LABEL, marginBottom: 8 }}>
+              PRODUCT IMAGE <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· optional</span>
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleImageSelect(f); }}
+            />
+            {imagePreview ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <img src={imagePreview} alt="Preview" style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 10, border: '1px solid var(--line-2)' }} />
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={() => fileInputRef.current?.click()}
+                    style={{ flex: 1, padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'var(--bg)', color: 'var(--fg-2)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Change
+                  </button>
+                  <button onClick={() => { onUpdate({ imageFile: null, imagePreview: null }); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                    style={{ flex: 1, padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'var(--bg)', color: 'var(--bad)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleImageSelect(f); }}
+                style={{
+                  border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--line-2)'}`,
+                  borderRadius: 10, padding: '28px 12px', textAlign: 'center',
+                  cursor: 'pointer', background: dragOver ? 'var(--accent-soft)' : 'var(--bg)',
+                  transition: 'border-color 150ms, background 150ms',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+                }}
+              >
+                <div style={{ fontSize: 26 }}>🖼</div>
+                <div style={{ fontSize: 12, fontWeight: 500, marginTop: 4 }}>Drop image here</div>
+                <div style={{ fontSize: 11, color: 'var(--fg-3)' }}>or click to browse</div>
+                <div style={{ fontSize: 10, color: 'var(--fg-4)' }}>JPG, PNG, WEBP</div>
+              </div>
+            )}
+          </div>
 
-        {/* SKU + Category */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div>
-            <label style={LABEL}>SKU</label>
-            <input value={sku} onChange={e => onUpdate({ sku: e.target.value })} placeholder="e.g. UWS-10"
-              style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
-          </div>
-          <div>
-            <label style={LABEL}>CATEGORY</label>
-            <CategoryCombobox value={category} onChange={v => onUpdate({ category: v })} />
-          </div>
-        </div>
+          {/* ── Right / Bottom: Form fields ─────────────────────────────── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* Barcode */}
-        <div>
-          <label style={LABEL}>BARCODE <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· optional</span></label>
-          <input value={barcode} onChange={e => onUpdate({ barcode: e.target.value })} placeholder="Scan or type EAN-13 barcode"
-            style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
-        </div>
-
-        {/* Divider */}
-        <div style={{ height: 1, background: 'var(--line)', margin: '0 -20px' }} />
-
-        {/* Cost + Price */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div>
-            <label style={LABEL}>COST PRICE (TZS) *</label>
-            <input type="number" value={cost} onChange={e => { onUpdate({ cost: e.target.value }); clrErr('cost'); }} placeholder="0"
-              style={{ ...INPUT, fontFamily: 'var(--mono)', borderColor: errors.cost ? 'var(--bad)' : 'var(--line-2)' }} disabled={saved} />
-            {errors.cost && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.cost}</div>}
-          </div>
-          <div>
-            <label style={LABEL}>SELLING PRICE (TZS) *</label>
-            <input type="number" value={price} onChange={e => { onUpdate({ price: e.target.value }); clrErr('price'); }} placeholder="0"
-              style={{ ...INPUT, fontFamily: 'var(--mono)', borderColor: errors.price ? 'var(--bad)' : 'var(--line-2)' }} disabled={saved} />
-            {errors.price && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.price}</div>}
-          </div>
-        </div>
-
-        {/* Margin strip */}
-        {margin && (
-          <div style={{ padding: '8px 12px', borderRadius: 7, background: 'var(--bg-3)', border: '1px solid var(--line)', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Margin: <span className="mono" style={{ color: +margin > 15 ? 'var(--good)' : 'var(--warn)' }}>{margin}%</span></span>
-            <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Markup: <span className="mono">{(((+price - +cost) / +cost) * 100).toFixed(0)}%</span></span>
-            <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Profit/unit: <span className="mono" style={{ color: 'var(--good)' }}>TZS {(+price - +cost).toLocaleString()}</span></span>
-          </div>
-        )}
-
-        {/* Divider */}
-        <div style={{ height: 1, background: 'var(--line)', margin: '0 -20px' }} />
-
-        {/* Stock */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-          <div>
-            <label style={LABEL}>OPENING STOCK</label>
-            <input type="number" value={openStock} onChange={e => onUpdate({ openStock: e.target.value })} placeholder="0"
-              style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
-          </div>
-          <div>
-            <label style={LABEL}>REORDER POINT</label>
-            <input type="number" value={minStock} onChange={e => onUpdate({ minStock: e.target.value })} placeholder="10"
-              style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
-          </div>
-          <div>
-            <label style={LABEL}>MAX STOCK</label>
-            <input type="number" value={maxStock} onChange={e => onUpdate({ maxStock: e.target.value })} placeholder="100"
-              style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
-          </div>
-        </div>
-
-        {/* Supplier + Status */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center' }}>
-          <div>
-            <label style={LABEL}>SUPPLIER</label>
-            <select value={supplier} onChange={e => onUpdate({ supplier: e.target.value })}
-              style={{ ...INPUT, cursor: 'pointer' }} disabled={saved}>
-              <option value="">Select supplier</option>
-              {['Aziz Wholesalers', 'Karibu Foods Ltd', 'Hassan Suppliers', 'Mpaji Distributors'].map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label style={LABEL}>STATUS</label>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', paddingTop: 4 }}>
-              {(['active', 'draft'] as const).map(s => (
-                <label key={s} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
-                  <input type="radio" name={`status-${draft.id}`} checked={status === s} onChange={() => onUpdate({ status: s })}
-                    style={{ accentColor: 'var(--accent)' }} disabled={saved} />
-                  {s.charAt(0).toUpperCase() + s.slice(1)}
-                </label>
-              ))}
+            {/* Name */}
+            <div>
+              <label style={LABEL}>PRODUCT NAME *</label>
+              <input
+                value={name}
+                onChange={e => { onUpdate({ name: e.target.value }); clrErr('name'); }}
+                placeholder="e.g. Unga wa Sembe 10kg"
+                style={{ ...INPUT, borderColor: errors.name ? 'var(--bad)' : 'var(--line-2)' }}
+                disabled={saved}
+              />
+              {errors.name && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.name}</div>}
             </div>
-          </div>
-        </div>
 
-        {/* Divider */}
-        <div style={{ height: 1, background: 'var(--line)', margin: '0 -20px' }} />
-
-        {/* Image upload */}
-        <div>
-          <label style={{ ...LABEL, marginBottom: 8 }}>
-            PRODUCT IMAGE <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· optional</span>
-          </label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={e => { const f = e.target.files?.[0]; if (f) handleImageSelect(f); }}
-          />
-          {imagePreview ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <img src={imagePreview} alt="Preview" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line-2)', flexShrink: 0 }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <button onClick={() => fileInputRef.current?.click()}
-                  style={{ padding: '5px 10px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'var(--bg)', color: 'var(--fg-2)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Change
-                </button>
-                <button onClick={() => { onUpdate({ imageFile: null, imagePreview: null }); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                  style={{ padding: '5px 10px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'var(--bg)', color: 'var(--bad)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Remove
-                </button>
+            {/* SKU + Category */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={LABEL}>SKU</label>
+                <input value={sku} onChange={e => onUpdate({ sku: e.target.value })} placeholder="e.g. UWS-10"
+                  style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+              </div>
+              <div>
+                <label style={LABEL}>CATEGORY</label>
+                <CategoryCombobox value={category} onChange={v => onUpdate({ category: v })} />
               </div>
             </div>
-          ) : (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={() => setDragOver(false)}
-              onDrop={e => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) handleImageSelect(f); }}
-              style={{
-                border: `2px dashed ${dragOver ? 'var(--accent)' : 'var(--line-2)'}`,
-                borderRadius: 10, padding: '18px 16px', textAlign: 'center',
-                cursor: 'pointer', background: dragOver ? 'var(--accent-soft)' : 'var(--bg)',
-                transition: 'border-color 150ms, background 150ms',
-              }}
-            >
-              <div style={{ fontSize: 22, marginBottom: 6 }}>🖼</div>
-              <div style={{ fontSize: 12.5, fontWeight: 500, marginBottom: 3 }}>Drop image here</div>
-              <div style={{ fontSize: 11.5, color: 'var(--fg-3)' }}>or click to browse · JPG, PNG, WEBP</div>
-            </div>
-          )}
-        </div>
 
-        {errors._submit && (
-          <div style={{ padding: '9px 12px', borderRadius: 7, background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)', color: 'var(--bad)', fontSize: 12.5 }}>
-            {errors._submit}
+            {/* Barcode */}
+            <div>
+              <label style={LABEL}>BARCODE <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· optional</span></label>
+              <input value={barcode} onChange={e => onUpdate({ barcode: e.target.value })} placeholder="Scan or type EAN-13 barcode"
+                style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+            </div>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: 'var(--line)' }} />
+
+            {/* Cost + Price */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={LABEL}>COST PRICE (TZS) *</label>
+                <input type="number" value={cost} onChange={e => { onUpdate({ cost: e.target.value }); clrErr('cost'); }} placeholder="0"
+                  style={{ ...INPUT, fontFamily: 'var(--mono)', borderColor: errors.cost ? 'var(--bad)' : 'var(--line-2)' }} disabled={saved} />
+                {errors.cost && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.cost}</div>}
+              </div>
+              <div>
+                <label style={LABEL}>SELLING PRICE (TZS) *</label>
+                <input type="number" value={price} onChange={e => { onUpdate({ price: e.target.value }); clrErr('price'); }} placeholder="0"
+                  style={{ ...INPUT, fontFamily: 'var(--mono)', borderColor: errors.price ? 'var(--bad)' : 'var(--line-2)' }} disabled={saved} />
+                {errors.price && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.price}</div>}
+              </div>
+            </div>
+
+            {/* Margin strip */}
+            {margin && (
+              <div style={{ padding: '8px 12px', borderRadius: 7, background: 'var(--bg-3)', border: '1px solid var(--line)', display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Margin: <span className="mono" style={{ color: +margin > 15 ? 'var(--good)' : 'var(--warn)' }}>{margin}%</span></span>
+                <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Markup: <span className="mono">{(((+price - +cost) / +cost) * 100).toFixed(0)}%</span></span>
+                <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Profit/unit: <span className="mono" style={{ color: 'var(--good)' }}>TZS {(+price - +cost).toLocaleString()}</span></span>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div style={{ height: 1, background: 'var(--line)' }} />
+
+            {/* Stock */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+              <div>
+                <label style={LABEL}>OPENING STOCK</label>
+                <input type="number" value={openStock} onChange={e => onUpdate({ openStock: e.target.value })} placeholder="0"
+                  style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+              </div>
+              <div>
+                <label style={LABEL}>REORDER POINT</label>
+                <input type="number" value={minStock} onChange={e => onUpdate({ minStock: e.target.value })} placeholder="10"
+                  style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+              </div>
+              <div>
+                <label style={LABEL}>MAX STOCK</label>
+                <input type="number" value={maxStock} onChange={e => onUpdate({ maxStock: e.target.value })} placeholder="100"
+                  style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+              </div>
+            </div>
+
+            {/* Supplier + Status */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'center' }}>
+              <div>
+                <label style={LABEL}>SUPPLIER</label>
+                <select value={supplier} onChange={e => onUpdate({ supplier: e.target.value })}
+                  style={{ ...INPUT, cursor: 'pointer' }} disabled={saved}>
+                  <option value="">Select supplier</option>
+                  {['Aziz Wholesalers', 'Karibu Foods Ltd', 'Hassan Suppliers', 'Mpaji Distributors'].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={LABEL}>STATUS</label>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', paddingTop: 4 }}>
+                  {(['active', 'draft'] as const).map(s => (
+                    <label key={s} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13 }}>
+                      <input type="radio" name={`status-${draft.id}`} checked={status === s} onChange={() => onUpdate({ status: s })}
+                        style={{ accentColor: 'var(--accent)' }} disabled={saved} />
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {errors._submit && (
+              <div style={{ padding: '9px 12px', borderRadius: 7, background: 'rgba(251,113,133,0.08)', border: '1px solid rgba(251,113,133,0.25)', color: 'var(--bad)', fontSize: 12.5 }}>
+                {errors._submit}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
