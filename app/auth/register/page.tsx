@@ -6,6 +6,29 @@ import { useRouter } from 'next/navigation';
 import { authApi, TANZANIA_REGIONS, BUSINESS_TYPES } from '@/lib/api';
 import { saveTokens, cacheUser, cacheSubscription, isAuthenticated } from '@/lib/auth';
 
+// ── Theme icons ────────────────────────────────────────────────────────────────
+function SunIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+    </svg>
+  );
+}
+function MoonIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+function DotsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <circle cx="3" cy="8" r="1.5" /><circle cx="8" cy="8" r="1.5" /><circle cx="13" cy="8" r="1.5" />
+    </svg>
+  );
+}
+
 // ── Eye icon ───────────────────────────────────────────────────────────────────
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
@@ -177,13 +200,60 @@ function StepDots({ step, total }: { step: number; total: number }) {
   );
 }
 
+// ── POS mockup (register left panel visual) ────────────────────────────────────
+function POSMockup() {
+  const accent = '#6366f1';
+  const items: [string, number, number][] = [
+    ['Unga wa Sembe 10kg', 2, 28000],
+    ['Mafuta ya Cooking 5L', 1, 34000],
+    ['Sabuni OMO 1kg', 3, 6200],
+  ];
+  const total = items.reduce((s, [,q,p]) => s + q * p, 0);
+  const fmt = (n: number) => 'TZS ' + n.toLocaleString('en-US');
+  return (
+    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--line-2)', boxShadow: '0 28px 64px rgba(0,0,0,0.22)', background: 'var(--bg)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', background: 'var(--bg-2)', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', gap: 5 }}>
+          {['#ff5f57','#febc2e','#28c840'].map(c => <span key={c} style={{ width: 9, height: 9, borderRadius: 999, background: c, opacity: 0.75, display: 'block' }} />)}
+        </div>
+        <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-4)', marginLeft: 8 }}>app.ziadapos.com/pos</span>
+      </div>
+      <div style={{ padding: '14px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontSize: 12, fontWeight: 500 }}>Current sale</span>
+          <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-4)' }}>SALE #TXN-2043</span>
+        </div>
+        {items.map(([n, q, p]) => (
+          <div key={n} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 10, fontSize: 11, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n}</span>
+            <span style={{ fontFamily: 'monospace', color: 'var(--fg-3)', fontSize: 10 }}>×{q}</span>
+            <span style={{ fontFamily: 'monospace', fontSize: 10 }}>{fmt(q * p)}</span>
+          </div>
+        ))}
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0 10px', borderTop: '1px solid var(--line-2)', marginTop: 4 }}>
+          <span style={{ fontSize: 11.5, fontWeight: 500 }}>Net total</span>
+          <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: accent }}>{fmt(total)}</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, marginBottom: 10 }}>
+          {['Cash','M-Pesa','Bank','Credit'].map((m, i) => (
+            <div key={m} style={{ padding: '5px 4px', borderRadius: 5, fontSize: 9.5, textAlign: 'center', border: `1px solid ${i === 1 ? accent : 'var(--line)'}`, background: i === 1 ? `${accent}20` : 'transparent', color: i === 1 ? accent : 'var(--fg-3)' }}>{m}</div>
+          ))}
+        </div>
+        <div style={{ padding: '8px', borderRadius: 6, background: accent, color: '#fff', textAlign: 'center', fontSize: 11, fontWeight: 500 }}>Complete sale →</div>
+      </div>
+    </div>
+  );
+}
+
 // ── Left panel ─────────────────────────────────────────────────────────────────
 function LeftPanel() {
   return (
     <div className="auth-left-reg">
       <style>{`
         .auth-left-reg {
-          display: flex; flex-direction: column; justify-content: space-between;
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: space-between;
+          text-align: center;
           padding: 44px 48px; background: var(--bg-2);
           border-right: 1px solid var(--line); min-height: 100vh;
           position: relative; overflow: hidden;
@@ -195,47 +265,35 @@ function LeftPanel() {
             linear-gradient(to right, var(--line) 1px, transparent 1px),
             linear-gradient(to bottom, var(--line) 1px, transparent 1px);
           background-size: 48px 48px;
-          mask-image: radial-gradient(ellipse 80% 70% at 30% 40%, #000 30%, transparent 80%);
+          mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 20%, transparent 75%);
         }
         @media (max-width: 900px) { .auth-left-reg { display: none; } }
       `}</style>
 
-      <div style={{ position: 'relative' }}>
-        <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
+      {/* Logo */}
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
+        <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--display, var(--sans))' }}>Ziada</span>
       </div>
 
-      <div style={{ position: 'relative' }}>
-        {/* Trial callout */}
-        <div style={{ padding: '16px 18px', borderRadius: 10, border: '1px solid var(--accent-line)', background: 'var(--accent-soft)', marginBottom: 28 }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.08em', marginBottom: 5 }}>FREE TRIAL OFFER</div>
-          <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em' }}>7 days free</div>
-          <div style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 5 }}>Activate with a one-time payment of <strong>TZS 10,000</strong> after sign-up.</div>
+      {/* Mockup + copy */}
+      <div style={{ position: 'relative', width: '100%', maxWidth: 360 }}>
+        <div style={{ marginBottom: 24 }}>
+          <POSMockup />
         </div>
-
-        <h2 style={{ margin: '0 0 10px', fontSize: 'clamp(24px, 2.6vw, 32px)', fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.1 }}>
+        {/* Trial pill */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--accent-line)', background: 'var(--accent-soft)', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', marginBottom: 16 }}>
+          7 days free · TZS 10,000 activation
+        </div>
+        <h2 style={{ margin: '0 0 10px', fontSize: 'clamp(22px, 2.4vw, 30px)', fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.15 }}>
           Everything your<br />shop needs.
         </h2>
-        <p style={{ margin: '0 0 28px', fontSize: 14, color: 'var(--fg-3)', lineHeight: 1.6 }}>
-          Your account is live in under 2 minutes. All 5 modules included on every plan.
+        <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-3)', lineHeight: 1.65 }}>
+          Account live in under 2 minutes.<br />All 5 modules on every plan.
         </p>
-
-        {/* What's included */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {[
-            'Point of Sale — sell instantly, online or offline',
-            'Inventory — auto-tracked across all stores',
-            'Credits — track every kopo without a notebook',
-            'Analytics — live profit, margins and cashflow',
-            'Ziada AI — ask your data in Swahili or English',
-          ].map(item => (
-            <div key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, fontSize: 13, color: 'var(--fg-2)' }}>
-              <span style={{ color: 'var(--good)', flexShrink: 0, marginTop: 2 }}><CheckIcon /></span>
-              {item}
-            </div>
-          ))}
-        </div>
       </div>
 
+      {/* Footer */}
       <div style={{ position: 'relative', fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>
         DAR ES SALAAM · ARUSHA · MWANZA · DODOMA
       </div>
@@ -310,7 +368,9 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [theme, setTheme] = useState('light');
+  const [theme,    setTheme]    = useState<'light' | 'dark'>('light');
+  const [dotsOpen, setDotsOpen] = useState(false);
+  const dotsRef = useRef<HTMLDivElement>(null);
 
   // Form state
   const [fullName,    setFullName]    = useState('');
@@ -341,6 +401,17 @@ export default function RegisterPage() {
     document.documentElement.setAttribute('data-theme', theme);
     try { localStorage.setItem('ziada-theme', theme); } catch {}
   }, [theme]);
+
+  useEffect(() => {
+    if (!dotsOpen) return;
+    function onOutside(e: MouseEvent) {
+      if (dotsRef.current && !dotsRef.current.contains(e.target as Node)) setDotsOpen(false);
+    }
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [dotsOpen]);
+
+  function applyTheme(t: 'light' | 'dark') { setTheme(t); }
 
   function clearErr(field: string) {
     if (fieldErrors[field]) setFieldErrors(p => ({ ...p, [field]: '' }));
@@ -540,6 +611,33 @@ export default function RegisterPage() {
         .step-enter { animation: slideIn 200ms ease forwards; }
         .step-back-enter { animation: slideOut 200ms ease forwards; }
       `}</style>
+
+      {/* Fixed three-dot theme menu */}
+      <div ref={dotsRef} style={{ position: 'fixed', top: 16, right: 20, zIndex: 200 }}>
+        <button
+          onClick={() => setDotsOpen(o => !o)}
+          aria-label="Appearance"
+          style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 8, background: dotsOpen ? 'var(--bg-3)' : 'var(--bg-2)', color: 'var(--fg-2)', cursor: 'pointer', transition: 'background 120ms' }}
+        >
+          <DotsIcon />
+        </button>
+        {dotsOpen && (
+          <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 210, background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: '0 8px 32px -8px rgba(0,0,0,0.18)', padding: 14, zIndex: 300 }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 10 }}>APPEARANCE</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, padding: 4, background: 'var(--bg-3)', borderRadius: 9 }}>
+              {(['light', 'dark'] as const).map(t => {
+                const active = theme === t;
+                return (
+                  <button key={t} onClick={() => applyTheme(t)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '8px 12px', borderRadius: 6, border: 0, cursor: 'pointer', background: active ? 'var(--bg)' : 'transparent', color: active ? 'var(--fg)' : 'var(--fg-3)', fontSize: 13, fontWeight: active ? 500 : 400, boxShadow: active ? '0 1px 4px rgba(0,0,0,0.10)' : 'none', transition: 'all 150ms' }}>
+                    {t === 'light' ? <SunIcon /> : <MoonIcon />}
+                    {t === 'light' ? 'Light' : 'Dark'}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="reg-page">
         <LeftPanel />
@@ -747,15 +845,6 @@ export default function RegisterPage() {
               </span>
             </div>
 
-            {/* Theme toggle */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
-              <button
-                onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-                style={{ background: 'transparent', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 10px', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', cursor: 'pointer' }}
-              >
-                {theme === 'dark' ? '◐ dark' : '◑ light'}
-              </button>
-            </div>
           </div>
 
           <div style={{ marginTop: 28, fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--fg-4)', textAlign: 'center' }}>

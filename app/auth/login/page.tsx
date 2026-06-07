@@ -6,13 +6,28 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import { saveTokens, cacheUser, cacheSubscription, isAuthenticated } from '@/lib/auth';
 
-// ── Feature highlight tiles shown on the left panel ───────────────────────────
-const FEATURES = [
-  { icon: '⚡', label: 'Point of Sale', desc: 'Ring up sales in under 3 taps' },
-  { icon: '📦', label: 'Inventory',     desc: 'Live stock across all stores' },
-  { icon: '✦',  label: 'Ziada AI',      desc: 'Ask your data in English or Swahili' },
-  { icon: '📊', label: 'Analytics',     desc: 'Profit, margins and cashflow live' },
-];
+// ── Icons ──────────────────────────────────────────────────────────────────────
+function SunIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+    </svg>
+  );
+}
+function MoonIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+function DotsIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <circle cx="3" cy="8" r="1.5" /><circle cx="8" cy="8" r="1.5" /><circle cx="13" cy="8" r="1.5" />
+    </svg>
+  );
+}
 
 // ── Eye icon ───────────────────────────────────────────────────────────────────
 function EyeIcon({ open }: { open: boolean }) {
@@ -31,17 +46,71 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
-// ── Left panel — branding + feature highlights ─────────────────────────────────
+// ── App dashboard mockup (left panel visual) ───────────────────────────────────
+function DashMockup() {
+  const kpis = [
+    { label: "TODAY'S SALES", v: 'TZS 1.24M', delta: '+18%' },
+    { label: 'TICKETS',       v: '48',        delta: '+9'   },
+    { label: 'PROFIT',        v: 'TZS 272K',  delta: '+12%' },
+    { label: 'CREDIT OUT',    v: 'TZS 184K',  delta: '14'   },
+  ];
+  const txns = [
+    { id: 'TXN-2042', amt: '142,000', via: 'M-Pesa', green: true  },
+    { id: 'TXN-2041', amt: '48,500',  via: 'Cash',   green: false },
+    { id: 'TXN-2040', amt: '217,000', via: 'M-Pesa', green: true  },
+  ];
+  return (
+    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--line-2)', boxShadow: '0 28px 64px rgba(0,0,0,0.22)', background: 'var(--bg)' }}>
+      {/* Window chrome */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', background: 'var(--bg-2)', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', gap: 5 }}>
+          {['#ff5f57','#febc2e','#28c840'].map(c => <span key={c} style={{ width: 9, height: 9, borderRadius: 999, background: c, opacity: 0.75, display: 'block' }} />)}
+        </div>
+        <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-4)', marginLeft: 8 }}>app.ziadapos.com/dashboard</span>
+        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-4)' }}>
+          <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--good)', display: 'inline-block' }} /> live
+        </span>
+      </div>
+      {/* Content */}
+      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {kpis.map(k => (
+            <div key={k.label} style={{ padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--bg-2)' }}>
+              <div style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)', letterSpacing: '0.06em', marginBottom: 4 }}>{k.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em' }}>{k.v}</div>
+              <div style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'var(--good)', marginTop: 3 }}>{k.delta}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.8fr', gap: 8, padding: '6px 12px', fontFamily: 'monospace', fontSize: 8, color: 'var(--fg-4)', letterSpacing: '0.06em', background: 'var(--bg-3)', borderBottom: '1px solid var(--line)' }}>
+            <span>TRANSACTION</span><span>AMOUNT</span><span>VIA</span>
+          </div>
+          {txns.map((t, i) => (
+            <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.8fr', gap: 8, padding: '8px 12px', fontSize: 11, alignItems: 'center', borderBottom: i < txns.length - 1 ? '1px solid var(--line)' : 0 }}>
+              <span style={{ fontFamily: 'monospace', fontSize: 9.5, color: 'var(--accent)' }}>{t.id}</span>
+              <span style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 500 }}>TZS {t.amt}</span>
+              <span style={{ fontFamily: 'monospace', fontSize: 8.5, padding: '2px 6px', borderRadius: 999, background: t.green ? 'rgba(16,185,129,0.1)' : 'var(--bg-3)', color: t.green ? '#10b981' : 'var(--fg-3)' }}>{t.via}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Left panel ─────────────────────────────────────────────────────────────────
 function LeftPanel() {
   return (
     <div className="auth-left">
       <style>{`
         .auth-left {
-          display: flex; flex-direction: column; justify-content: space-between;
+          display: flex; flex-direction: column;
+          align-items: center; justify-content: space-between;
+          text-align: center;
           padding: 44px 48px; background: var(--bg-2);
           border-right: 1px solid var(--line);
-          min-height: 100vh;
-          position: relative; overflow: hidden;
+          min-height: 100vh; position: relative; overflow: hidden;
         }
         .auth-left::before {
           content: '';
@@ -50,45 +119,35 @@ function LeftPanel() {
             linear-gradient(to right, var(--line) 1px, transparent 1px),
             linear-gradient(to bottom, var(--line) 1px, transparent 1px);
           background-size: 48px 48px;
-          mask-image: radial-gradient(ellipse 80% 70% at 30% 40%, #000 30%, transparent 80%);
+          mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 20%, transparent 75%);
         }
         @media (max-width: 768px) { .auth-left { display: none; } }
       `}</style>
 
       {/* Logo */}
-      <div style={{ position: 'relative' }}>
-        <div>
-          <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
-        </div>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
+        <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--display, var(--sans))' }}>Ziada</span>
       </div>
 
-      {/* Main copy */}
-      <div style={{ position: 'relative' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 10px 4px 8px', border: '1px solid var(--line-2)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', marginBottom: 20 }}>
+      {/* Mockup + copy */}
+      <div style={{ position: 'relative', width: '100%', maxWidth: 380 }}>
+        <div style={{ marginBottom: 28 }}>
+          <DashMockup />
+        </div>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 10px 4px 8px', border: '1px solid var(--line-2)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', marginBottom: 16 }}>
           <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--accent)', boxShadow: '0 0 0 3px var(--accent-soft)', display: 'inline-block' }} />
           Trusted by 1,247+ stores in Tanzania
         </div>
-
-        <h2 style={{ margin: '0 0 12px', fontSize: 'clamp(26px, 2.8vw, 36px)', fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.1 }}>
+        <h2 style={{ margin: '0 0 10px', fontSize: 'clamp(22px, 2.4vw, 30px)', fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.15 }}>
           The operating system<br />for your shop.
         </h2>
-        <p style={{ margin: '0 0 32px', fontSize: 14, color: 'var(--fg-3)', lineHeight: 1.6, maxWidth: 340 }}>
-          POS, inventory, credit, analytics and AI — all in one calm platform built for Tanzanian businesses.
+        <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-3)', lineHeight: 1.65 }}>
+          POS, inventory, credits, analytics and AI —<br />one calm platform built for Tanzania.
         </p>
-
-        {/* Feature tiles */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {FEATURES.map(f => (
-            <div key={f.label} style={{ padding: '14px 16px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg)', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ fontSize: 18 }}>{f.icon}</span>
-              <div style={{ fontSize: 13, fontWeight: 500 }}>{f.label}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--fg-3)', lineHeight: 1.45 }}>{f.desc}</div>
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Footer note */}
+      {/* Footer */}
       <div style={{ position: 'relative', fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>
         DAR ES SALAAM · ARUSHA · MWANZA · DODOMA
       </div>
@@ -108,7 +167,9 @@ function LoginPageContent() {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [theme, setTheme] = useState('light');
+  const [theme,    setTheme]    = useState<'light' | 'dark'>('light');
+  const [dotsOpen, setDotsOpen] = useState(false);
+  const dotsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Already authenticated — skip the login page
@@ -130,6 +191,17 @@ function LoginPageContent() {
     document.documentElement.setAttribute('data-theme', theme);
     try { localStorage.setItem('ziada-theme', theme); } catch {}
   }, [theme]);
+
+  useEffect(() => {
+    if (!dotsOpen) return;
+    function onOutside(e: MouseEvent) {
+      if (dotsRef.current && !dotsRef.current.contains(e.target as Node)) setDotsOpen(false);
+    }
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, [dotsOpen]);
+
+  function applyTheme(t: 'light' | 'dark') { setTheme(t); }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -274,6 +346,33 @@ function LoginPageContent() {
         }
       `}</style>
 
+      {/* Fixed three-dot theme menu — always accessible */}
+      <div ref={dotsRef} style={{ position: 'fixed', top: 16, right: 20, zIndex: 200 }}>
+        <button
+          onClick={() => setDotsOpen(o => !o)}
+          aria-label="Appearance"
+          style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 8, background: dotsOpen ? 'var(--bg-3)' : 'var(--bg-2)', color: 'var(--fg-2)', cursor: 'pointer', transition: 'background 120ms' }}
+        >
+          <DotsIcon />
+        </button>
+        {dotsOpen && (
+          <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 210, background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: '0 8px 32px -8px rgba(0,0,0,0.18)', padding: 14, zIndex: 300 }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 10 }}>APPEARANCE</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, padding: 4, background: 'var(--bg-3)', borderRadius: 9 }}>
+              {(['light', 'dark'] as const).map(t => {
+                const active = theme === t;
+                return (
+                  <button key={t} onClick={() => applyTheme(t)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '8px 12px', borderRadius: 6, border: 0, cursor: 'pointer', background: active ? 'var(--bg)' : 'transparent', color: active ? 'var(--fg)' : 'var(--fg-3)', fontSize: 13, fontWeight: active ? 500 : 400, boxShadow: active ? '0 1px 4px rgba(0,0,0,0.10)' : 'none', transition: 'all 150ms' }}>
+                    {t === 'light' ? <SunIcon /> : <MoonIcon />}
+                    {t === 'light' ? 'Light' : 'Dark'}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="auth-page">
         <LeftPanel />
 
@@ -374,15 +473,6 @@ function LoginPageContent() {
               </span>
             </div>
 
-            {/* Theme toggle */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
-              <button
-                onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-                style={{ background: 'transparent', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 10px', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', cursor: 'pointer' }}
-              >
-                {theme === 'dark' ? '◐ dark' : '◑ light'}
-              </button>
-            </div>
           </div>
 
           {/* Footer */}
