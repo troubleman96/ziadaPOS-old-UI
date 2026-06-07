@@ -1,36 +1,42 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
-
-const COLS = [
-  {
-    title: 'Product',
-    links: [
-      { label: 'Point of Sale', href: '/#features' },
-      { label: 'Inventory', href: '/#features' },
-      { label: 'Analytics', href: '/#features' },
-      { label: 'Credits', href: '/#features' },
-      { label: 'Ziada AI', href: '/#ai' },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { label: 'About', href: '/about' },
-      { label: 'Pricing', href: '/pricing' },
-      { label: 'Contact', href: '/contact' },
-      { label: 'Careers', href: '/contact' },
-    ],
-  },
-  {
-    title: 'Legal',
-    links: [
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Privacy Policy', href: '/privacy' },
-    ],
-  },
-];
+import { useLang } from '@/components/LangContext';
+import { t } from '@/lib/lang';
 
 export function MarketingFooter() {
+  const { lang } = useLang();
+
+  const COLS = [
+    {
+      titleKey: 'footer_product' as const,
+      links: [
+        { labelKey: 'footer_pos'      as const, href: '/#features' },
+        { labelKey: 'footer_inv'      as const, href: '/#features' },
+        { labelKey: 'footer_analytics'as const, href: '/#features' },
+        { labelKey: 'footer_credits'  as const, href: '/#features' },
+        { labelKey: 'nav_ai'          as const, href: '/#ai'       },
+      ],
+    },
+    {
+      titleKey: 'footer_company' as const,
+      links: [
+        { labelKey: 'footer_about'   as const, href: '/about'   },
+        { labelKey: 'footer_pricing' as const, href: '/pricing' },
+        { labelKey: 'footer_contact' as const, href: '/contact' },
+        { labelKey: 'footer_careers' as const, href: '/contact' },
+      ],
+    },
+    {
+      titleKey: 'footer_legal' as const,
+      links: [
+        { labelKey: 'footer_terms'   as const, href: '/terms'   },
+        { labelKey: 'footer_privacy' as const, href: '/privacy' },
+      ],
+    },
+  ];
+
   return (
     <footer style={{ borderTop: '1px solid var(--line)', background: 'var(--bg-2)' }}>
       <div className="mkt-footer-grid" style={{ maxWidth: 1240, margin: '0 auto', padding: '44px 24px 28px' }}>
@@ -41,7 +47,7 @@ export function MarketingFooter() {
             <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(79,70,229,0.18)' }} />
           </div>
           <p style={{ fontSize: 12.5, color: 'var(--fg-3)', maxWidth: 220, margin: '0 0 18px', lineHeight: 1.65 }}>
-            The operating system for retail. Built in Dar es Salaam, made for any counter on the continent.
+            {t(lang, 'footer_desc')}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             <a
@@ -62,16 +68,16 @@ export function MarketingFooter() {
         </div>
 
         {/* Link columns */}
-        {COLS.map(({ title, links }) => (
-          <div key={title}>
+        {COLS.map(({ titleKey, links }) => (
+          <div key={titleKey}>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 16 }}>
-              {title.toUpperCase()}
+              {t(lang, titleKey).toUpperCase()}
             </div>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {links.map(({ label, href }) => (
-                <li key={label}>
+              {links.map(({ labelKey, href }) => (
+                <li key={labelKey}>
                   <Link href={href} style={{ fontSize: 13, color: 'var(--fg-2)', textDecoration: 'none' }}>
-                    {label}
+                    {t(lang, labelKey)}
                   </Link>
                 </li>
               ))}
@@ -86,7 +92,7 @@ export function MarketingFooter() {
           © 2026 Ziada Technologies Ltd · Dar es Salaam, Tanzania
         </span>
         <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)' }}>
-          Built by{' '}
+          {t(lang, 'footer_built')}{' '}
           <span style={{ color: 'var(--fg-3)' }}>Camel Tech</span>
           {' × '}
           <span style={{ color: 'var(--fg-3)' }}>Camel Creatives</span>

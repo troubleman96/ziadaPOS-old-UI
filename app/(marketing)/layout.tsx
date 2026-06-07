@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { MarketingNav } from '@/components/marketing/MarketingNav';
 import { MarketingFooter } from '@/components/marketing/MarketingFooter';
+import { LangProvider } from '@/components/LangContext';
 
 export const metadata: Metadata = {
   title: {
@@ -13,10 +14,12 @@ export const metadata: Metadata = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--fg)', fontFamily: 'var(--sans)', WebkitFontSmoothing: 'antialiased' as const }}>
-      <MarketingNav />
-      <main>{children}</main>
-      <MarketingFooter />
-    </div>
+    <LangProvider>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--fg)', fontFamily: 'var(--sans)', WebkitFontSmoothing: 'antialiased' as const }}>
+        <MarketingNav />
+        <main>{children}</main>
+        <MarketingFooter />
+      </div>
+    </LangProvider>
   );
 }

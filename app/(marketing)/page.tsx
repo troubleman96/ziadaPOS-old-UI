@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useLang } from '@/components/LangContext';
+import { t, type Lang } from '@/lib/lang';
 
 // ── Sparkline ──────────────────────────────────────────────────────────────────
 function Sparkline({ data, color = 'currentColor', height = 28, fill = false, strokeWidth = 1.5 }: {
@@ -47,7 +49,6 @@ function DashboardMockup({ accent }: { accent: string }) {
     { label: 'CREDIT OUT',    value: 'TZS 184,500',   delta: '14',   good: false, spark: [8,8,9,8,9,10,9,10,11,10,11,10,9,10,9,10,9,10,9,8] },
   ];
 
-  // Sales by hour (6am–6pm, 13 points, thousands)
   const hourly = [12, 28, 45, 72, 95, 120, 158, 210, 175, 230, 280, 195, 145];
   const maxH = Math.max(...hourly);
   const SVG_W = 200, SVG_H = 48;
@@ -58,7 +59,6 @@ function DashboardMockup({ accent }: { accent: string }) {
   const hLine = hPts.map(([x, y], i) => (i === 0 ? `M${x.toFixed(1)},${y.toFixed(1)}` : `L${x.toFixed(1)},${y.toFixed(1)}`)).join(' ');
   const hFill = `${hLine} L${SVG_W},${SVG_H} L0,${SVG_H} Z`;
 
-  // Payment mix donut
   const methods = [
     { label: 'M-Pesa', pct: 52, color: '#10b981' },
     { label: 'Cash',   pct: 28, color: accent },
@@ -114,7 +114,6 @@ function DashboardMockup({ accent }: { accent: string }) {
 
       {/* Main */}
       <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 9, overflow: 'hidden', minWidth: 0 }}>
-        {/* Topbar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontSize: 12.5, fontWeight: 600 }}>Dashboard</div>
@@ -128,7 +127,6 @@ function DashboardMockup({ accent }: { accent: string }) {
           </div>
         </div>
 
-        {/* KPI cards */}
         <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6 }}>
           {kpis.map((k) => (
             <div key={k.label} style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '7px 9px', background: 'var(--bg-2)', display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
@@ -144,7 +142,6 @@ function DashboardMockup({ accent }: { accent: string }) {
           ))}
         </div>
 
-        {/* Sales chart + Payment mix */}
         <div className="dash-mid-grid" style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 6 }}>
           <div style={{ border: '1px solid var(--line)', borderRadius: 7, padding: '8px 10px', background: 'var(--bg-2)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
@@ -162,8 +159,8 @@ function DashboardMockup({ accent }: { accent: string }) {
               <path d={hLine} fill="none" stroke={accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
             </svg>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
-              {['6am','8','10','12','2pm','4','6'].map(t => (
-                <span key={t} style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)' }}>{t}</span>
+              {['6am','8','10','12','2pm','4','6'].map(lbl => (
+                <span key={lbl} style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)' }}>{lbl}</span>
               ))}
             </div>
           </div>
@@ -198,18 +195,17 @@ function DashboardMockup({ accent }: { accent: string }) {
           </div>
         </div>
 
-        {/* Recent txns + Top products */}
         <div className="dash-bot-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 6 }}>
           <div className="dash-txn-table" style={{ border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg-2)', overflow: 'hidden' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.7fr 1.3fr 0.9fr', gap: 4, padding: '5px 10px', fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)', letterSpacing: '0.05em', borderBottom: '1px solid var(--line)', background: 'var(--bg-3)' }}>
               <span>TXN</span><span>TIME</span><span>AMOUNT</span><span>VIA</span>
             </div>
-            {txns.map((t, i) => (
-              <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.7fr 1.3fr 0.9fr', gap: 4, padding: '5px 10px', fontSize: 9.5, alignItems: 'center', borderBottom: i < txns.length - 1 ? '1px solid var(--line)' : 0 }}>
-                <span style={{ fontFamily: 'monospace', color: accent, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.id}</span>
-                <span style={{ fontFamily: 'monospace', color: 'var(--fg-4)', fontSize: 8.5 }}>{t.time}</span>
-                <span style={{ fontFamily: 'monospace', fontWeight: 500, fontSize: 9.5 }}>TZS {t.amount}</span>
-                <span style={{ fontFamily: 'monospace', fontSize: 8, padding: '1px 5px', borderRadius: 999, background: t.mpesa ? 'rgba(16,185,129,0.08)' : 'var(--bg-3)', color: t.mpesa ? '#10b981' : 'var(--fg-3)', border: `1px solid ${t.mpesa ? 'rgba(16,185,129,0.22)' : 'var(--line)'}`, textAlign: 'center' }}>{t.method}</span>
+            {txns.map((tx, i) => (
+              <div key={tx.id} style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.7fr 1.3fr 0.9fr', gap: 4, padding: '5px 10px', fontSize: 9.5, alignItems: 'center', borderBottom: i < txns.length - 1 ? '1px solid var(--line)' : 0 }}>
+                <span style={{ fontFamily: 'monospace', color: accent, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.id}</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--fg-4)', fontSize: 8.5 }}>{tx.time}</span>
+                <span style={{ fontFamily: 'monospace', fontWeight: 500, fontSize: 9.5 }}>TZS {tx.amount}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: 8, padding: '1px 5px', borderRadius: 999, background: tx.mpesa ? 'rgba(16,185,129,0.08)' : 'var(--bg-3)', color: tx.mpesa ? '#10b981' : 'var(--fg-3)', border: `1px solid ${tx.mpesa ? 'rgba(16,185,129,0.22)' : 'var(--line)'}`, textAlign: 'center' }}>{tx.method}</span>
               </div>
             ))}
           </div>
@@ -318,7 +314,7 @@ function CreditsMini({ accent: _accent }: { accent: string }) {
         <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-3)' }}>14 customers</span>
       </div>
       <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>TZS 184,500</div>
-      {[['Fatuma A.', 'TZS 38,500', 'Today'], ['Juma K.', 'TZS 84,200', '2d'], ['Asha M.', 'TZS 54,200', '5d']].map(([n, a, d]) => (
+      {[['Fatuma A.', 'TZS 38,500', 'Leo'], ['Juma K.', 'TZS 84,200', '2d'], ['Asha M.', 'TZS 54,200', '5d']].map(([n, a, d]) => (
         <div key={n} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, fontSize: 11, padding: '4px 0', borderBottom: '1px solid var(--line)' }}>
           <span>{n}</span>
           <span style={{ fontFamily: 'monospace', color: 'var(--fg-2)' }}>{a}</span>
@@ -348,148 +344,7 @@ function AIChatMini({ accent }: { accent: string }) {
   );
 }
 
-// ── Hero ───────────────────────────────────────────────────────────────────────
-function Hero({ accent }: { accent: string }) {
-  return (
-    <section className="hero-section" style={{ paddingTop: 80, paddingBottom: 88 }}>
-      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px 4px 8px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.04em', color: 'var(--fg-2)', background: 'var(--bg-2)', marginBottom: 28 }}>
-            <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--accent)', boxShadow: '0 0 0 3px var(--accent-soft)', display: 'inline-block' }} />
-            Ziada AI · now in every store
-            <span style={{ color: 'var(--fg-4)' }}>→</span>
-          </span>
-          <h1 className="hero-h1" style={{ margin: 0, fontSize: 'clamp(44px, 5.6vw, 72px)', lineHeight: 1.03, fontWeight: 500, letterSpacing: '-0.03em', fontFamily: 'var(--display, var(--sans))' }}>
-            The operating system<br />for your shop.
-          </h1>
-          <p style={{ margin: '24px auto 0', fontSize: 17, lineHeight: 1.6, color: 'var(--fg-2)', maxWidth: 540 }}>
-            POS, inventory, credit, analytics and an AI that actually knows your store — running on one calm, fast platform. Built in Tanzania, made for any counter.
-          </p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 22px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
-              Start free 7-day trial <span style={{ opacity: 0.8 }}>→</span>
-            </Link>
-            <Link href="/auth/login" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 20px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none', background: 'transparent' }}>
-              Sign in
-            </Link>
-          </div>
-          <div style={{ display: 'flex', gap: 20, marginTop: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
-            {['no card required', 'works offline', 'EN + Swahili', 'M-Pesa, Tigo, Airtel, Bank'].map((t) => (
-              <span key={t} style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.2L4.8 8.5L9.5 3.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-        <div className="hero-mock-wrap" style={{ maxWidth: 1040, margin: '56px auto 0', position: 'relative' }}>
-          <div style={{ position: 'absolute', bottom: -40, left: '15%', right: '15%', height: 80, background: `${accent}`, filter: 'blur(60px)', opacity: 0.18, borderRadius: '50%', pointerEvents: 'none' }} />
-          <WindowChrome url="app.ziadapos.com/dashboard">
-            <DashboardMockup accent={accent} />
-          </WindowChrome>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Stats strip ────────────────────────────────────────────────────────────────
-function StatsStrip() {
-  const stats = [
-    { label: 'STORES RUNNING ZIADA', v: '1,247' },
-    { label: 'TXNS LAST 24H',        v: '89,412' },
-    { label: 'TZS PROCESSED · 30D',  v: '4.21B' },
-    { label: 'AI QUERIES · 24H',     v: '12,094' },
-    { label: 'UPTIME · 90D',         v: '99.98%' },
-  ];
-  // Doubled for seamless ticker loop
-  const ticker = [...stats, ...stats];
-
-  return (
-    <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--bg-2)', overflow: 'hidden' }}>
-      {/* Desktop: 5-col grid */}
-      <div className="stats-desktop" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)' }}>
-        {stats.map((s, i) => (
-          <div key={s.label} style={{ padding: '20px', borderLeft: i === 0 ? 0 : '1px solid var(--line)' }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 6 }}>{s.label}</div>
-            <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em' }}>{s.v}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Mobile: horizontal ticker */}
-      <div className="stats-ticker" style={{ display: 'none' }}>
-        <div style={{ display: 'flex', width: 'max-content', animation: 'mkt-ticker 22s linear infinite' }}>
-          {ticker.map((s, i) => (
-            <div key={i} style={{ padding: '14px 28px', borderRight: '1px solid var(--line)', flexShrink: 0 }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 3 }}>{s.label}</div>
-              <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em' }}>{s.v}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Testimonials ───────────────────────────────────────────────────────────────
-function TestimonialsSection() {
-  const testimonials = [
-    {
-      quote: '"Ziada ilibadilisha jinsi tunavyofanya biashara. Sasa naona data zangu wakati wowote, hata bila internet."',
-      name: 'Amina J.',
-      role: 'Supermarket owner',
-      location: 'Mwanza',
-      initial: 'A',
-    },
-    {
-      quote: '"The credit tracking alone saved me from losing TZS 2M in unpaid tabs. Every duka owner needs this."',
-      name: 'Hassan B.',
-      role: 'Pharmacy',
-      location: 'Dar es Salaam',
-      initial: 'H',
-    },
-    {
-      quote: '"Managing 3 stores from one screen — that used to be a dream. Now it\'s just Tuesday."',
-      name: 'Grace N.',
-      role: 'Retail chain',
-      location: 'Arusha',
-      initial: 'G',
-    },
-  ];
-
-  return (
-    <section style={{ padding: '80px 0', borderTop: '1px solid var(--line)' }}>
-      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>MERCHANTS</div>
-            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>What store owners say.</h2>
-          </div>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>1,247+ stores in Tanzania</span>
-        </div>
-        <div className="mkt-testimonials-grid">
-          {testimonials.map((t) => (
-            <div key={t.name} style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '24px', background: 'var(--bg-2)', display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.65, color: 'var(--fg)', fontStyle: 'italic' }}>{t.quote}</p>
-              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, display: 'flex', gap: 12, alignItems: 'center', marginTop: 'auto' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 999, background: 'var(--accent-soft)', border: '1px solid var(--accent-line)', display: 'grid', placeItems: 'center', color: 'var(--accent)', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
-                  {t.initial}
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{t.name}</div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', marginTop: 2 }}>{t.role} · {t.location}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── Feature grid ───────────────────────────────────────────────────────────────
+// ── Feature data ───────────────────────────────────────────────────────────────
 const MODULE_COLORS: Record<string, string> = {
   pos:       '#6366f1',
   inventory: '#10b981',
@@ -498,13 +353,15 @@ const MODULE_COLORS: Record<string, string> = {
   ai:        '#06b6d4',
 };
 
-const FEATURES = [
-  { n: '01', id: 'pos',       title: 'Point of Sale',  tagline: 'Ring up a sale in three taps.',             desc: 'Search, scan, or pick from the grid. Take cash, M-Pesa, Tigo Pesa, Airtel or bank — split across any of them on one ticket.',  bullets: ['Barcode + visual search', 'Split tender', 'Offline-first, syncs when back online'] },
-  { n: '02', id: 'inventory', title: 'Inventory',      tagline: "Know what's on the shelf without counting.", desc: 'Stock moves automatically as you sell, restock or transfer. Reorder points and supplier history live with each product.',      bullets: ['Auto reorder points', 'Supplier ledger', 'Variant + bulk pricing'] },
-  { n: '03', id: 'analytics', title: 'Analytics',      tagline: "The shop's pulse, every minute.",           desc: 'Sales, profit, margins, payment mix and cash position — all visible at a glance, all filterable to a single SKU.',           bullets: ['Hour-by-hour revenue', 'Profit by product', 'Cohort & repeat-customer view'] },
-  { n: '04', id: 'credits',   title: 'Credits',        tagline: 'Track every kopo without a notebook.',       desc: 'Open tabs, payment reminders, statements over WhatsApp. Aging buckets so you always know who\'s overdue.',                  bullets: ['Aging buckets', 'WhatsApp reminders', 'Statement PDF in one tap'] },
-  { n: '05', id: 'ai',        title: 'Ziada AI',       tagline: 'An assistant that actually knows your store.', desc: 'Ask in English or Swahili. Pulls answers from your live data and drafts the next action.',                                  bullets: ['Grounded on your data', 'Bilingual EN/SW', 'Drafts orders, reports, messages'] },
-];
+function getFeatures(lang: Lang) {
+  return [
+    { n: '01', id: 'pos',       title: t(lang,'feat_pos_title'), tagline: t(lang,'feat_pos_tag'), desc: t(lang,'feat_pos_desc'), bullets: [t(lang,'feat_pos_b1'), t(lang,'feat_pos_b2'), t(lang,'feat_pos_b3')] },
+    { n: '02', id: 'inventory', title: t(lang,'feat_inv_title'), tagline: t(lang,'feat_inv_tag'), desc: t(lang,'feat_inv_desc'), bullets: [t(lang,'feat_inv_b1'), t(lang,'feat_inv_b2'), t(lang,'feat_inv_b3')] },
+    { n: '03', id: 'analytics', title: t(lang,'feat_ana_title'), tagline: t(lang,'feat_ana_tag'), desc: t(lang,'feat_ana_desc'), bullets: [t(lang,'feat_ana_b1'), t(lang,'feat_ana_b2'), t(lang,'feat_ana_b3')] },
+    { n: '04', id: 'credits',   title: t(lang,'feat_crd_title'), tagline: t(lang,'feat_crd_tag'), desc: t(lang,'feat_crd_desc'), bullets: [t(lang,'feat_crd_b1'), t(lang,'feat_crd_b2'), t(lang,'feat_crd_b3')] },
+    { n: '05', id: 'ai',        title: t(lang,'feat_ai_title'),  tagline: t(lang,'feat_ai_tag'),  desc: t(lang,'feat_ai_desc'),  bullets: [t(lang,'feat_ai_b1'),  t(lang,'feat_ai_b2'),  t(lang,'feat_ai_b3')]  },
+  ];
+}
 
 function Check({ color }: { color: string }) {
   return (
@@ -515,7 +372,7 @@ function Check({ color }: { color: string }) {
   );
 }
 
-function FeatureCard({ f }: { f: typeof FEATURES[0] }) {
+function FeatureCard({ f }: { f: ReturnType<typeof getFeatures>[0] }) {
   const c = MODULE_COLORS[f.id] ?? '#6366f1';
   const mockup =
     f.id === 'pos'       ? <POSMockup accent={c} /> :
@@ -536,11 +393,7 @@ function FeatureCard({ f }: { f: typeof FEATURES[0] }) {
         '--card-accent': c,
       } as React.CSSProperties}
     >
-
-      {/* Colored top identity bar */}
       <div style={{ height: 3, background: `linear-gradient(90deg, ${c} 0%, ${c}55 100%)` }} />
-
-      {/* Header */}
       <div style={{
         padding: '20px 22px 16px',
         background: `linear-gradient(160deg, ${c}09 0%, transparent 65%)`,
@@ -558,14 +411,10 @@ function FeatureCard({ f }: { f: typeof FEATURES[0] }) {
         <h3 style={{ margin: 0, fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{f.title}</h3>
         <p style={{ margin: '7px 0 0', fontSize: 13.5, color: 'var(--fg-2)', lineHeight: 1.5 }}>{f.tagline}</p>
       </div>
-
-      {/* Mockup preview — fixed height, fade at bottom so content clips cleanly */}
       <div style={{ height: 240, overflow: 'hidden', borderBottom: '1px solid var(--line)', position: 'relative', background: 'var(--bg)' }}>
         {mockup}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, background: 'linear-gradient(to bottom, transparent, var(--bg-2))', pointerEvents: 'none' }} />
       </div>
-
-      {/* Footer */}
       <div style={{ padding: '16px 22px 20px' }}>
         <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6 }}>{f.desc}</p>
         <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -580,22 +429,150 @@ function FeatureCard({ f }: { f: typeof FEATURES[0] }) {
   );
 }
 
+// ── Hero ───────────────────────────────────────────────────────────────────────
+function Hero({ accent }: { accent: string }) {
+  const { lang } = useLang();
+  return (
+    <section className="hero-section" style={{ paddingTop: 80, paddingBottom: 88 }}>
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px 4px 8px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.04em', color: 'var(--fg-2)', background: 'var(--bg-2)', marginBottom: 28 }}>
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--accent)', boxShadow: '0 0 0 3px var(--accent-soft)', display: 'inline-block' }} />
+            {t(lang, 'hero_badge')}
+            <span style={{ color: 'var(--fg-4)' }}>→</span>
+          </span>
+          <h1 className="hero-h1" style={{ margin: 0, fontSize: 'clamp(44px, 5.6vw, 72px)', lineHeight: 1.03, fontWeight: 500, letterSpacing: '-0.03em', fontFamily: 'var(--display, var(--sans))' }}>
+            {t(lang, 'hero_h1a')}<br />{t(lang, 'hero_h1b')}
+          </h1>
+          <p style={{ margin: '24px auto 0', fontSize: 17, lineHeight: 1.6, color: 'var(--fg-2)', maxWidth: 540 }}>
+            {t(lang, 'hero_sub')}
+          </p>
+          <div style={{ display: 'flex', gap: 10, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 22px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+              {t(lang, 'hero_trial')} <span style={{ opacity: 0.8 }}>→</span>
+            </Link>
+            <Link href="/auth/login" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 20px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none', background: 'transparent' }}>
+              {t(lang, 'hero_signin')}
+            </Link>
+          </div>
+          <div style={{ display: 'flex', gap: 20, marginTop: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
+            {(['hero_trust1','hero_trust2','hero_trust3','hero_trust4'] as const).map((key) => (
+              <span key={key} style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.2L4.8 8.5L9.5 3.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                {t(lang, key)}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="hero-mock-wrap" style={{ maxWidth: 1040, margin: '56px auto 0', position: 'relative' }}>
+          <div style={{ position: 'absolute', bottom: -40, left: '15%', right: '15%', height: 80, background: `${accent}`, filter: 'blur(60px)', opacity: 0.18, borderRadius: '50%', pointerEvents: 'none' }} />
+          <WindowChrome url="app.ziadapos.com/dashboard">
+            <DashboardMockup accent={accent} />
+          </WindowChrome>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Stats strip ────────────────────────────────────────────────────────────────
+function StatsStrip() {
+  const { lang } = useLang();
+  const stats = [
+    { labelKey: 'stat_stores' as const, v: '1,247'  },
+    { labelKey: 'stat_txns'   as const, v: '89,412' },
+    { labelKey: 'stat_tzs'    as const, v: '4.21B'  },
+    { labelKey: 'stat_ai'     as const, v: '12,094' },
+    { labelKey: 'stat_uptime' as const, v: '99.98%' },
+  ];
+  const ticker = [...stats, ...stats];
+
+  return (
+    <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--bg-2)', overflow: 'hidden' }}>
+      {/* Desktop: 5-col grid */}
+      <div className="stats-desktop" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        {stats.map((s, i) => (
+          <div key={s.labelKey} style={{ padding: '20px', borderLeft: i === 0 ? 0 : '1px solid var(--line)' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 6 }}>{t(lang, s.labelKey)}</div>
+            <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em' }}>{s.v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Mobile: horizontal ticker */}
+      <div className="stats-ticker" style={{ display: 'none' }}>
+        <div style={{ display: 'flex', width: 'max-content', animation: 'mkt-ticker 22s linear infinite' }}>
+          {ticker.map((s, i) => (
+            <div key={i} style={{ padding: '14px 28px', borderRight: '1px solid var(--line)', flexShrink: 0 }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 3 }}>{t(lang, s.labelKey)}</div>
+              <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em' }}>{s.v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Testimonials ───────────────────────────────────────────────────────────────
+function TestimonialsSection() {
+  const { lang } = useLang();
+  const testimonials = [
+    { quoteKey: 'test_q1' as const, roleKey: 'test_q1_role' as const, name: 'Amina J.',  location: 'Mwanza',        initial: 'A' },
+    { quoteKey: 'test_q2' as const, roleKey: 'test_q2_role' as const, name: 'Hassan B.', location: 'Dar es Salaam', initial: 'H' },
+    { quoteKey: 'test_q3' as const, roleKey: 'test_q3_role' as const, name: 'Grace N.',  location: 'Arusha',        initial: 'G' },
+  ];
+
+  return (
+    <section style={{ padding: '80px 0', borderTop: '1px solid var(--line)' }}>
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>{t(lang, 'test_label')}</div>
+            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t(lang, 'test_h2')}</h2>
+          </div>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>{t(lang, 'test_count')}</span>
+        </div>
+        <div className="mkt-testimonials-grid">
+          {testimonials.map((tst) => (
+            <div key={tst.name} style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '24px', background: 'var(--bg-2)', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.65, color: 'var(--fg)', fontStyle: 'italic' }}>{t(lang, tst.quoteKey)}</p>
+              <div style={{ borderTop: '1px solid var(--line)', paddingTop: 16, display: 'flex', gap: 12, alignItems: 'center', marginTop: 'auto' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 999, background: 'var(--accent-soft)', border: '1px solid var(--accent-line)', display: 'grid', placeItems: 'center', color: 'var(--accent)', fontSize: 14, fontWeight: 600, flexShrink: 0 }}>
+                  {tst.initial}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{tst.name}</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', marginTop: 2 }}>{t(lang, tst.roleKey)} · {tst.location}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── Feature grid ───────────────────────────────────────────────────────────────
 function FeatureGrid({ accent }: { accent: string }) {
+  const { lang } = useLang();
+  const features = getFeatures(lang);
   return (
     <section id="features" style={{ padding: '88px 0', borderTop: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>01 · MODULES</div>
-            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>One platform. Five surfaces. Every counter.</h2>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>{t(lang, 'feat_label')}</div>
+            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t(lang, 'feat_h2')}</h2>
           </div>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>5 / 5 included on every plan</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>{t(lang, 'feat_sub')}</span>
         </div>
         <div className="feat-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, alignItems: 'start' }}>
-          {FEATURES.slice(0, 3).map((f) => <FeatureCard key={f.id} f={f} />)}
+          {features.slice(0, 3).map((f) => <FeatureCard key={f.id} f={f} />)}
         </div>
         <div className="feat-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14, alignItems: 'start' }}>
-          {FEATURES.slice(3).map((f) => <FeatureCard key={f.id} f={f} />)}
+          {features.slice(3).map((f) => <FeatureCard key={f.id} f={f} />)}
         </div>
       </div>
     </section>
@@ -604,7 +581,15 @@ function FeatureGrid({ accent }: { accent: string }) {
 
 // ── AI section ─────────────────────────────────────────────────────────────────
 function AISection({ accent }: { accent: string }) {
-  const prompts = [
+  const { lang } = useLang();
+  const prompts = lang === 'sw' ? [
+    'Bidhaa 3 zinazouzwa zaidi wiki hii, na zipi zinaisha?',
+    'Niambie wateja waliokuwa na deni kubwa zaidi mwezi huu.',
+    'Linganisha faida ya mafuta ya kupikia katika maduka yote 3.',
+    'Andika agizo la kuagiza kwa kila kitu chini ya kiwango cha kuagiza.',
+    'Ni saa ngapi ilikuwa na shughuli nyingi zaidi jana?',
+    'Tuma Fatuma taarifa yake kupitia WhatsApp.',
+  ] : [
     'Top 3 fast movers this week, and which are running low?',
     'Niambie wateja waliokuwa na deni kubwa zaidi mwezi huu.',
     'Compare margins on cooking oil across all 3 stores.',
@@ -612,23 +597,31 @@ function AISection({ accent }: { accent: string }) {
     'What was my busiest hour yesterday and who was on the till?',
     'Send Fatuma her statement on WhatsApp.',
   ];
+
+  const props = [
+    { titleKey: 'ai_prop1_t' as const, descKey: 'ai_prop1_d' as const },
+    { titleKey: 'ai_prop2_t' as const, descKey: 'ai_prop2_d' as const },
+    { titleKey: 'ai_prop3_t' as const, descKey: 'ai_prop3_d' as const },
+    { titleKey: 'ai_prop4_t' as const, descKey: 'ai_prop4_d' as const },
+  ];
+
   return (
     <section id="ai" style={{ padding: '88px 0', borderTop: '1px solid var(--line)', background: 'var(--bg-2)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>02 · ZIADA AI</div>
-            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>The first AI that actually knows your shop.</h2>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>{t(lang, 'ai_label')}</div>
+            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t(lang, 'ai_h2')}</h2>
           </div>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>grounded · bilingual · in every screen</span>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>{t(lang, 'ai_badge')}</span>
         </div>
         <div className="ai-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.15fr', gap: 32, alignItems: 'start' }}>
           <div>
             <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--fg-2)', margin: '0 0 20px', maxWidth: 520 }}>
-              Most &ldquo;AI features&rdquo; are a chatbot bolted on. Ziada AI reads from your live sales, stock, suppliers and credits — and writes back. Ask in English or Swahili and get an answer with data and a next action.
+              {t(lang, 'ai_desc')}
             </p>
             <div style={{ border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden', marginTop: 24 }}>
-              <div style={{ fontFamily: 'var(--mono)', padding: '9px 14px', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', background: 'var(--bg)', borderBottom: '1px solid var(--line)' }}>THINGS PEOPLE ASK</div>
+              <div style={{ fontFamily: 'var(--mono)', padding: '9px 14px', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', background: 'var(--bg)', borderBottom: '1px solid var(--line)' }}>{t(lang, 'ai_things_label')}</div>
               {prompts.map((p, i) => (
                 <div key={i} style={{ padding: '10px 14px', fontSize: 12.5, color: 'var(--fg-2)', borderBottom: i < prompts.length - 1 ? '1px solid var(--line)' : 0, display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontFamily: 'var(--mono)', color: 'var(--fg-4)', fontSize: 11 }}>›</span>{p}
@@ -636,10 +629,10 @@ function AISection({ accent }: { accent: string }) {
               ))}
             </div>
             <div className="ai-props" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 22 }}>
-              {[['Grounded', 'Answers cite the exact rows from your store.'], ['Bilingual', 'Speaks English and Swahili, by default.'], ['Action-oriented', 'Drafts the restock, the message, the report.'], ['Private', 'Your data never trains a foundation model.']].map(([t, d]) => (
-                <div key={t} style={{ paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{t}</div>
-                  <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 2 }}>{d}</div>
+              {props.map(({ titleKey, descKey }) => (
+                <div key={titleKey} style={{ paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{t(lang, titleKey)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 2 }}>{t(lang, descKey)}</div>
                 </div>
               ))}
             </div>
@@ -699,14 +692,16 @@ function AISection({ accent }: { accent: string }) {
 
 // ── Pricing teaser ─────────────────────────────────────────────────────────────
 function PricingTeaser() {
+  const { lang } = useLang();
+
   const plans = [
     {
       name: 'Starter',
       price: 'TZS 15,000',
       period: '/month',
-      desc: 'For a solo duka or kiosk getting started with digital records.',
+      descKey: 'plan_starter_desc' as const,
       features: ['1 store', 'Up to 500 products', '2 staff accounts', 'POS + Inventory + Credits'],
-      cta: 'Start free trial',
+      ctaKey: 'pricing_trial' as const,
       href: '/auth/register',
       popular: false,
     },
@@ -714,9 +709,9 @@ function PricingTeaser() {
       name: 'Business',
       price: 'TZS 40,000',
       period: '/month',
-      desc: 'For growing shops that need multi-store management and Ziada AI.',
+      descKey: 'plan_biz_desc' as const,
       features: ['Up to 3 stores', 'Unlimited products', '10 staff accounts', 'Ziada AI included'],
-      cta: 'Start free trial',
+      ctaKey: 'pricing_trial' as const,
       href: '/auth/register',
       popular: true,
     },
@@ -724,9 +719,9 @@ function PricingTeaser() {
       name: 'Enterprise',
       price: 'Custom',
       period: '',
-      desc: 'For retail chains and wholesalers that need dedicated support.',
+      descKey: 'plan_ent_desc' as const,
       features: ['Unlimited stores', 'API access', 'Unlimited staff', 'Dedicated support'],
-      cta: 'Contact us',
+      ctaKey: 'pricing_contact' as const,
       href: '/contact',
       popular: false,
     },
@@ -737,10 +732,10 @@ function PricingTeaser() {
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>03 · PRICING</div>
-            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>Simple, honest pricing. Billed in TZS.</h2>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>{t(lang, 'pricing_label')}</div>
+            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t(lang, 'pricing_h2')}</h2>
           </div>
-          <Link href="/pricing" style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>See full pricing →</Link>
+          <Link href="/pricing" style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>{t(lang, 'pricing_see')}</Link>
         </div>
 
         <div className="mkt-pricing-grid">
@@ -748,7 +743,7 @@ function PricingTeaser() {
             <div key={plan.name} style={{ border: `1px solid ${plan.popular ? 'var(--accent-line)' : 'var(--line)'}`, borderRadius: 12, background: plan.popular ? 'var(--accent-soft)' : 'var(--bg)', padding: '24px', display: 'flex', flexDirection: 'column', gap: 20, position: 'relative' }}>
               {plan.popular && (
                 <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', background: 'var(--accent)', color: '#fff', fontFamily: 'var(--mono)', fontSize: 10, padding: '3px 12px', borderRadius: 999, letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
-                  MOST POPULAR
+                  {t(lang, 'pricing_popular')}
                 </div>
               )}
               <div>
@@ -757,7 +752,7 @@ function PricingTeaser() {
                   <span style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em' }}>{plan.price}</span>
                   {plan.period && <span style={{ fontSize: 13, color: 'var(--fg-3)' }}>{plan.period}</span>}
                 </div>
-                <p style={{ margin: '10px 0 0', fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.55 }}>{plan.desc}</p>
+                <p style={{ margin: '10px 0 0', fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.55 }}>{t(lang, plan.descKey)}</p>
               </div>
               <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 7 }}>
                 {plan.features.map((f) => (
@@ -768,14 +763,14 @@ function PricingTeaser() {
                 ))}
               </ul>
               <Link href={plan.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', borderRadius: 8, background: plan.popular ? 'var(--accent)' : 'var(--bg-3)', color: plan.popular ? '#fff' : 'var(--fg)', fontSize: 13.5, fontWeight: 500, textDecoration: 'none', border: plan.popular ? 'none' : '1px solid var(--line)', marginTop: 'auto' }}>
-                {plan.cta} {plan.popular ? ' →' : ''}
+                {t(lang, plan.ctaKey)} {plan.popular ? ' →' : ''}
               </Link>
             </div>
           ))}
         </div>
 
         <div style={{ marginTop: 20, textAlign: 'center', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)' }}>
-          All plans include a 7-day free trial · TZS 10,000 activation · No credit card · M-Pesa · Tigo · Airtel · Bank
+          {t(lang, 'pricing_foot')}
         </div>
       </div>
     </section>
@@ -784,36 +779,37 @@ function PricingTeaser() {
 
 // ── FAQ ────────────────────────────────────────────────────────────────────────
 function FAQSection() {
+  const { lang } = useLang();
   const [open, setOpen] = useState<number | null>(null);
 
   const faqs = [
-    { q: 'Does Ziada work without internet?', a: 'Yes. Ziada is offline-first — you can ring up sales, update stock and track credits with no connection. Everything syncs automatically the moment you\'re back online.' },
-    { q: 'How many products can I add?', a: 'Starter plans support up to 500 products. Business and Enterprise plans have no limit. Products can have multiple variants (sizes, colours) and bulk pricing tiers.' },
-    { q: 'Can I manage multiple stores?', a: 'Yes. The Business plan supports up to 3 locations from one dashboard, including cross-store stock transfers and consolidated analytics. Enterprise supports unlimited stores.' },
-    { q: 'What payment methods can my customers use?', a: 'Cash, M-Pesa, Tigo Pesa, Airtel Money and bank transfer — all on one ticket. Payments can be split across methods on a single sale.' },
-    { q: 'Is my data private and secure?', a: 'Yes. Your sales, customer and stock data is never used to train any AI model. Data is stored on servers in Tanzania, encrypted at rest and in transit. You own your data and can export it any time.' },
-    { q: 'How do I cancel my subscription?', a: 'You can cancel any time from Settings → Billing. No lock-in contracts, no exit fees. Your data remains exportable for 30 days after cancellation.' },
+    { qKey: 'faq_q1' as const, aKey: 'faq_a1' as const },
+    { qKey: 'faq_q2' as const, aKey: 'faq_a2' as const },
+    { qKey: 'faq_q3' as const, aKey: 'faq_a3' as const },
+    { qKey: 'faq_q4' as const, aKey: 'faq_a4' as const },
+    { qKey: 'faq_q5' as const, aKey: 'faq_a5' as const },
+    { qKey: 'faq_q6' as const, aKey: 'faq_a6' as const },
   ];
 
   return (
     <section style={{ padding: '80px 0', borderTop: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>04 · FAQ</div>
-          <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>Common questions.</h2>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>{t(lang, 'faq_label')}</div>
+          <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t(lang, 'faq_h2')}</h2>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {faqs.map((faq, i) => (
+          {faqs.map(({ qKey, aKey }, i) => (
             <div key={i} style={{ borderTop: '1px solid var(--line)' }}>
               <button
                 onClick={() => setOpen(open === i ? null : i)}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '18px 0', background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left', gap: 16 }}
               >
-                <span style={{ fontSize: 14.5, fontWeight: 500, color: 'var(--fg)' }}>{faq.q}</span>
+                <span style={{ fontSize: 14.5, fontWeight: 500, color: 'var(--fg)' }}>{t(lang, qKey)}</span>
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 18, color: 'var(--fg-3)', flexShrink: 0, display: 'inline-block', transition: 'transform 200ms', transform: open === i ? 'rotate(45deg)' : 'none' }}>+</span>
               </button>
               {open === i && (
-                <div style={{ paddingBottom: 20, fontSize: 14.5, color: 'var(--fg-2)', lineHeight: 1.65 }}>{faq.a}</div>
+                <div style={{ paddingBottom: 20, fontSize: 14.5, color: 'var(--fg-2)', lineHeight: 1.65 }}>{t(lang, aKey)}</div>
               )}
             </div>
           ))}
@@ -821,11 +817,11 @@ function FAQSection() {
         </div>
         <div style={{ marginTop: 32, padding: '20px 24px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg-2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 500 }}>Still have questions?</div>
-            <div style={{ fontSize: 13, color: 'var(--fg-3)', marginTop: 3 }}>Talk to the team directly — we respond fast.</div>
+            <div style={{ fontSize: 14, fontWeight: 500 }}>{t(lang, 'faq_still')}</div>
+            <div style={{ fontSize: 13, color: 'var(--fg-3)', marginTop: 3 }}>{t(lang, 'faq_team')}</div>
           </div>
           <a href="https://wa.me/255692069230?text=Hi%2C+I+have+a+question+about+Ziada" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 13.5, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            Chat on WhatsApp →
+            {t(lang, 'faq_wa')}
           </a>
         </div>
       </div>
@@ -835,19 +831,20 @@ function FAQSection() {
 
 // ── CTA ────────────────────────────────────────────────────────────────────────
 function CTA() {
+  const { lang } = useLang();
   return (
     <section style={{ padding: '100px 0 88px' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.08em' }}>05 · GET ZIADA</div>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.08em' }}>{t(lang, 'cta_label')}</div>
         <h2 style={{ margin: '16px 0 18px', fontSize: 'clamp(32px, 4.5vw, 52px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05, fontFamily: 'var(--display, var(--sans))' }}>
-          Run your shop on calm software.
+          {t(lang, 'cta_h2')}
         </h2>
         <p style={{ margin: '0 auto', maxWidth: 520, fontSize: 16, color: 'var(--fg-2)' }}>
-          Seven days, every feature, no card. Most shops are live on Ziada in under an hour.
+          {t(lang, 'cta_sub')}
         </p>
         <div style={{ display: 'inline-flex', gap: 10, marginTop: 28, flexWrap: 'wrap', justifyContent: 'center' }}>
           <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 22px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
-            Start free trial <span style={{ opacity: 0.8 }}>→</span>
+            {t(lang, 'cta_trial')} <span style={{ opacity: 0.8 }}>→</span>
           </Link>
           <a
             href="https://wa.me/255692069230?text=Hi%2C+I%27d+like+to+learn+more+about+Ziada"
@@ -855,7 +852,7 @@ function CTA() {
             rel="noopener noreferrer"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none' }}
           >
-            Talk to the team
+            {t(lang, 'cta_talk')}
           </a>
         </div>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', marginTop: 32, letterSpacing: '0.05em' }}>

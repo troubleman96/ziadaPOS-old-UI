@@ -3,14 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
-const NAV_LINKS = [
-  { label: 'Product', href: '/#features' },
-  { label: 'Ziada AI', href: '/#ai' },
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'About', href: '/about' },
-  { label: 'Contact', href: '/contact' },
-];
+import { useLang } from '@/components/LangContext';
+import { t, LANG_LABELS, type Lang } from '@/lib/lang';
 
 function SunIcon() {
   return (
@@ -40,22 +34,30 @@ function DotsIcon() {
 }
 
 export function MarketingNav() {
-  const [theme, setTheme]         = useState<'light' | 'dark'>('light');
-  const [menuOpen, setMenuOpen]   = useState(false);
-  const [dotsOpen, setDotsOpen]   = useState(false);
-  const dotsRef                   = useRef<HTMLDivElement>(null);
-  const pathname                  = usePathname();
+  const [theme, setTheme]       = useState<'light' | 'dark'>('light');
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [dotsOpen, setDotsOpen] = useState(false);
+  const dotsRef                 = useRef<HTMLDivElement>(null);
+  const pathname                = usePathname();
+  const { lang, setLang }       = useLang();
+
+  const NAV_LINKS = [
+    { labelKey: 'nav_product' as const, href: '/#features' },
+    { labelKey: 'nav_ai'      as const, href: '/#ai'       },
+    { labelKey: 'nav_pricing' as const, href: '/pricing'   },
+    { labelKey: 'nav_about'   as const, href: '/about'     },
+    { labelKey: 'nav_contact' as const, href: '/contact'   },
+  ];
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem('ziada-theme');
-      const t = stored === 'dark' ? 'dark' : 'light';
-      setTheme(t);
-      document.documentElement.setAttribute('data-theme', t);
+      const th = stored === 'dark' ? 'dark' : 'light';
+      setTheme(th);
+      document.documentElement.setAttribute('data-theme', th);
     } catch {}
   }, []);
 
-  // Close dots menu on click outside
   useEffect(() => {
     if (!dotsOpen) return;
     function onOutside(e: MouseEvent) {
@@ -67,10 +69,10 @@ export function MarketingNav() {
     return () => document.removeEventListener('mousedown', onOutside);
   }, [dotsOpen]);
 
-  function applyTheme(t: 'light' | 'dark') {
-    setTheme(t);
-    document.documentElement.setAttribute('data-theme', t);
-    try { localStorage.setItem('ziada-theme', t); } catch {}
+  function applyTheme(th: 'light' | 'dark') {
+    setTheme(th);
+    document.documentElement.setAttribute('data-theme', th);
+    try { localStorage.setItem('ziada-theme', th); } catch {}
   }
 
   const isActive = (href: string) => href !== '/' && pathname === href;
@@ -96,18 +98,18 @@ export function MarketingNav() {
 
         {/* Desktop nav — absolutely centered */}
         <nav className="mkt-nav-links" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 32 }}>
-          {NAV_LINKS.map(({ label, href }) => (
+          {NAV_LINKS.map(({ labelKey, href }) => (
             <Link
-              key={label}
+              key={labelKey}
               href={href}
               style={{ fontSize: 13.5, color: isActive(href) ? 'var(--fg)' : 'var(--fg-2)', textDecoration: 'none', fontWeight: isActive(href) ? 500 : 400, transition: 'color 120ms', whiteSpace: 'nowrap' }}
             >
-              {label}
+              {t(lang, labelKey)}
             </Link>
           ))}
         </nav>
 
-        {/* Right side: Sign in (desktop) + three-dot menu (all) + hamburger (mobile) */}
+        {/* Right side: Sign in (desktop) + three-dot menu + hamburger (mobile) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
 
           {/* Sign in — desktop only */}
@@ -116,7 +118,7 @@ export function MarketingNav() {
             className="mkt-nav-links"
             style={{ padding: '7px 18px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 13.5, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}
           >
-            Sign in
+            {t(lang, 'nav_signin')}
           </Link>
 
           {/* Three-dot menu — all devices */}
@@ -148,18 +150,18 @@ export function MarketingNav() {
                 padding: 14,
                 zIndex: 100,
               }}>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 10 }}>
-                  APPEARANCE
-                </div>
 
-                {/* Segmented theme control */}
+                {/* ── Appearance ── */}
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 10 }}>
+                  {t(lang, 'dots_appearance')}
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, padding: 4, background: 'var(--bg-3)', borderRadius: 9 }}>
-                  {(['light', 'dark'] as const).map((t) => {
-                    const active = theme === t;
+                  {(['light', 'dark'] as const).map((th) => {
+                    const active = theme === th;
                     return (
                       <button
-                        key={t}
-                        onClick={() => applyTheme(t)}
+                        key={th}
+                        onClick={() => applyTheme(th)}
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                           padding: '8px 12px', borderRadius: 6, border: 0, cursor: 'pointer',
@@ -170,8 +172,40 @@ export function MarketingNav() {
                           transition: 'all 150ms',
                         }}
                       >
-                        {t === 'light' ? <SunIcon /> : <MoonIcon />}
-                        {t === 'light' ? 'Light' : 'Dark'}
+                        {th === 'light' ? <SunIcon /> : <MoonIcon />}
+                        {t(lang, th === 'light' ? 'dots_light' : 'dots_dark')}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* ── Divider ── */}
+                <div style={{ height: 1, background: 'var(--line)', margin: '14px 0 12px' }} />
+
+                {/* ── Language ── */}
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 10 }}>
+                  {t(lang, 'dots_language')}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, padding: 4, background: 'var(--bg-3)', borderRadius: 9 }}>
+                  {(['sw', 'en'] as Lang[]).map((l) => {
+                    const active = lang === l;
+                    return (
+                      <button
+                        key={l}
+                        onClick={() => setLang(l)}
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          padding: '8px 4px', borderRadius: 6, border: 0, cursor: 'pointer',
+                          background: active ? 'var(--bg)' : 'transparent',
+                          color: active ? 'var(--fg)' : 'var(--fg-3)',
+                          fontSize: 11, fontWeight: active ? 600 : 400,
+                          boxShadow: active ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
+                          transition: 'all 150ms',
+                          gap: 2,
+                        }}
+                      >
+                        <span style={{ fontSize: 13, fontWeight: 700, fontFamily: 'var(--mono)', letterSpacing: '0.05em' }}>{l.toUpperCase()}</span>
+                        <span style={{ fontSize: 10, color: active ? 'var(--fg-2)' : 'var(--fg-4)' }}>{LANG_LABELS[l]}</span>
                       </button>
                     );
                   })}
@@ -197,14 +231,14 @@ export function MarketingNav() {
       {/* Mobile drawer */}
       {menuOpen && (
         <div style={{ borderTop: '1px solid var(--line)', background: 'var(--bg-2)', padding: '16px 24px 20px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {NAV_LINKS.map(({ label, href }) => (
+          {NAV_LINKS.map(({ labelKey, href }) => (
             <Link
-              key={label}
+              key={labelKey}
               href={href}
               style={{ fontSize: 14, color: 'var(--fg-2)', textDecoration: 'none', padding: '10px 0', borderBottom: '1px solid var(--line)' }}
               onClick={() => setMenuOpen(false)}
             >
-              {label}
+              {t(lang, labelKey)}
             </Link>
           ))}
           <div style={{ marginTop: 12 }}>
@@ -213,7 +247,7 @@ export function MarketingNav() {
               onClick={() => setMenuOpen(false)}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 14px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}
             >
-              Sign in
+              {t(lang, 'nav_signin')}
             </Link>
           </div>
         </div>
