@@ -402,15 +402,31 @@ function StatsStrip() {
     { label: 'AI QUERIES · 24H',     v: '12,094' },
     { label: 'UPTIME · 90D',         v: '99.98%' },
   ];
+  // Doubled for seamless ticker loop
+  const ticker = [...stats, ...stats];
+
   return (
-    <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--bg-2)' }}>
-      <div className="stats-grid" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', overflowX: 'auto' }}>
+    <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--bg-2)', overflow: 'hidden' }}>
+      {/* Desktop: 5-col grid */}
+      <div className="stats-desktop" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)' }}>
         {stats.map((s, i) => (
           <div key={s.label} style={{ padding: '20px', borderLeft: i === 0 ? 0 : '1px solid var(--line)' }}>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 6 }}>{s.label}</div>
             <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em' }}>{s.v}</div>
           </div>
         ))}
+      </div>
+
+      {/* Mobile: horizontal ticker */}
+      <div className="stats-ticker" style={{ display: 'none' }}>
+        <div style={{ display: 'flex', width: 'max-content', animation: 'mkt-ticker 22s linear infinite' }}>
+          {ticker.map((s, i) => (
+            <div key={i} style={{ padding: '14px 28px', borderRight: '1px solid var(--line)', flexShrink: 0 }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 3 }}>{s.label}</div>
+              <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em' }}>{s.v}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -447,7 +463,7 @@ function TestimonialsSection() {
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>§ · MERCHANTS</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>MERCHANTS</div>
             <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>What store owners say.</h2>
           </div>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>1,247+ stores in Tanzania</span>
@@ -474,6 +490,14 @@ function TestimonialsSection() {
 }
 
 // ── Feature grid ───────────────────────────────────────────────────────────────
+const MODULE_COLORS: Record<string, string> = {
+  pos:       '#6366f1',
+  inventory: '#10b981',
+  analytics: '#8b5cf6',
+  credits:   '#f59e0b',
+  ai:        '#06b6d4',
+};
+
 const FEATURES = [
   { n: '01', id: 'pos',       title: 'Point of Sale',  tagline: 'Ring up a sale in three taps.',             desc: 'Search, scan, or pick from the grid. Take cash, M-Pesa, Tigo Pesa, Airtel or bank — split across any of them on one ticket.',  bullets: ['Barcode + visual search', 'Split tender', 'Offline-first, syncs when back online'] },
   { n: '02', id: 'inventory', title: 'Inventory',      tagline: "Know what's on the shelf without counting.", desc: 'Stock moves automatically as you sell, restock or transfer. Reorder points and supplier history live with each product.',      bullets: ['Auto reorder points', 'Supplier ledger', 'Variant + bulk pricing'] },
@@ -482,30 +506,72 @@ const FEATURES = [
   { n: '05', id: 'ai',        title: 'Ziada AI',       tagline: 'An assistant that actually knows your store.', desc: 'Ask in English or Swahili. Pulls answers from your live data and drafts the next action.',                                  bullets: ['Grounded on your data', 'Bilingual EN/SW', 'Drafts orders, reports, messages'] },
 ];
 
-function FeatureCard({ f, accent }: { f: typeof FEATURES[0]; accent: string }) {
-  const mockup =
-    f.id === 'pos'       ? <POSMockup accent={accent} /> :
-    f.id === 'inventory' ? <InventoryMini accent={accent} /> :
-    f.id === 'analytics' ? <AnalyticsMini accent={accent} /> :
-    f.id === 'credits'   ? <CreditsMini accent={accent} /> :
-                           <AIChatMini accent={accent} />;
+function Check({ color }: { color: string }) {
   return (
-    <article className="feat-card" style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--bg-2)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>{f.n} · {f.id.toUpperCase()}</span>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-3)' }}>module</span>
-        </div>
-        <h3 style={{ margin: 0, fontSize: 19, fontWeight: 500, letterSpacing: '-0.01em' }}>{f.title}</h3>
-        <p style={{ margin: '5px 0 0', fontSize: 13, color: 'var(--fg-2)' }}>{f.tagline}</p>
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+      <circle cx="6.5" cy="6.5" r="6" fill={color} fillOpacity="0.12" />
+      <path d="M3.5 6.5L5.5 8.5L9.5 4.5" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function FeatureCard({ f }: { f: typeof FEATURES[0] }) {
+  const c = MODULE_COLORS[f.id] ?? '#6366f1';
+  const mockup =
+    f.id === 'pos'       ? <POSMockup accent={c} /> :
+    f.id === 'inventory' ? <InventoryMini accent={c} /> :
+    f.id === 'analytics' ? <AnalyticsMini accent={c} /> :
+    f.id === 'credits'   ? <CreditsMini accent={c} /> :
+                           <AIChatMini accent={c} />;
+  return (
+    <article
+      className="feat-card"
+      style={{
+        border: '1px solid var(--line)',
+        borderRadius: 16,
+        background: 'var(--bg-2)',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        '--card-accent': c,
+      } as React.CSSProperties}
+    >
+
+      {/* Colored top identity bar */}
+      <div style={{ height: 3, background: `linear-gradient(90deg, ${c} 0%, ${c}55 100%)` }} />
+
+      {/* Header */}
+      <div style={{
+        padding: '20px 22px 16px',
+        background: `linear-gradient(160deg, ${c}09 0%, transparent 65%)`,
+        borderBottom: '1px solid var(--line)',
+      }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 5,
+          padding: '3px 9px', borderRadius: 999,
+          background: `${c}18`, border: `1px solid ${c}35`,
+          fontFamily: 'var(--mono)', fontSize: 10.5, color: c, letterSpacing: '0.06em',
+          marginBottom: 12,
+        }}>
+          {f.n} · {f.id.toUpperCase()}
+        </span>
+        <h3 style={{ margin: 0, fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{f.title}</h3>
+        <p style={{ margin: '7px 0 0', fontSize: 13.5, color: 'var(--fg-2)', lineHeight: 1.5 }}>{f.tagline}</p>
       </div>
-      <div style={{ flex: 1, borderBottom: '1px solid var(--line)' }}>{mockup}</div>
-      <div style={{ padding: '14px 20px 18px' }}>
-        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.55 }}>{f.desc}</p>
-        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
+
+      {/* Mockup preview — fixed height, fade at bottom so content clips cleanly */}
+      <div style={{ height: 240, overflow: 'hidden', borderBottom: '1px solid var(--line)', position: 'relative', background: 'var(--bg)' }}>
+        {mockup}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, background: 'linear-gradient(to bottom, transparent, var(--bg-2))', pointerEvents: 'none' }} />
+      </div>
+
+      {/* Footer */}
+      <div style={{ padding: '16px 22px 20px' }}>
+        <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6 }}>{f.desc}</p>
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {f.bullets.map((b) => (
-            <li key={b} style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', display: 'flex', gap: 8 }}>
-              <span style={{ color: accent }}>›</span>{b}
+            <li key={b} style={{ fontSize: 12.5, color: 'var(--fg-3)', display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+              <Check color={c} />{b}
             </li>
           ))}
         </ul>
@@ -518,18 +584,18 @@ function FeatureGrid({ accent }: { accent: string }) {
   return (
     <section id="features" style={{ padding: '88px 0', borderTop: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>§ 01 · MODULES</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>01 · MODULES</div>
             <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>One platform. Five surfaces. Every counter.</h2>
           </div>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>5 / 5 included on every plan</span>
         </div>
-        <div className="feat-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
-          {FEATURES.slice(0, 3).map((f) => <FeatureCard key={f.id} f={f} accent={accent} />)}
+        <div className="feat-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, alignItems: 'start' }}>
+          {FEATURES.slice(0, 3).map((f) => <FeatureCard key={f.id} f={f} />)}
         </div>
-        <div className="feat-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-          {FEATURES.slice(3).map((f) => <FeatureCard key={f.id} f={f} accent={accent} />)}
+        <div className="feat-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14, alignItems: 'start' }}>
+          {FEATURES.slice(3).map((f) => <FeatureCard key={f.id} f={f} />)}
         </div>
       </div>
     </section>
@@ -551,7 +617,7 @@ function AISection({ accent }: { accent: string }) {
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>§ 02 · ZIADA AI</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>02 · ZIADA AI</div>
             <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>The first AI that actually knows your shop.</h2>
           </div>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>grounded · bilingual · in every screen</span>
@@ -671,7 +737,7 @@ function PricingTeaser() {
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>§ 03 · PRICING</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>03 · PRICING</div>
             <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>Simple, honest pricing. Billed in TZS.</h2>
           </div>
           <Link href="/pricing" style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>See full pricing →</Link>
@@ -733,7 +799,7 @@ function FAQSection() {
     <section style={{ padding: '80px 0', borderTop: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>§ 04 · FAQ</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>04 · FAQ</div>
           <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>Common questions.</h2>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -772,7 +838,7 @@ function CTA() {
   return (
     <section style={{ padding: '100px 0 88px' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.08em' }}>§ 05 · GET ZIADA</div>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.08em' }}>05 · GET ZIADA</div>
         <h2 style={{ margin: '16px 0 18px', fontSize: 'clamp(32px, 4.5vw, 52px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05, fontFamily: 'var(--display, var(--sans))' }}>
           Run your shop on calm software.
         </h2>
@@ -807,9 +873,14 @@ export default function LandingPage() {
   return (
     <>
       <style>{`
-        .stats-grid > div { border-left-color: var(--line); }
-        article.feat-card { transition: box-shadow 180ms, border-color 180ms, transform 180ms; }
-        article.feat-card:hover { border-color: var(--line-2) !important; box-shadow: 0 8px 32px -8px rgba(0,0,0,0.18); transform: translateY(-2px); }
+        article.feat-card { transition: box-shadow 200ms, border-color 200ms, transform 200ms; }
+        article.feat-card:hover { border-color: var(--card-accent, var(--line-2)) !important; box-shadow: 0 0 0 1px var(--card-accent, transparent), 0 12px 40px -12px rgba(0,0,0,0.22); transform: translateY(-2px); }
+
+        /* ── Stats ticker ── */
+        @keyframes mkt-ticker {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
 
         /* ── Dashboard mockup responsive ── */
         @media (max-width: 900px) {
@@ -832,14 +903,13 @@ export default function LandingPage() {
 
         /* ── Section grids ── */
         @media (max-width: 768px) {
-          .stats-grid { grid-template-columns: repeat(3, minmax(140px, 1fr)) !important; }
-          .stats-grid > div { border-left: 0 !important; border-bottom: 1px solid var(--line); }
+          .stats-desktop { display: none !important; }
+          .stats-ticker  { display: block !important; }
           .feat-grid-3, .feat-grid-2 { grid-template-columns: 1fr !important; }
           .ai-grid { grid-template-columns: 1fr !important; }
           .ai-props { grid-template-columns: 1fr 1fr !important; }
         }
         @media (max-width: 480px) {
-          .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .ai-props { grid-template-columns: 1fr !important; }
         }
       `}</style>

@@ -30,7 +30,7 @@ export default function AboutPage() {
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'start' }} className="about-origin-grid">
           <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 20 }}>§ 01 · ORIGIN</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 20 }}>ORIGIN</div>
             <h2 style={{ margin: '0 0 20px', fontSize: 26, fontWeight: 500, letterSpacing: '-0.015em' }}>Why we built this</h2>
             <p style={{ margin: '0 0 16px', fontSize: 15, lineHeight: 1.7, color: 'var(--fg-2)' }}>
               Walk into any duka in Dar es Salaam and you&apos;ll see the same thing: a worn notebook tracking who owes what, a calculator for every sale, and a phone full of M-Pesa confirmation screenshots. These are not unsophisticated businesses — they&apos;re sophisticated traders running on tools that weren&apos;t built for them.
@@ -65,7 +65,7 @@ export default function AboutPage() {
       {/* ── Founders ── */}
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0', background: 'var(--bg-2)' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>§ 02 · TEAM</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>TEAM</div>
           <h2 style={{ margin: '0 0 40px', fontSize: 26, fontWeight: 500, letterSpacing: '-0.015em' }}>The cofounders</h2>
           <div className="mkt-founders-grid">
             {[
@@ -109,7 +109,7 @@ export default function AboutPage() {
       {/* ── Companies ── */}
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>§ 03 · COMPANIES</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>COMPANIES</div>
           <h2 style={{ margin: '0 0 12px', fontSize: 26, fontWeight: 500, letterSpacing: '-0.015em' }}>Ziada is a product of two companies working as one</h2>
           <p style={{ margin: '0 0 36px', fontSize: 15, color: 'var(--fg-2)', lineHeight: 1.6, maxWidth: 600 }}>
             Engineering and design built under one roof — different disciplines, one product, one mission.
@@ -147,7 +147,7 @@ export default function AboutPage() {
       {/* ── Values ── */}
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0', background: 'var(--bg-2)' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>§ 04 · VALUES</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>VALUES</div>
           <h2 style={{ margin: '0 0 36px', fontSize: 26, fontWeight: 500, letterSpacing: '-0.015em' }}>What we build around</h2>
           <div className="mkt-values-grid">
             {[
