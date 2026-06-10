@@ -5,29 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authApi, TANZANIA_REGIONS, BUSINESS_TYPES } from '@/lib/api';
 import { saveTokens, cacheUser, cacheSubscription, isAuthenticated } from '@/lib/auth';
-
-// ── Theme icons ────────────────────────────────────────────────────────────────
-function SunIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-    </svg>
-  );
-}
-function MoonIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  );
-}
-function DotsIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-      <circle cx="3" cy="8" r="1.5" /><circle cx="8" cy="8" r="1.5" /><circle cx="13" cy="8" r="1.5" />
-    </svg>
-  );
-}
+import { DotsMenu } from '@/components/DotsMenu';
 
 // ── Eye icon ───────────────────────────────────────────────────────────────────
 function EyeIcon({ open }: { open: boolean }) {
@@ -334,10 +312,6 @@ export default function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [theme,    setTheme]    = useState<'light' | 'dark'>('light');
-  const [dotsOpen, setDotsOpen] = useState(false);
-  const dotsRef = useRef<HTMLDivElement>(null);
-
   // Form state
   const [fullName,    setFullName]    = useState('');
   const [phone,       setPhone]       = useState('');
@@ -349,35 +323,9 @@ export default function RegisterPage() {
   const [confirm,     setConfirm]     = useState('');
 
   useEffect(() => {
-    // Already authenticated — skip registration
-    if (isAuthenticated()) {
-      router.replace('/dashboard');
-      return;
-    }
-    try {
-      const stored = localStorage.getItem('ziada-theme');
-      const effective = stored === 'dark' ? 'dark' : 'light';
-      setTheme(effective);
-      document.documentElement.setAttribute('data-theme', effective);
-    } catch {}
+    if (isAuthenticated()) { router.replace('/dashboard'); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem('ziada-theme', theme); } catch {}
-  }, [theme]);
-
-  useEffect(() => {
-    if (!dotsOpen) return;
-    function onOutside(e: MouseEvent) {
-      if (dotsRef.current && !dotsRef.current.contains(e.target as Node)) setDotsOpen(false);
-    }
-    document.addEventListener('mousedown', onOutside);
-    return () => document.removeEventListener('mousedown', onOutside);
-  }, [dotsOpen]);
-
-  function applyTheme(t: 'light' | 'dark') { setTheme(t); }
 
   function clearErr(field: string) {
     if (fieldErrors[field]) setFieldErrors(p => ({ ...p, [field]: '' }));
@@ -578,32 +526,8 @@ export default function RegisterPage() {
         .step-back-enter { animation: slideOut 200ms ease forwards; }
       `}</style>
 
-      {/* Fixed three-dot theme menu */}
-      <div ref={dotsRef} style={{ position: 'fixed', top: 16, right: 20, zIndex: 200 }}>
-        <button
-          onClick={() => setDotsOpen(o => !o)}
-          aria-label="Appearance"
-          style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--line)', borderRadius: 8, background: dotsOpen ? 'var(--bg-3)' : 'var(--bg-2)', color: 'var(--fg-2)', cursor: 'pointer', transition: 'background 120ms' }}
-        >
-          <DotsIcon />
-        </button>
-        {dotsOpen && (
-          <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 210, background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 12, boxShadow: '0 8px 32px -8px rgba(0,0,0,0.18)', padding: 14, zIndex: 300 }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 10 }}>APPEARANCE</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, padding: 4, background: 'var(--bg-3)', borderRadius: 9 }}>
-              {(['light', 'dark'] as const).map(t => {
-                const active = theme === t;
-                return (
-                  <button key={t} onClick={() => applyTheme(t)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '8px 12px', borderRadius: 6, border: 0, cursor: 'pointer', background: active ? 'var(--bg)' : 'transparent', color: active ? 'var(--fg)' : 'var(--fg-3)', fontSize: 13, fontWeight: active ? 500 : 400, boxShadow: active ? '0 1px 4px rgba(0,0,0,0.10)' : 'none', transition: 'all 150ms' }}>
-                    {t === 'light' ? <SunIcon /> : <MoonIcon />}
-                    {t === 'light' ? 'Light' : 'Dark'}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Appearance + language menu */}
+      <DotsMenu fixed />
 
       <div className="reg-page">
         <LeftPanel />

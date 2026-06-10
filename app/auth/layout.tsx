@@ -1,11 +1,5 @@
-/**
- * app/auth/layout.tsx
- *
- * Standalone layout for public auth pages (login, register).
- * No AppShell, no sidenav — bare HTML with theme support.
- */
-
 import type { Metadata } from 'next';
+import { LangProvider } from '@/components/LangContext';
 
 export const metadata: Metadata = {
   title: {
@@ -17,5 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <LangProvider>{children}</LangProvider>;
 }

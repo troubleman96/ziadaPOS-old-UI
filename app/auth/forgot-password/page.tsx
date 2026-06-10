@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { DotsMenu } from '@/components/DotsMenu';
 
 type Step = 'phone' | 'sent';
 
@@ -13,22 +14,7 @@ export default function ForgotPasswordPage() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [theme, setTheme] = useState('light');
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('ziada-theme');
-      const t = stored === 'dark' ? 'dark' : 'light';
-      setTheme(t);
-      document.documentElement.setAttribute('data-theme', t);
-    } catch {}
-    phoneRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    try { localStorage.setItem('ziada-theme', theme); } catch {}
-  }, [theme]);
+  useEffect(() => { phoneRef.current?.focus(); }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,6 +60,7 @@ export default function ForgotPasswordPage() {
         .fp-btn:disabled { opacity: 0.55; cursor: not-allowed; }
       `}</style>
 
+      <DotsMenu fixed />
       <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--fg)', fontFamily: 'var(--sans)', padding: '24px', WebkitFontSmoothing: 'antialiased' }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
 
@@ -151,19 +138,10 @@ export default function ForgotPasswordPage() {
           )}
 
           {/* Footer */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 28 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 28 }}>
             <Link href="/auth/login" style={{ fontSize: 13, color: 'var(--accent)', textDecoration: 'none' }}>
               ← Back to sign in
             </Link>
-            <button
-              onClick={() => {
-                const next = theme === 'dark' ? 'light' : 'dark';
-                setTheme(next);
-              }}
-              style={{ background: 'transparent', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 10px', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', cursor: 'pointer' }}
-            >
-              {theme === 'dark' ? '◐ dark' : '◑ light'}
-            </button>
           </div>
 
           <div style={{ marginTop: 24, textAlign: 'center', fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--fg-4)' }}>
