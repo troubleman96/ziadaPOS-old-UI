@@ -87,13 +87,8 @@ export function MarketingNav() {
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', height: 56, position: 'relative' }}>
 
         {/* Logo */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
-          <img
-            src="/ziadaposicon.jpeg"
-            alt="Ziada"
-            style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(79,70,229,0.2), 0 3px 10px rgba(79,70,229,0.14)' }}
-          />
-          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--display)' }}>Ziada</span>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--sans)' }}>Ziada</span>
         </Link>
 
         {/* Desktop nav — absolutely centered */}
@@ -116,7 +111,7 @@ export function MarketingNav() {
           <Link
             href="/auth/login"
             className="mkt-nav-links"
-            style={{ padding: '7px 18px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 13.5, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}
+            style={{ padding: '7px 18px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 13.5, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}
           >
             {t(lang, 'nav_signin')}
           </Link>
@@ -245,7 +240,7 @@ export function MarketingNav() {
             <Link
               href="/auth/login"
               onClick={() => setMenuOpen(false)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 14px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 14px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
             >
               {t(lang, 'nav_signin')}
             </Link>

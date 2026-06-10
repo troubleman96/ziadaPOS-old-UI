@@ -273,7 +273,7 @@ function LeftPanel() {
       {/* Logo */}
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
         <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
-        <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--display, var(--sans))' }}>Ziada</span>
+        <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--sans)' }}>Ziada</span>
       </div>
 
       {/* Mockup + copy */}

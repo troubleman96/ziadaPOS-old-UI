@@ -45,7 +45,7 @@ export default function ContactPage() {
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px)', backgroundSize: '64px 64px', maskImage: 'radial-gradient(ellipse 80% 55% at 50% 0%, #000 20%, transparent 75%)' }} />
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', position: 'relative' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 16 }}>CONTACT</div>
-          <h1 style={{ margin: '0 0 16px', fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.06, fontFamily: 'var(--display, var(--sans))' }}>
+          <h1 style={{ margin: '0 0 16px', fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.02, fontFamily: 'var(--sans)' }}>
             Get in touch.
           </h1>
           <p style={{ margin: 0, fontSize: 17, lineHeight: 1.65, color: 'var(--fg-2)', maxWidth: 480 }}>
@@ -65,7 +65,7 @@ export default function ContactPage() {
                 <EmailIcon />
               </div>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 6 }}>Email</div>
+                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Email</div>
                 <div style={{ fontSize: 13.5, color: 'var(--fg-3)', lineHeight: 1.55 }}>
                   For general enquiries, partnership and billing questions.
                 </div>
@@ -73,7 +73,7 @@ export default function ContactPage() {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 'auto' }}>
                 <a
                   href="mailto:contact@ziadapos.com"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 13.5, fontWeight: 500, textDecoration: 'none' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 13.5, fontWeight: 600, textDecoration: 'none' }}
                 >
                   contact@ziadapos.com
                 </a>
@@ -92,7 +92,7 @@ export default function ContactPage() {
                 <WhatsAppIcon />
               </div>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 6 }}>WhatsApp</div>
+                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>WhatsApp</div>
                 <div style={{ fontSize: 13.5, color: 'var(--fg-3)', lineHeight: 1.55 }}>
                   The fastest way to reach us. Talk directly to a founder, not a support queue.
                 </div>
@@ -102,7 +102,7 @@ export default function ContactPage() {
                   href="https://wa.me/255692069230?text=Hi%20Ziada%20team%2C%20I%27d%20like%20to%20learn%20more%20about%20Ziada"
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '9px 18px', borderRadius: 7, background: '#22c55e', color: '#fff', fontSize: 13.5, fontWeight: 500, textDecoration: 'none' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '9px 18px', borderRadius: 7, background: '#22c55e', color: '#fff', fontSize: 13.5, fontWeight: 600, textDecoration: 'none' }}
                 >
                   <WhatsAppIcon /> Chat on WhatsApp
                 </a>
@@ -116,7 +116,7 @@ export default function ContactPage() {
                 <LocationIcon />
               </div>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 6 }}>Location</div>
+                <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Location</div>
                 <div style={{ fontSize: 13.5, color: 'var(--fg-3)', lineHeight: 1.65 }}>
                   Dar es Salaam, Tanzania<br />
                   East Africa
@@ -137,7 +137,7 @@ export default function ContactPage() {
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0', background: 'var(--bg-2)' }}>
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>THE TEAM</div>
-          <h2 style={{ margin: '0 0 36px', fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>Talk directly to a founder</h2>
+          <h2 style={{ margin: '0 0 36px', fontSize: 24, fontWeight: 700, letterSpacing: '-0.015em' }}>Talk directly to a founder</h2>
           <div className="mkt-founders-grid">
             {[
               {
@@ -159,11 +159,11 @@ export default function ContactPage() {
             ].map((f) => (
               <div key={f.name} style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '24px', background: 'var(--bg)', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 999, background: 'var(--accent)', display: 'grid', placeItems: 'center', fontSize: 20, fontWeight: 600, color: '#fff', flexShrink: 0, fontFamily: 'var(--display, var(--sans))' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 999, background: 'var(--accent)', display: 'grid', placeItems: 'center', fontSize: 20, fontWeight: 600, color: '#fff', flexShrink: 0, fontFamily: 'var(--sans)' }}>
                     {f.initial}
                   </div>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 500 }}>{f.name}</div>
+                    <div style={{ fontSize: 15, fontWeight: 600 }}>{f.name}</div>
                     <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 3 }}>{f.role}</div>
                     <div style={{ display: 'inline-flex', marginTop: 6, padding: '2px 8px', borderRadius: 999, background: 'var(--accent-soft)', border: '1px solid var(--accent-line)', fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--accent)', letterSpacing: '0.04em' }}>
                       {f.company}
@@ -197,7 +197,7 @@ export default function ContactPage() {
             ].map(({ label, time, note }) => (
               <div key={label} style={{ textAlign: 'center', padding: '24px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)' }}>
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 8 }}>{label.toUpperCase()}</div>
-                <div style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--good)', fontFamily: 'var(--mono)', marginBottom: 6 }}>{time}</div>
+                <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--good)', fontFamily: 'var(--mono)', marginBottom: 6 }}>{time}</div>
                 <div style={{ fontSize: 12.5, color: 'var(--fg-3)' }}>{note}</div>
               </div>
             ))}

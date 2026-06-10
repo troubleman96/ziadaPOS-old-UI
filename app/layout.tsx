@@ -1,30 +1,17 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter, JetBrains_Mono, Instrument_Serif, DM_Sans } from 'next/font/google';
+import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: 'swap',
 });
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
   weight: ['400', '500'],
-  display: 'swap',
-});
-const instrumentSerif = Instrument_Serif({
-  subsets: ['latin'],
-  variable: '--font-display',
-  weight: '400',
-  style: ['normal', 'italic'],
-  display: 'swap',
-});
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  variable: '--font-dm',
-  weight: ['300', '400', '500', '600'],
   display: 'swap',
 });
 
@@ -91,7 +78,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="msapplication-TileImage" content="/ziadaposicon.jpeg" />
         <meta name="msapplication-TileColor" content="#4f46e5" />
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable} ${dmSans.variable}`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
         {children}
       </body>
     </html>

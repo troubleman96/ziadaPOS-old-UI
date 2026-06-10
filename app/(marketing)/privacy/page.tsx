@@ -3,7 +3,7 @@ import React from 'react';
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ borderTop: '1px solid var(--line)', paddingTop: 32, marginTop: 32 }}>
-      <h2 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 500, letterSpacing: '-0.01em' }}>{title}</h2>
+      <h2 style={{ margin: '0 0 16px', fontSize: 18, fontWeight: 700, letterSpacing: '-0.01em' }}>{title}</h2>
       <div style={{ fontSize: 14.5, color: 'var(--fg-2)', lineHeight: 1.75, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {children}
       </div>
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
         {/* Header */}
         <div style={{ marginBottom: 48 }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 12 }}>LEGAL</div>
-          <h1 style={{ margin: '0 0 12px', fontSize: 36, fontWeight: 500, letterSpacing: '-0.02em' }}>Privacy Policy</h1>
+          <h1 style={{ margin: '0 0 12px', fontSize: 36, fontWeight: 700, letterSpacing: '-0.02em' }}>Privacy Policy</h1>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--fg-4)' }}>Last updated: June 2026 · Effective immediately</div>
           <p style={{ margin: '16px 0 0', fontSize: 14.5, color: 'var(--fg-2)', lineHeight: 1.7 }}>
             Ziada Technologies Ltd (&quot;Ziada&quot;, &quot;we&quot;, &quot;us&quot;) is committed to protecting your privacy. This policy explains what data we collect, why, how we store it, and your rights over it.

@@ -44,7 +44,7 @@ export function MarketingFooter() {
         {/* Brand column */}
         <div>
           <div style={{ marginBottom: 14 }}>
-            <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(79,70,229,0.18)' }} />
+            <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--sans)', color: 'var(--fg)' }}>Ziada</span>
           </div>
           <p style={{ fontSize: 12.5, color: 'var(--fg-3)', maxWidth: 220, margin: '0 0 18px', lineHeight: 1.65 }}>
             {t(lang, 'footer_desc')}

@@ -101,7 +101,7 @@ export default function PricingPage() {
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px)', backgroundSize: '64px 64px', maskImage: 'radial-gradient(ellipse 80% 60% at 50% 0%, #000 20%, transparent 75%)' }} />
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', textAlign: 'center', position: 'relative' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 16 }}>PRICING</div>
-          <h1 style={{ margin: '0 0 16px', fontSize: 'clamp(34px, 5vw, 56px)', fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.06, fontFamily: 'var(--display, var(--sans))' }}>
+          <h1 style={{ margin: '0 0 16px', fontSize: 'clamp(34px, 5vw, 56px)', fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1.02, fontFamily: 'var(--sans)' }}>
             Simple, honest pricing.
           </h1>
           <p style={{ margin: '0 auto 32px', maxWidth: 480, fontSize: 16, color: 'var(--fg-2)', lineHeight: 1.6 }}>
@@ -159,11 +159,11 @@ export default function PricingPage() {
                     <div style={{ fontSize: 12.5, color: 'var(--fg-3)', marginBottom: 16 }}>{plan.target}</div>
                     {price !== null ? (
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                        <span style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.025em', fontFamily: 'var(--mono)' }}>{fmt(price)}</span>
+                        <span style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em', fontFamily: 'var(--mono)' }}>{fmt(price)}</span>
                         <span style={{ fontSize: 13, color: 'var(--fg-3)' }}>/month</span>
                       </div>
                     ) : (
-                      <div style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.025em' }}>Custom</div>
+                      <div style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.025em' }}>Custom</div>
                     )}
                     <p style={{ margin: '14px 0 0', fontSize: 13.5, color: 'var(--fg-2)', lineHeight: 1.6 }}>{plan.desc}</p>
                   </div>
@@ -172,7 +172,7 @@ export default function PricingPage() {
                     href={plan.href}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      padding: '11px', borderRadius: 8, fontWeight: 500, fontSize: 14,
+                      padding: '11px', borderRadius: 8, fontWeight: 600, fontSize: 14,
                       textDecoration: 'none',
                       background: plan.popular ? 'var(--accent)' : 'var(--bg-3)',
                       color: plan.popular ? '#fff' : 'var(--fg)',
@@ -208,7 +208,7 @@ export default function PricingPage() {
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0', background: 'var(--bg-2)' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>FULL COMPARISON</div>
-          <h2 style={{ margin: '0 0 36px', fontSize: 22, fontWeight: 500, letterSpacing: '-0.015em' }}>What&apos;s included</h2>
+          <h2 style={{ margin: '0 0 36px', fontSize: 22, fontWeight: 700, letterSpacing: '-0.015em' }}>What&apos;s included</h2>
           <div style={{ overflowX: 'auto' }}>
             <table className="mkt-feature-matrix">
               <thead>
@@ -246,7 +246,7 @@ export default function PricingPage() {
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>PRICING FAQ</div>
-          <h2 style={{ margin: '0 0 36px', fontSize: 22, fontWeight: 500, letterSpacing: '-0.015em' }}>Questions about pricing</h2>
+          <h2 style={{ margin: '0 0 36px', fontSize: 22, fontWeight: 700, letterSpacing: '-0.015em' }}>Questions about pricing</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {[
               { q: 'What\'s included in the free trial?', a: 'Every feature on the plan you sign up for — no restrictions. The 7-day trial requires a one-time TZS 10,000 activation fee paid via M-Pesa, Tigo, Airtel, or Bank. No credit card required.' },
@@ -256,7 +256,7 @@ export default function PricingPage() {
               { q: 'How do I pay for Enterprise?', a: 'Enterprise pricing is customised based on number of stores, staff, and support requirements. Reach out to contact@ziadapos.com or WhatsApp 0692069230 and we\'ll put together a quote within 24 hours.' },
             ].map((faq, i) => (
               <div key={i} style={{ borderTop: '1px solid var(--line)', paddingTop: 20 }}>
-                <div style={{ fontSize: 14.5, fontWeight: 500, marginBottom: 8 }}>{faq.q}</div>
+                <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 8 }}>{faq.q}</div>
                 <div style={{ fontSize: 14, color: 'var(--fg-2)', lineHeight: 1.65 }}>{faq.a}</div>
               </div>
             ))}
@@ -267,12 +267,12 @@ export default function PricingPage() {
       {/* ── CTA ── */}
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0', background: 'var(--bg-2)' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
-          <h2 style={{ margin: '0 0 12px', fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>Ready to get started?</h2>
+          <h2 style={{ margin: '0 0 12px', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>Ready to get started?</h2>
           <p style={{ margin: '0 auto 28px', maxWidth: 480, fontSize: 15, color: 'var(--fg-2)' }}>
             Start your 7-day free trial today. Most shops are live in under an hour.
           </p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 22px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+            <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 22px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
               Start free trial →
             </Link>
             <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 18px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none' }}>

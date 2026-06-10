@@ -239,118 +239,13 @@ function DashboardMockup({ accent }: { accent: string }) {
   );
 }
 
-// ── Feature mockups ────────────────────────────────────────────────────────────
-function POSMockup({ accent }: { accent: string }) {
-  const items: [string, number, number][] = [['Mafuta ya Cooking 5L', 5, 170000], ['Sabuni ya OMO 1kg', 1, 6200], ['Chai Bora 500g', 1, 4800], ['Mchele Pishori 5kg', 1, 22000]];
-  const sub = items.reduce((s, [, q, p]) => s + q * p, 0);
-  const fmt = (n: number) => 'TZS ' + n.toLocaleString('en-US');
-  return (
-    <div style={{ padding: 14, background: 'var(--bg)', color: 'var(--fg)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ fontSize: 12, fontWeight: 500 }}>Current sale</span>
-        <span style={{ fontFamily: 'monospace', fontSize: 9.5, color: 'var(--fg-3)' }}>SALE #TXN-2042</span>
-      </div>
-      {items.map(([n, q, p]) => (
-        <div key={n} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 10, fontSize: 11, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n}</span>
-          <span style={{ fontFamily: 'monospace', color: 'var(--fg-3)' }}>×{q}</span>
-          <span style={{ fontFamily: 'monospace' }}>{fmt(q * p)}</span>
-        </div>
-      ))}
-      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0 2px', marginTop: 6, borderTop: '1px solid var(--line-2)' }}>
-        <span style={{ fontSize: 12, fontWeight: 500 }}>Net total</span>
-        <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600, color: accent }}>{fmt(Math.round(sub * 1.18))}</span>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, margin: '8px 0' }}>
-        {['Cash', 'M-Pesa', 'Bank', 'Credit'].map((m, i) => (
-          <div key={m} style={{ padding: '6px 4px', borderRadius: 5, fontSize: 10, textAlign: 'center', border: `1px solid ${i === 0 ? accent : 'var(--line)'}`, background: i === 0 ? `${accent}22` : 'transparent', color: i === 0 ? 'var(--fg)' : 'var(--fg-2)' }}>{m}</div>
-        ))}
-      </div>
-      <div style={{ padding: '8px', borderRadius: 5, background: accent, color: '#fff', textAlign: 'center', fontSize: 11.5, fontWeight: 500 }}>Complete sale →</div>
-    </div>
-  );
-}
-
-function InventoryMini({ accent: _accent }: { accent: string }) {
-  const rows: [string, number, string][] = [['Unga wa Sembe 10kg', 42, 'ok'], ['Sabuni ya OMO 1kg', 3, 'critical'], ['Mafuta Cooking 5L', 24, 'ok'], ['Sukari 2kg', 8, 'low']];
-  const sc = (s: string) => s === 'critical' ? 'var(--bad)' : s === 'low' ? 'var(--warn)' : 'var(--good)';
-  const sb = (s: string) => s === 'critical' ? 'var(--bad-soft)' : s === 'low' ? 'var(--warn-soft)' : 'var(--good-soft)';
-  return (
-    <div style={{ padding: '12px 14px', background: 'var(--bg)', color: 'var(--fg)' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 44px 60px', gap: 8, fontSize: 9, fontFamily: 'monospace', color: 'var(--fg-4)', letterSpacing: '0.06em', paddingBottom: 4, borderBottom: '1px solid var(--line)' }}>
-        <span>PRODUCT</span><span>STOCK</span><span>STATUS</span>
-      </div>
-      {rows.map(([name, qty, s]) => (
-        <div key={name} style={{ display: 'grid', gridTemplateColumns: '1fr 44px 60px', gap: 8, fontSize: 11, padding: '5px 0', alignItems: 'center' }}>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-          <span style={{ fontFamily: 'monospace', color: 'var(--fg-2)' }}>{qty}</span>
-          <span style={{ fontFamily: 'monospace', fontSize: 9, padding: '2px 6px', borderRadius: 999, color: sc(s), background: sb(s), width: 'fit-content' }}>{s.toUpperCase()}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function AnalyticsMini({ accent }: { accent: string }) {
-  return (
-    <div style={{ padding: '14px', background: 'var(--bg)', color: 'var(--fg)' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>PROFIT · 30D</span>
-        <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--good)' }}>+6.2%</span>
-      </div>
-      <div style={{ fontSize: 16, fontWeight: 500, marginTop: 4 }}>TZS 4.82M</div>
-      <div style={{ height: 56, marginTop: 8 }}>
-        <Sparkline data={[3, 4, 3, 5, 4, 5, 6, 5, 7, 6, 7, 8, 7, 9, 8, 10, 9, 11, 10, 12]} color={accent} fill strokeWidth={1.5} height={56} />
-      </div>
-    </div>
-  );
-}
-
-function CreditsMini({ accent: _accent }: { accent: string }) {
-  return (
-    <div style={{ padding: '12px 14px', background: 'var(--bg)', color: 'var(--fg)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-        <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>OUTSTANDING</span>
-        <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-3)' }}>14 customers</span>
-      </div>
-      <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 8 }}>TZS 184,500</div>
-      {[['Fatuma A.', 'TZS 38,500', 'Leo'], ['Juma K.', 'TZS 84,200', '2d'], ['Asha M.', 'TZS 54,200', '5d']].map(([n, a, d]) => (
-        <div key={n} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, fontSize: 11, padding: '4px 0', borderBottom: '1px solid var(--line)' }}>
-          <span>{n}</span>
-          <span style={{ fontFamily: 'monospace', color: 'var(--fg-2)' }}>{a}</span>
-          <span style={{ fontFamily: 'monospace', color: 'var(--fg-4)' }}>{d}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function AIChatMini({ accent }: { accent: string }) {
-  return (
-    <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 11.5, background: 'var(--bg)', color: 'var(--fg)' }}>
-      <div style={{ alignSelf: 'flex-end', maxWidth: '82%', padding: '6px 10px', border: '1px solid var(--line-2)', borderRadius: 8 }}>Niambie mauzo ya leo</div>
-      <div style={{ display: 'flex', gap: 6 }}>
-        <span style={{ width: 18, height: 18, borderRadius: 5, background: `${accent}22`, color: accent, display: 'grid', placeItems: 'center', fontSize: 10, flexShrink: 0 }}>✦</span>
-        <div style={{ color: 'var(--fg-2)', lineHeight: 1.5 }}>
-          Mauzo ya leo ni <strong style={{ color: 'var(--fg)' }}>TZS 1,240,000</strong> — juu kwa 18%.
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        {['Tuma report', 'Linganisha wiki'].map((c, i) => (
-          <span key={c} style={{ fontFamily: 'monospace', fontSize: 10, padding: '3px 8px', borderRadius: 999, border: '1px solid var(--line-2)', color: i === 0 ? accent : 'var(--fg-3)', background: i === 0 ? `${accent}22` : 'transparent' }}>{c}</span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Feature data ───────────────────────────────────────────────────────────────
-const MODULE_COLORS: Record<string, string> = {
-  pos:       '#6366f1',
-  inventory: '#10b981',
-  analytics: '#8b5cf6',
-  credits:   '#f59e0b',
-  ai:        '#06b6d4',
+// ── Module meta (icon + colors) ────────────────────────────────────────────────
+const MODULE_META: Record<string, { color: string; bg: string; icon: string }> = {
+  pos:       { color: '#4B3FD4', bg: 'rgba(75,63,212,0.08)',  icon: '⊞' },
+  inventory: { color: '#1D9E75', bg: 'rgba(29,158,117,0.1)',  icon: '⬡' },
+  analytics: { color: '#BA7517', bg: 'rgba(186,117,23,0.1)',  icon: '↗' },
+  credits:   { color: '#A32D2D', bg: 'rgba(163,45,45,0.1)',   icon: '◈' },
+  ai:        { color: '#4B3FD4', bg: 'rgba(75,63,212,0.08)',  icon: '✦' },
 };
 
 function getFeatures(lang: Lang) {
@@ -363,68 +258,44 @@ function getFeatures(lang: Lang) {
   ];
 }
 
-function Check({ color }: { color: string }) {
-  return (
-    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
-      <circle cx="6.5" cy="6.5" r="6" fill={color} fillOpacity="0.12" />
-      <path d="M3.5 6.5L5.5 8.5L9.5 4.5" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function FeatureCard({ f }: { f: ReturnType<typeof getFeatures>[0] }) {
-  const c = MODULE_COLORS[f.id] ?? '#6366f1';
-  const mockup =
-    f.id === 'pos'       ? <POSMockup accent={c} /> :
-    f.id === 'inventory' ? <InventoryMini accent={c} /> :
-    f.id === 'analytics' ? <AnalyticsMini accent={c} /> :
-    f.id === 'credits'   ? <CreditsMini accent={c} /> :
-                           <AIChatMini accent={c} />;
+function FeatureCard({ f, wide }: { f: ReturnType<typeof getFeatures>[0]; wide?: boolean }) {
+  const meta = MODULE_META[f.id] ?? MODULE_META.pos;
+  const [hovered, setHovered] = React.useState(false);
   return (
     <article
-      className="feat-card"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        border: '1px solid var(--line)',
-        borderRadius: 16,
-        background: 'var(--bg-2)',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        '--card-accent': c,
-      } as React.CSSProperties}
-    >
-      <div style={{ height: 3, background: `linear-gradient(90deg, ${c} 0%, ${c}55 100%)` }} />
-      <div style={{
-        padding: '20px 22px 16px',
-        background: `linear-gradient(160deg, ${c}09 0%, transparent 65%)`,
-        borderBottom: '1px solid var(--line)',
+        border: `1px solid ${hovered ? meta.color + '88' : meta.color + '33'}`,
+        borderRadius: 12,
+        padding: 22,
+        background: hovered ? meta.bg : 'var(--bg)',
+        gridColumn: wide ? 'span 2' : undefined,
+        transition: 'border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease',
+        boxShadow: hovered ? `0 4px 24px ${meta.color}18` : 'none',
+        cursor: 'default',
       }}>
+      <div style={{ marginBottom: 14 }}>
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 5,
-          padding: '3px 9px', borderRadius: 999,
-          background: `${c}18`, border: `1px solid ${c}35`,
-          fontFamily: 'var(--mono)', fontSize: 10.5, color: c, letterSpacing: '0.06em',
-          marginBottom: 12,
+          padding: '3px 10px', borderRadius: 999,
+          border: `1px solid ${meta.color}44`,
+          background: meta.bg,
+          fontFamily: 'var(--mono)', fontSize: 10.5,
+          color: meta.color, letterSpacing: '0.04em',
         }}>
           {f.n} · {f.id.toUpperCase()}
         </span>
-        <h3 style={{ margin: 0, fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{f.title}</h3>
-        <p style={{ margin: '7px 0 0', fontSize: 13.5, color: 'var(--fg-2)', lineHeight: 1.5 }}>{f.tagline}</p>
       </div>
-      <div style={{ height: 240, overflow: 'hidden', borderBottom: '1px solid var(--line)', position: 'relative', background: 'var(--bg)' }}>
-        {mockup}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, background: 'linear-gradient(to bottom, transparent, var(--bg-2))', pointerEvents: 'none' }} />
-      </div>
-      <div style={{ padding: '16px 22px 20px' }}>
-        <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.6 }}>{f.desc}</p>
-        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {f.bullets.map((b) => (
-            <li key={b} style={{ fontSize: 12.5, color: 'var(--fg-3)', display: 'flex', alignItems: 'flex-start', gap: 7 }}>
-              <Check color={c} />{b}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg)', marginBottom: 8 }}>{f.title}</div>
+      <div style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.55, marginBottom: 14 }}>{f.tagline}</div>
+      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+        {f.bullets.map((b) => (
+          <li key={b} style={{ fontSize: 12, color: 'var(--fg-2)', padding: '3px 0', display: 'flex', gap: 4 }}>
+            <span style={{ color: meta.color, fontWeight: 600, flexShrink: 0 }}>›</span>{b}
+          </li>
+        ))}
+      </ul>
     </article>
   );
 }
@@ -433,39 +304,59 @@ function FeatureCard({ f }: { f: ReturnType<typeof getFeatures>[0] }) {
 function Hero({ accent }: { accent: string }) {
   const { lang } = useLang();
   return (
-    <section className="hero-section" style={{ paddingTop: 80, paddingBottom: 88 }}>
-      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
+    <section className="hero-section" style={{ paddingTop: 88, paddingBottom: 96, position: 'relative', overflow: 'hidden' }}>
+      {/* radial glow behind the heading */}
+      <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 900, height: 560, background: `radial-gradient(ellipse 70% 60% at 50% 0%, ${accent}22 0%, transparent 70%)`, pointerEvents: 'none' }} />
+
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', position: 'relative' }}>
         <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px 4px 8px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.04em', color: 'var(--fg-2)', background: 'var(--bg-2)', marginBottom: 28 }}>
-            <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--accent)', boxShadow: '0 0 0 3px var(--accent-soft)', display: 'inline-block' }} />
+
+          {/* Badge */}
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7,
+            padding: '5px 14px 5px 10px', border: `1px solid ${accent}44`,
+            borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11,
+            letterSpacing: '0.04em', color: accent,
+            background: `${accent}0e`, marginBottom: 32,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: accent, boxShadow: `0 0 0 3px ${accent}33`, display: 'inline-block' }} />
             {t(lang, 'hero_badge')}
-            <span style={{ color: 'var(--fg-4)' }}>→</span>
           </span>
-          <h1 className="hero-h1" style={{ margin: 0, fontSize: 'clamp(44px, 5.6vw, 72px)', lineHeight: 1.03, fontWeight: 500, letterSpacing: '-0.03em', fontFamily: 'var(--display, var(--sans))' }}>
-            {t(lang, 'hero_h1a')}<br />{t(lang, 'hero_h1b')}
+
+          {/* Heading */}
+          <h1 className="hero-h1" style={{ margin: 0, fontSize: 'clamp(48px, 6.2vw, 80px)', lineHeight: 1.0, fontWeight: 900, letterSpacing: '-0.04em', fontFamily: 'var(--sans)' }}>
+            {t(lang, 'hero_h1a')}<br />
+            <span style={{ color: accent }}>{t(lang, 'hero_h1b')}</span>
           </h1>
-          <p style={{ margin: '24px auto 0', fontSize: 17, lineHeight: 1.6, color: 'var(--fg-2)', maxWidth: 540 }}>
+
+          <p style={{ margin: '26px auto 0', fontSize: 17, lineHeight: 1.65, color: 'var(--fg-2)', maxWidth: 520 }}>
             {t(lang, 'hero_sub')}
           </p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 22px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
-              {t(lang, 'hero_trial')} <span style={{ opacity: 0.8 }}>→</span>
+
+          {/* CTAs */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 36, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 26px', borderRadius: 999, background: accent, color: '#fff', fontSize: 14.5, fontWeight: 600, textDecoration: 'none', boxShadow: `0 4px 20px ${accent}55` }}>
+              {t(lang, 'hero_trial')} <span>→</span>
             </Link>
-            <Link href="/auth/login" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '12px 20px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none', background: 'transparent' }}>
+            <Link href="/auth/login" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 22px', borderRadius: 999, border: '1px solid var(--line-2)', color: 'var(--fg)', fontSize: 14.5, textDecoration: 'none', background: 'var(--bg-2)' }}>
               {t(lang, 'hero_signin')}
             </Link>
           </div>
-          <div style={{ display: 'flex', gap: 20, marginTop: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
+
+          {/* Trust badges */}
+          <div style={{ display: 'flex', gap: 20, marginTop: 22, flexWrap: 'wrap', justifyContent: 'center' }}>
             {(['hero_trust1','hero_trust2','hero_trust3','hero_trust4'] as const).map((key) => (
               <span key={key} style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.2L4.8 8.5L9.5 3.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.2L4.8 8.5L9.5 3.8" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 {t(lang, key)}
               </span>
             ))}
           </div>
         </div>
-        <div className="hero-mock-wrap" style={{ maxWidth: 1040, margin: '56px auto 0', position: 'relative' }}>
-          <div style={{ position: 'absolute', bottom: -40, left: '15%', right: '15%', height: 80, background: `${accent}`, filter: 'blur(60px)', opacity: 0.18, borderRadius: '50%', pointerEvents: 'none' }} />
+
+        {/* Dashboard mockup */}
+        <div className="hero-mock-wrap" style={{ maxWidth: 1040, margin: '64px auto 0', position: 'relative' }}>
+          <div style={{ position: 'absolute', bottom: -48, left: '12%', right: '12%', height: 96, background: accent, filter: 'blur(72px)', opacity: 0.22, borderRadius: '50%', pointerEvents: 'none' }} />
           <WindowChrome url="app.ziadapos.com/dashboard">
             <DashboardMockup accent={accent} />
           </WindowChrome>
@@ -492,9 +383,9 @@ function StatsStrip() {
       {/* Desktop: 5-col grid */}
       <div className="stats-desktop" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)' }}>
         {stats.map((s, i) => (
-          <div key={s.labelKey} style={{ padding: '20px', borderLeft: i === 0 ? 0 : '1px solid var(--line)' }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 6 }}>{t(lang, s.labelKey)}</div>
-            <div style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em' }}>{s.v}</div>
+          <div key={s.labelKey} style={{ padding: '28px 20px', borderLeft: i === 0 ? 0 : '1px solid var(--line)', textAlign: 'center' }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 8 }}>{t(lang, s.labelKey)}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.03em' }}>{s.v}</div>
           </div>
         ))}
       </div>
@@ -503,9 +394,9 @@ function StatsStrip() {
       <div className="stats-ticker" style={{ display: 'none' }}>
         <div style={{ display: 'flex', width: 'max-content', animation: 'mkt-ticker 22s linear infinite' }}>
           {ticker.map((s, i) => (
-            <div key={i} style={{ padding: '14px 28px', borderRight: '1px solid var(--line)', flexShrink: 0 }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 3 }}>{t(lang, s.labelKey)}</div>
-              <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em' }}>{s.v}</div>
+            <div key={i} style={{ padding: '18px 28px', borderRight: '1px solid var(--line)', flexShrink: 0, textAlign: 'center' }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 5 }}>{t(lang, s.labelKey)}</div>
+              <div style={{ fontSize: 21, fontWeight: 700, letterSpacing: '-0.02em' }}>{s.v}</div>
             </div>
           ))}
         </div>
@@ -526,12 +417,12 @@ function TestimonialsSection() {
   return (
     <section style={{ padding: '80px 0', borderTop: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>{t(lang, 'test_label')}</div>
-            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t(lang, 'test_h2')}</h2>
+        <div style={{ marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 10 }}>{t(lang, 'test_label')}</div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'test_h2')}</h2>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', flexShrink: 0 }}>{t(lang, 'test_count')}</span>
           </div>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>{t(lang, 'test_count')}</span>
         </div>
         <div className="mkt-testimonials-grid">
           {testimonials.map((tst) => (
@@ -542,7 +433,7 @@ function TestimonialsSection() {
                   {tst.initial}
                 </div>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{tst.name}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{tst.name}</div>
                   <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', marginTop: 2 }}>{t(lang, tst.roleKey)} · {tst.location}</div>
                 </div>
               </div>
@@ -555,24 +446,19 @@ function TestimonialsSection() {
 }
 
 // ── Feature grid ───────────────────────────────────────────────────────────────
-function FeatureGrid({ accent }: { accent: string }) {
+function FeatureGrid() {
   const { lang } = useLang();
   const features = getFeatures(lang);
   return (
     <section id="features" style={{ padding: '88px 0', borderTop: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>{t(lang, 'feat_label')}</div>
-            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t(lang, 'feat_h2')}</h2>
-          </div>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>{t(lang, 'feat_sub')}</span>
+        <div style={{ marginBottom: 36, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 10 }}>{t(lang, 'feat_label')}</div>
+          <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'feat_h2')}</h2>
+          <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--fg-3)', fontFamily: 'var(--mono)' }}>{t(lang, 'feat_sub')}</p>
         </div>
-        <div className="feat-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, alignItems: 'start' }}>
-          {features.slice(0, 3).map((f) => <FeatureCard key={f.id} f={f} />)}
-        </div>
-        <div className="feat-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14, alignItems: 'start' }}>
-          {features.slice(3).map((f) => <FeatureCard key={f.id} f={f} />)}
+        <div className="z-modules" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+          {features.map((f) => <FeatureCard key={f.id} f={f} wide={f.id === 'ai'} />)}
         </div>
       </div>
     </section>
@@ -608,12 +494,10 @@ function AISection({ accent }: { accent: string }) {
   return (
     <section id="ai" style={{ padding: '88px 0', borderTop: '1px solid var(--line)', background: 'var(--bg-2)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>{t(lang, 'ai_label')}</div>
-            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t(lang, 'ai_h2')}</h2>
-          </div>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>{t(lang, 'ai_badge')}</span>
+        <div style={{ marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 10 }}>{t(lang, 'ai_label')}</div>
+          <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'ai_h2')}</h2>
+          <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--fg-3)', fontFamily: 'var(--mono)' }}>{t(lang, 'ai_badge')}</p>
         </div>
         <div className="ai-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.15fr', gap: 32, alignItems: 'start' }}>
           <div>
@@ -631,7 +515,7 @@ function AISection({ accent }: { accent: string }) {
             <div className="ai-props" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 22 }}>
               {props.map(({ titleKey, descKey }) => (
                 <div key={titleKey} style={{ paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>{t(lang, titleKey)}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{t(lang, titleKey)}</div>
                   <div style={{ fontSize: 12, color: 'var(--fg-3)', marginTop: 2 }}>{t(lang, descKey)}</div>
                 </div>
               ))}
@@ -643,7 +527,7 @@ function AISection({ accent }: { accent: string }) {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--line)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 22, height: 22, borderRadius: 6, background: `${accent}22`, color: accent, display: 'grid', placeItems: 'center', fontSize: 11 }}>✦</span>
-                    <span style={{ fontSize: 12.5, fontWeight: 500 }}>Ziada AI</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 600 }}>Ziada AI</span>
                     <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-4)', marginLeft: 4 }}>· Duka Kuu</span>
                   </div>
                   <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-3)', display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -730,12 +614,12 @@ function PricingTeaser() {
   return (
     <section style={{ padding: '88px 0', borderTop: '1px solid var(--line)', background: 'var(--bg-2)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)', flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>{t(lang, 'pricing_label')}</div>
-            <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t(lang, 'pricing_h2')}</h2>
+        <div style={{ marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 10 }}>{t(lang, 'pricing_label')}</div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'pricing_h2')}</h2>
+            <Link href="/pricing" style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', textDecoration: 'none', flexShrink: 0 }}>{t(lang, 'pricing_see')}</Link>
           </div>
-          <Link href="/pricing" style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>{t(lang, 'pricing_see')}</Link>
         </div>
 
         <div className="mkt-pricing-grid">
@@ -749,7 +633,7 @@ function PricingTeaser() {
               <div>
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 8 }}>{plan.name.toUpperCase()}</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                  <span style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em' }}>{plan.price}</span>
+                  <span style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em' }}>{plan.price}</span>
                   {plan.period && <span style={{ fontSize: 13, color: 'var(--fg-3)' }}>{plan.period}</span>}
                 </div>
                 <p style={{ margin: '10px 0 0', fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.55 }}>{t(lang, plan.descKey)}</p>
@@ -762,7 +646,7 @@ function PricingTeaser() {
                   </li>
                 ))}
               </ul>
-              <Link href={plan.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', borderRadius: 8, background: plan.popular ? 'var(--accent)' : 'var(--bg-3)', color: plan.popular ? '#fff' : 'var(--fg)', fontSize: 13.5, fontWeight: 500, textDecoration: 'none', border: plan.popular ? 'none' : '1px solid var(--line)', marginTop: 'auto' }}>
+              <Link href={plan.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px', borderRadius: 8, background: plan.popular ? 'var(--accent)' : 'var(--bg-3)', color: plan.popular ? '#fff' : 'var(--fg)', fontSize: 13.5, fontWeight: 600, textDecoration: 'none', border: plan.popular ? 'none' : '1px solid var(--line)', marginTop: 'auto' }}>
                 {t(lang, plan.ctaKey)} {plan.popular ? ' →' : ''}
               </Link>
             </div>
@@ -795,8 +679,8 @@ function FAQSection() {
     <section style={{ padding: '80px 0', borderTop: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px' }}>
         <div style={{ marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>{t(lang, 'faq_label')}</div>
-          <h2 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t(lang, 'faq_h2')}</h2>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 10 }}>{t(lang, 'faq_label')}</div>
+          <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'faq_h2')}</h2>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {faqs.map(({ qKey, aKey }, i) => (
@@ -805,7 +689,7 @@ function FAQSection() {
                 onClick={() => setOpen(open === i ? null : i)}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '18px 0', background: 'transparent', border: 0, cursor: 'pointer', textAlign: 'left', gap: 16 }}
               >
-                <span style={{ fontSize: 14.5, fontWeight: 500, color: 'var(--fg)' }}>{t(lang, qKey)}</span>
+                <span style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--fg)' }}>{t(lang, qKey)}</span>
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 18, color: 'var(--fg-3)', flexShrink: 0, display: 'inline-block', transition: 'transform 200ms', transform: open === i ? 'rotate(45deg)' : 'none' }}>+</span>
               </button>
               {open === i && (
@@ -817,10 +701,10 @@ function FAQSection() {
         </div>
         <div style={{ marginTop: 32, padding: '20px 24px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--bg-2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 500 }}>{t(lang, 'faq_still')}</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{t(lang, 'faq_still')}</div>
             <div style={{ fontSize: 13, color: 'var(--fg-3)', marginTop: 3 }}>{t(lang, 'faq_team')}</div>
           </div>
-          <a href="https://wa.me/255692069230?text=Hi%2C+I+have+a+question+about+Ziada" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 13.5, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          <a href="https://wa.me/255692069230?text=Hi%2C+I+have+a+question+about+Ziada" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 13.5, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
             {t(lang, 'faq_wa')}
           </a>
         </div>
@@ -836,14 +720,14 @@ function CTA() {
     <section style={{ padding: '100px 0 88px' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.08em' }}>{t(lang, 'cta_label')}</div>
-        <h2 style={{ margin: '16px 0 18px', fontSize: 'clamp(32px, 4.5vw, 52px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05, fontFamily: 'var(--display, var(--sans))' }}>
+        <h2 style={{ margin: '16px 0 18px', fontSize: 'clamp(36px, 4.5vw, 56px)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.02, fontFamily: 'var(--sans)' }}>
           {t(lang, 'cta_h2')}
         </h2>
         <p style={{ margin: '0 auto', maxWidth: 520, fontSize: 16, color: 'var(--fg-2)' }}>
           {t(lang, 'cta_sub')}
         </p>
         <div style={{ display: 'inline-flex', gap: 10, marginTop: 28, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 22px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+          <Link href="/auth/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '11px 22px', borderRadius: 999, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
             {t(lang, 'cta_trial')} <span style={{ opacity: 0.8 }}>→</span>
           </Link>
           <a
@@ -870,9 +754,6 @@ export default function LandingPage() {
   return (
     <>
       <style>{`
-        article.feat-card { transition: box-shadow 200ms, border-color 200ms, transform 200ms; }
-        article.feat-card:hover { border-color: var(--card-accent, var(--line-2)) !important; box-shadow: 0 0 0 1px var(--card-accent, transparent), 0 12px 40px -12px rgba(0,0,0,0.22); transform: translateY(-2px); }
-
         /* ── Stats ticker ── */
         @keyframes mkt-ticker {
           0%   { transform: translateX(0); }
@@ -902,9 +783,16 @@ export default function LandingPage() {
         @media (max-width: 768px) {
           .stats-desktop { display: none !important; }
           .stats-ticker  { display: block !important; }
-          .feat-grid-3, .feat-grid-2 { grid-template-columns: 1fr !important; }
           .ai-grid { grid-template-columns: 1fr !important; }
           .ai-props { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 900px) {
+          .z-modules { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 600px) {
+          .z-modules { grid-template-columns: 1fr !important; }
+          .z-modules article[style*="span 2"] { grid-column: span 1 !important; }
+          .z-modules article ul { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 480px) {
           .ai-props { grid-template-columns: 1fr !important; }
@@ -913,9 +801,9 @@ export default function LandingPage() {
 
       <Hero accent={accent} />
       <StatsStrip />
-      <TestimonialsSection />
-      <FeatureGrid accent={accent} />
+      <FeatureGrid />
       <AISection accent={accent} />
+      <TestimonialsSection />
       <PricingTeaser />
       <FAQSection />
       <CTA />

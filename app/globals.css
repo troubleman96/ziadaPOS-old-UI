@@ -70,7 +70,16 @@ body {
   text-rendering: optimizeLegibility;
   font-size: 14px;
   line-height: 1.5;
-  letter-spacing: -0.006em;
+  letter-spacing: -0.012em;
+}
+
+/* ─── Global heading scale ──────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--sans);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 0;
 }
 ::selection { background: var(--accent); color: #fff; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -170,7 +179,7 @@ input, select, textarea { font-family: inherit; }
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 14px 16px; border-bottom: 1px solid var(--line);
 }
-.card-title { font-size: 13.5px; font-weight: 500; }
+.card-title { font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; }
 
 .dot-s { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
 
@@ -245,7 +254,7 @@ input, select, textarea { font-family: inherit; }
   transition: color 100ms;
 }
 .tab-btn:hover { color: var(--fg-2); }
-.tab-btn.active { color: var(--fg); border-color: var(--accent); font-weight: 500; }
+.tab-btn.active { color: var(--fg); border-color: var(--accent); font-weight: 600; }
 
 /* ─── Field rows ────────────────────────────────────────────────────────────── */
 .field-row {
@@ -323,13 +332,13 @@ input, select, textarea { font-family: inherit; }
   padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;
 }
 .stat-card .label { font-family: var(--mono); font-size: 11.5px; font-weight: 500; color: var(--fg-2); letter-spacing: 0.07em; }
-.stat-card .value { font-size: 26px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.1; }
+.stat-card .value { font-size: 26px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
 .stat-card .sub   { font-family: var(--mono); font-size: 11px; color: var(--fg-2); }
 
 /* KPI mini (product detail) */
 .kpi-mini { padding: 14px 16px; display: flex; flex-direction: column; gap: 5px; }
 .kpi-mini .label { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--fg-2); letter-spacing: 0.07em; }
-.kpi-mini .value { font-size: 22px; font-weight: 500; letter-spacing: -0.015em; line-height: 1.1; }
+.kpi-mini .value { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
 .kpi-mini .delta { font-family: var(--mono); font-size: 11px; font-weight: 400; color: var(--fg-2); }
 
 /* ─── Inventory stock bar ───────────────────────────────────────────────────── */
@@ -442,7 +451,7 @@ input, select, textarea { font-family: inherit; }
   flex-shrink: 0; white-space: nowrap;
 }
 .analytics-nav a:hover { color: var(--fg-2); }
-.analytics-nav a.active { color: var(--fg); border-color: var(--accent); font-weight: 500; }
+.analytics-nav a.active { color: var(--fg); border-color: var(--accent); font-weight: 600; }
 
 /* ─── Analytics payment mix ─────────────────────────────────────────────────── */
 .payment-mix-layout {
@@ -550,8 +559,8 @@ input, select, textarea { font-family: inherit; }
 
   /* Store / KPI grids: CSS vars handle it, but also shrink cards */
   .stat-card { padding: 14px; }
-  .stat-card .value { font-size: 22px; }
-  .kpi-mini .value { font-size: 20px; }
+  .stat-card .value { font-size: 22px; font-weight: 700; }
+  .kpi-mini .value { font-size: 20px; font-weight: 700; }
   .card-head { align-items: flex-start; padding: 12px 14px; }
   .card-head > div { min-width: 0; flex-wrap: wrap; }
   .btn { min-height: 34px; justify-content: center; }
@@ -601,8 +610,8 @@ input, select, textarea { font-family: inherit; }
   display: flex; align-items: flex-end; justify-content: space-between;
   margin-bottom: 20px; gap: 16px; flex-wrap: wrap;
 }
-.page-title { margin: 0; font-size: 24px; font-weight: 500; letter-spacing: -0.015em; }
-.page-sub   { margin: 6px 0 0; font-size: 13.5px; color: var(--fg-3); }
+.page-title { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.03em; }
+.page-sub   { margin: 6px 0 0; font-size: 13.5px; color: var(--fg-3); font-weight: 400; }
 
 /* ─── Form inputs (shared) ───────────────────────────────────────────────────── */
 .form-input {
@@ -1147,7 +1156,7 @@ html[data-theme="light"] .hover-card:hover {
 
 /* ─── Marketing pages ───────────────────────────────────────────────────────── */
 :root {
-  --display: var(--font-display, 'Georgia', serif);
+  --display: var(--sans);
   --dm: var(--font-dm, var(--sans));
 }
 

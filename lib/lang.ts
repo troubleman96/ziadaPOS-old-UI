@@ -26,7 +26,7 @@ const dict = {
   hero_h1b:        { sw: 'wa duka lako.',                         en: 'for your shop.'                           },
   hero_sub:        { sw: 'POS, bidhaa, mikopo, uchambuzi na AI inayojua duka lako — mfumo mmoja, wa haraka. Ilijengwa Tanzania, kwa kila kaunta.',
                      en: 'POS, inventory, credit, analytics and an AI that actually knows your store — running on one calm, fast platform. Built in Tanzania, made for any counter.' },
-  hero_trial:      { sw: 'Anza majaribio ya siku 7 bure',         en: 'Start free 7-day trial'                   },
+  hero_trial:      { sw: 'Anza majaribio',                         en: 'Start trial'                              },
   hero_signin:     { sw: 'Ingia',                                  en: 'Sign in'                                  },
   hero_trust1:     { sw: 'kadi haihitajiki',                       en: 'no card required'                         },
   hero_trust2:     { sw: 'inafanya kazi bila mtandao',             en: 'works offline'                            },
@@ -171,7 +171,7 @@ const dict = {
   cta_h2:          { sw: 'Endesha duka lako kwa programu tulivu.',       en: 'Run your shop on calm software.'        },
   cta_sub:         { sw: 'Siku saba, kipengele chochote, bila kadi. Maduka mengi yanaanza Ziada ndani ya saa moja.',
                      en: 'Seven days, every feature, no card. Most shops are live on Ziada in under an hour.'        },
-  cta_trial:       { sw: 'Anza jaribio bure',   en: 'Start free trial'  },
+  cta_trial:       { sw: 'Anza majaribio',       en: 'Start trial'       },
   cta_talk:        { sw: 'Zungumza na timu',    en: 'Talk to the team'  },
 
   // ── Footer ───────────────────────────────────────────────────────────────────

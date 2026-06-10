@@ -17,7 +17,7 @@ export default function AboutPage() {
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'linear-gradient(to right, var(--line) 1px, transparent 1px), linear-gradient(to bottom, var(--line) 1px, transparent 1px)', backgroundSize: '64px 64px', maskImage: 'radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 80%)' }} />
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', position: 'relative' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 16 }}>ABOUT · ZIADA TECHNOLOGIES</div>
-          <h1 style={{ margin: '0 0 24px', fontSize: 'clamp(36px, 5vw, 64px)', lineHeight: 1.04, fontWeight: 500, letterSpacing: '-0.03em', maxWidth: 820, fontFamily: 'var(--display, var(--sans))' }}>
+          <h1 style={{ margin: '0 0 24px', fontSize: 'clamp(36px, 5vw, 64px)', lineHeight: 1.04, fontWeight: 800, letterSpacing: '-0.04em', maxWidth: 820, fontFamily: 'var(--sans)' }}>
             Built in Tanzania,<br />designed for African commerce.
           </h1>
           <p style={{ margin: 0, fontSize: 17, lineHeight: 1.65, color: 'var(--fg-2)', maxWidth: 600 }}>
@@ -31,7 +31,7 @@ export default function AboutPage() {
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'start' }} className="about-origin-grid">
           <div>
             <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 20 }}>ORIGIN</div>
-            <h2 style={{ margin: '0 0 20px', fontSize: 26, fontWeight: 500, letterSpacing: '-0.015em' }}>Why we built this</h2>
+            <h2 style={{ margin: '0 0 20px', fontSize: 26, fontWeight: 700, letterSpacing: '-0.015em' }}>Why we built this</h2>
             <p style={{ margin: '0 0 16px', fontSize: 15, lineHeight: 1.7, color: 'var(--fg-2)' }}>
               Walk into any duka in Dar es Salaam and you&apos;ll see the same thing: a worn notebook tracking who owes what, a calculator for every sale, and a phone full of M-Pesa confirmation screenshots. These are not unsophisticated businesses — they&apos;re sophisticated traders running on tools that weren&apos;t built for them.
             </p>
@@ -51,7 +51,7 @@ export default function AboutPage() {
                   <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 4 }}>{label}</div>
                   <div style={{ fontSize: 11.5, color: 'var(--fg-3)' }}>{desc}</div>
                 </div>
-                <div style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', flexShrink: 0, fontFamily: 'var(--mono)' }}>{v}</div>
+                <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.02em', flexShrink: 0, fontFamily: 'var(--mono)' }}>{v}</div>
               </div>
             ))}
           </div>
@@ -66,7 +66,7 @@ export default function AboutPage() {
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0', background: 'var(--bg-2)' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>TEAM</div>
-          <h2 style={{ margin: '0 0 40px', fontSize: 26, fontWeight: 500, letterSpacing: '-0.015em' }}>The cofounders</h2>
+          <h2 style={{ margin: '0 0 40px', fontSize: 26, fontWeight: 700, letterSpacing: '-0.015em' }}>The cofounders</h2>
           <div className="mkt-founders-grid">
             {[
               {
@@ -86,11 +86,11 @@ export default function AboutPage() {
             ].map((f) => (
               <div key={f.name} style={{ border: '1px solid var(--line)', borderRadius: 12, overflow: 'hidden', background: 'var(--bg)' }}>
                 <div style={{ padding: '32px 28px', borderBottom: '1px solid var(--line)', background: 'var(--bg-3)', display: 'flex', alignItems: 'center', gap: 20 }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 999, background: 'var(--accent)', display: 'grid', placeItems: 'center', fontSize: 26, fontWeight: 600, color: '#fff', flexShrink: 0, fontFamily: 'var(--display, var(--sans))' }}>
+                  <div style={{ width: 64, height: 64, borderRadius: 999, background: 'var(--accent)', display: 'grid', placeItems: 'center', fontSize: 26, fontWeight: 600, color: '#fff', flexShrink: 0, fontFamily: 'var(--sans)' }}>
                     {f.initial}
                   </div>
                   <div>
-                    <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.01em' }}>{f.name}</div>
+                    <div style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.01em' }}>{f.name}</div>
                     <div style={{ fontSize: 12.5, color: 'var(--fg-3)', marginTop: 4, lineHeight: 1.5 }}>{f.role}</div>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8, padding: '3px 9px', borderRadius: 999, background: 'var(--accent-soft)', border: '1px solid var(--accent-line)', fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--accent)', letterSpacing: '0.04em' }}>
                       {f.company}
@@ -110,7 +110,7 @@ export default function AboutPage() {
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>COMPANIES</div>
-          <h2 style={{ margin: '0 0 12px', fontSize: 26, fontWeight: 500, letterSpacing: '-0.015em' }}>Ziada is a product of two companies working as one</h2>
+          <h2 style={{ margin: '0 0 12px', fontSize: 26, fontWeight: 700, letterSpacing: '-0.015em' }}>Ziada is a product of two companies working as one</h2>
           <p style={{ margin: '0 0 36px', fontSize: 15, color: 'var(--fg-2)', lineHeight: 1.6, maxWidth: 600 }}>
             Engineering and design built under one roof — different disciplines, one product, one mission.
           </p>
@@ -135,7 +135,7 @@ export default function AboutPage() {
                     <span style={{ width: 7, height: 7, borderRadius: 999, background: c.color, display: 'block' }} />
                     <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: c.color, letterSpacing: '0.04em' }}>{c.name}</span>
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 8 }}>{c.tagline}</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>{c.tagline}</div>
                   <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-2)', lineHeight: 1.65 }}>{c.desc}</p>
                 </div>
               </div>
@@ -148,7 +148,7 @@ export default function AboutPage() {
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0', background: 'var(--bg-2)' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 8 }}>VALUES</div>
-          <h2 style={{ margin: '0 0 36px', fontSize: 26, fontWeight: 500, letterSpacing: '-0.015em' }}>What we build around</h2>
+          <h2 style={{ margin: '0 0 36px', fontSize: 26, fontWeight: 700, letterSpacing: '-0.015em' }}>What we build around</h2>
           <div className="mkt-values-grid">
             {[
               { n: '01', title: 'Offline-first', desc: 'Your shop doesn\'t stop when the internet does. Every feature works without a connection — syncing happens in the background when connectivity returns. This isn\'t a fallback mode, it\'s the default.' },
@@ -157,7 +157,7 @@ export default function AboutPage() {
             ].map((v) => (
               <div key={v.n} style={{ border: '1px solid var(--line)', borderRadius: 12, padding: '28px', background: 'var(--bg)' }}>
                 <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 14 }}>{v.n}</div>
-                <h3 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 500 }}>{v.title}</h3>
+                <h3 style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 700 }}>{v.title}</h3>
                 <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-2)', lineHeight: 1.65 }}>{v.desc}</p>
               </div>
             ))}
@@ -169,13 +169,13 @@ export default function AboutPage() {
       <section style={{ borderTop: '1px solid var(--line)', padding: '72px 0' }}>
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
           <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent)', display: 'grid', placeItems: 'center', margin: '0 auto 24px', fontSize: 18, color: '#fff', fontFamily: 'var(--display, var(--sans))' }}>Z</div>
-            <h2 style={{ margin: '0 0 12px', fontSize: 28, fontWeight: 500, letterSpacing: '-0.02em' }}>Based in Dar es Salaam, Tanzania</h2>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent)', display: 'grid', placeItems: 'center', margin: '0 auto 24px', fontSize: 18, color: '#fff', fontFamily: 'var(--sans)' }}>Z</div>
+            <h2 style={{ margin: '0 0 12px', fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>Based in Dar es Salaam, Tanzania</h2>
             <p style={{ margin: '0 0 36px', fontSize: 15, color: 'var(--fg-2)', lineHeight: 1.6 }}>
               We love hearing from merchants, partners and anyone building in the East African retail space.
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-              <a href="mailto:contact@ziadapos.com" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 500, textDecoration: 'none' }}>
+              <a href="mailto:contact@ziadapos.com" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 7, background: 'var(--accent)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
                 contact@ziadapos.com
               </a>
               <a href="https://wa.me/255692069230?text=Hi+Ziada+team%2C" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 7, border: '1px solid var(--line)', color: 'var(--fg)', fontSize: 14, textDecoration: 'none' }}>
