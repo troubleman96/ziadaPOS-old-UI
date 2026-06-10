@@ -178,7 +178,7 @@ function DashboardScreen({ accent }: { accent: string }) {
             ))}
           </div>
           <div style={{marginTop:10,padding:'5px 8px',borderRadius:5,background:`${accent}10`,border:`1px solid ${accent}30`,display:'flex',alignItems:'center',gap:5}}>
-            <span style={{width:14,height:14,borderRadius:4,background:`${accent}22`,color:accent,display:'grid',placeItems:'center',fontSize:9,flexShrink:0}}>✦</span>
+            <img src="/ziada-final.jpeg" alt="Ziada" style={{width:14,height:14,borderRadius:'50%',objectFit:'cover',flexShrink:0,display:'block'}} />
             <span style={{fontSize:9,color:'var(--fg-3)',lineHeight:1.3}}>Sabuni OMO below reorder point</span>
           </div>
         </div>
@@ -391,7 +391,7 @@ function AppShellMockup({ accent, activeScreen, children }: { accent: string; ac
     <div className="dash-main-grid" style={{display:'grid',gridTemplateColumns:'136px 1fr',background:'var(--bg)',color:'var(--fg)'}}>
       <div className="dash-sidebar" style={{borderRight:'1px solid var(--line)',padding:'12px 10px',display:'flex',flexDirection:'column',gap:2}}>
         <div style={{display:'flex',alignItems:'center',gap:7,padding:'0 4px',marginBottom:12}}>
-          <span style={{width:22,height:22,borderRadius:6,background:accent,color:'#fff',display:'grid',placeItems:'center',fontSize:11,fontWeight:700,flexShrink:0}}>Z</span>
+          <img src="/ziada-final.jpeg" alt="Ziada" style={{width:22,height:22,borderRadius:'50%',objectFit:'cover',flexShrink:0,display:'block'}} />
           <div>
             <div style={{fontSize:11.5,fontWeight:600}}>Ziada</div>
             <div style={{fontFamily:'monospace',fontSize:9,color:'var(--fg-4)',marginTop:1}}>Duka Kuu · DSM</div>
@@ -918,7 +918,7 @@ function AISection({ accent }: { accent: string }) {
                   {/* Chat header */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid var(--line)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ width: 24, height: 24, borderRadius: 7, background: `${accent}22`, color: accent, display: 'grid', placeItems: 'center', fontSize: 12 }}>✦</span>
+                      <img src="/ziada-final.jpeg" alt="Ziada" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, display: 'block' }} />
                       <span style={{ fontSize: 13, fontWeight: 600 }}>Ziada AI</span>
                       <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-4)' }}>· Duka Kuu</span>
                     </div>
@@ -936,7 +936,7 @@ function AISection({ accent }: { accent: string }) {
 
                   {/* AI response */}
                   <div style={{ display: 'flex', gap: 10 }}>
-                    <span style={{ width: 24, height: 24, borderRadius: 7, background: `${accent}22`, color: accent, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 12 }}>✦</span>
+                    <img src="/ziada-final.jpeg" alt="Ziada" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, display: 'block' }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.55, marginBottom: 10 }}>{t(lang, 'ai_chat_ai_intro')}</div>
                       <div style={{ border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
