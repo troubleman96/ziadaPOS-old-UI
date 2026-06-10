@@ -1209,8 +1209,8 @@ export default function LandingPage() {
       <FeatureCarousel />
       <AISection accent={accent} />
       <PricingTeaser />
-      <TestimonialsSection />
       <FAQSection />
+      <TestimonialsSection />
       <CTA />
     </>
   );
