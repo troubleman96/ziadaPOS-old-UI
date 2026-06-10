@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     url: 'https://www.ziadapos.com',
     siteName: 'Ziada POS',
     locale: 'en_TZ',
-    images: [{ url: '/ziada-app.PNG', width: 1200, height: 1200, alt: 'Ziada POS — Retail Management Tanzania' }],
+    images: [{ url: '/ziada-final.jpeg', width: 1200, height: 1200, alt: 'Ziada POS — Retail Management Tanzania' }],
   },
 };
 

@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
           {/* Logo */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
             <Link href="/">
-              <img src="/ziada-app.PNG" alt="Ziada" style={{ width: 32, height: 32, borderRadius: 9, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(79,70,229,0.2)' }} />
+              <img src="/ziada-final.jpeg" alt="Ziada" style={{ width: 32, height: 32, borderRadius: 9, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(79,70,229,0.2)' }} />
             </Link>
           </div>
 

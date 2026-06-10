@@ -70,9 +70,9 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: [{ url: '/ziada-app.PNG', sizes: '512x512', type: 'image/png' }],
-    apple: [{ url: '/ziada-app.PNG', sizes: '512x512', type: 'image/png' }],
-    shortcut: '/ziada-app.PNG',
+    icon: [{ url: '/ziada-final.jpeg', sizes: '512x512', type: 'image/jpeg' }],
+    apple: [{ url: '/ziada-final.jpeg', sizes: '512x512', type: 'image/jpeg' }],
+    shortcut: '/ziada-final.jpeg',
   },
 
   manifest: '/manifest.webmanifest',
@@ -91,7 +91,7 @@ export const metadata: Metadata = {
       "Tanzania's #1 POS platform. Sales, inventory, credits, AI assistant. Works offline. Supports M-Pesa, Tigo, Airtel. Trusted by 1,247+ stores.",
     siteName: 'Ziada POS',
     locale: 'en_TZ',
-    images: [{ url: '/ziada-app.PNG', width: 1200, height: 1200, alt: 'Ziada POS — Retail Management System Tanzania' }],
+    images: [{ url: '/ziada-final.jpeg', width: 1200, height: 1200, alt: 'Ziada POS — Retail Management System Tanzania' }],
   },
 
   twitter: {
@@ -101,7 +101,7 @@ export const metadata: Metadata = {
     title: 'Ziada POS — Retail Management System for Tanzania',
     description:
       "Tanzania's #1 POS. Sales, inventory, credits & AI — offline-first. M-Pesa · Tigo · Airtel. 1,247+ stores.",
-    images: ['/ziada-app.PNG'],
+    images: ['/ziada-final.jpeg'],
   },
 };
 
@@ -117,7 +117,7 @@ const jsonLd = {
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/ziada-app.PNG`,
+        url: `${SITE_URL}/ziada-final.jpeg`,
         width: 512,
         height: 512,
       },
@@ -194,8 +194,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js');})}`,
           }}
         />
+        <meta name="google-site-verification" content="ae9jQV2RmOk268SNFMikPYjyBgOgvPbqCgBth0rojK4" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="msapplication-TileImage" content="/ziada-app.PNG" />
+        <meta name="msapplication-TileImage" content="/ziada-final.jpeg" />
         <meta name="msapplication-TileColor" content="#2563eb" />
         <meta name="geo.region" content="TZ" />
         <meta name="geo.placename" content="Dar es Salaam, Tanzania" />

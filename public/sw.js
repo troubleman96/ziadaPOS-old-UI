@@ -3,7 +3,7 @@ const PRECACHE = [
   '/',
   '/dashboard',
   '/pos',
-  '/ziadaposicon.jpeg',
+  '/ziada-final.jpeg',
 ];
 
 self.addEventListener('install', (e) => {
