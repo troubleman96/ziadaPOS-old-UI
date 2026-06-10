@@ -34,7 +34,7 @@ export function MarketingNav() {
         {/* Logo */}
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', color: 'inherit', flexShrink: 0 }}>
           <img src="/ziada-final.jpeg" alt="Ziada" style={{ width: 26, height: 26, borderRadius: 7, objectFit: 'cover', display: 'block' }} />
-          <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--sans)' }}>Ziada</span>
+          <span style={{ fontSize: 15, fontWeight: 900, letterSpacing: '-0.04em', fontFamily: 'var(--sans)' }}>POS</span>
         </Link>
 
         {/* Desktop nav — absolutely centered */}
