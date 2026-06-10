@@ -751,9 +751,9 @@ function FeatureCarousel() {
                 gap: isAI ? 32 : 20,
                 alignItems: 'center',
                 padding: '26px 28px',
-                border: `1px solid ${m.color}33`,
+                border: '1px solid var(--line)',
                 borderRadius: 12,
-                background: m.bg,
+                background: 'var(--bg-2)',
               }}>
                 {/* Text */}
                 <div>
@@ -798,9 +798,9 @@ function FeatureCarousel() {
               gap: 64,
               alignItems: 'center',
               padding: '52px 56px',
-              border: `1px solid ${meta.color}44`,
+              border: '1px solid var(--line)',
               borderRadius: 16,
-              background: meta.bg,
+              background: 'var(--bg-2)',
               minHeight: 360,
             }}
           >
