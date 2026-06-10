@@ -64,10 +64,10 @@ function LeftPanel() {
 
       <div className="auth-left-content">
         {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <img src="/ziada-final.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(255,255,255,0.25), 0 3px 12px rgba(0,0,0,0.4)' }} />
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}>
+          <img src="/ziada-final.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(255,255,255,0.25), 0 3px 12px rgba(0,0,0,0.4)' }} />
           <span style={{ fontSize: 16, fontWeight: 900, letterSpacing: '-0.04em', fontFamily: 'var(--sans)', color: '#fff' }}>POS</span>
-        </div>
+        </Link>
 
         {/* Copy */}
         <div>
@@ -264,7 +264,7 @@ function LoginPageContent() {
 
             {/* Mobile-only logo */}
             <div style={{ display: 'none', marginBottom: 32 }} className="auth-mobile-logo">
-              <img src="/ziada-final.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
+              <Link href="/"><img src="/ziada-final.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} /></Link>
             </div>
             <style>{`.auth-mobile-logo { display: none !important; } @media (max-width: 768px) { .auth-mobile-logo { display: flex !important; } }`}</style>
 

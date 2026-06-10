@@ -215,7 +215,7 @@ export default function ActivatePage() {
 
           {/* Logo */}
           <div style={{ marginBottom: 4 }}>
-            <img src="/ziada-final.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
+            <Link href="/"><img src="/ziada-final.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} /></Link>
           </div>
 
           {/* Heading */}
