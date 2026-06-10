@@ -676,12 +676,10 @@ function TestimonialsSection() {
   return (
     <section style={{ padding: '80px 0', borderTop: '1px solid var(--line)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+        <div style={{ marginBottom: 32, paddingBottom: 16, borderBottom: '1px solid var(--line)', textAlign: 'center' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 10 }}>{t(lang, 'test_label')}</div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'test_h2')}</h2>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', flexShrink: 0 }}>{t(lang, 'test_count')}</span>
-          </div>
+          <h2 style={{ margin: '0 0 6px', fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'test_h2')}</h2>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)' }}>{t(lang, 'test_count')}</span>
         </div>
         <div className="mkt-testimonials-grid">
           {testimonials.map((tst) => (
@@ -731,7 +729,7 @@ function FeatureCarousel() {
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
 
         {/* Header */}
-        <div style={{ marginBottom: 48, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+        <div style={{ marginBottom: 48, paddingBottom: 16, borderBottom: '1px solid var(--line)', textAlign: 'center' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 10 }}>{t(lang, 'feat_label')}</div>
           <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'feat_h2')}</h2>
           <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--fg-3)', fontFamily: 'var(--mono)' }}>{t(lang, 'feat_sub')}</p>
@@ -886,12 +884,10 @@ function AISection({ accent }: { accent: string }) {
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
 
         {/* Header */}
-        <div style={{ marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+        <div style={{ marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)', textAlign: 'center' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 10 }}>{t(lang, 'ai_label')}</div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'ai_h2')}</h2>
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--fg-3)', fontFamily: 'var(--mono)' }}>{t(lang, 'ai_badge')}</p>
-          </div>
+          <h2 style={{ margin: '0 0 8px', fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'ai_h2')}</h2>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--fg-3)', fontFamily: 'var(--mono)' }}>{t(lang, 'ai_badge')}</p>
         </div>
 
         {/* Chat window — centered, full width up to 760px */}
@@ -1027,12 +1023,10 @@ function PricingTeaser() {
   return (
     <section style={{ padding: '88px 0', borderTop: '1px solid var(--line)', background: 'var(--bg-2)' }}>
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)' }}>
+        <div style={{ marginBottom: 40, paddingBottom: 16, borderBottom: '1px solid var(--line)', textAlign: 'center' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)', letterSpacing: '0.1em', marginBottom: 10 }}>{t(lang, 'pricing_label')}</div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-            <h2 style={{ margin: 0, fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'pricing_h2')}</h2>
-            <Link href="/pricing" style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', textDecoration: 'none', flexShrink: 0 }}>{t(lang, 'pricing_see')}</Link>
-          </div>
+          <h2 style={{ margin: '0 0 10px', fontSize: 30, fontWeight: 700, letterSpacing: '-0.03em', lineHeight: 1.08 }}>{t(lang, 'pricing_h2')}</h2>
+          <Link href="/pricing" style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>{t(lang, 'pricing_see')}</Link>
         </div>
 
         <div className="mkt-pricing-grid">
