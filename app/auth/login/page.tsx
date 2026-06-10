@@ -46,59 +46,6 @@ function EyeIcon({ open }: { open: boolean }) {
   );
 }
 
-// ── App dashboard mockup (left panel visual) ───────────────────────────────────
-function DashMockup() {
-  const kpis = [
-    { label: "TODAY'S SALES", v: 'TZS 1.24M', delta: '+18%' },
-    { label: 'TICKETS',       v: '48',        delta: '+9'   },
-    { label: 'PROFIT',        v: 'TZS 272K',  delta: '+12%' },
-    { label: 'CREDIT OUT',    v: 'TZS 184K',  delta: '14'   },
-  ];
-  const txns = [
-    { id: 'TXN-2042', amt: '142,000', via: 'M-Pesa', green: true  },
-    { id: 'TXN-2041', amt: '48,500',  via: 'Cash',   green: false },
-    { id: 'TXN-2040', amt: '217,000', via: 'M-Pesa', green: true  },
-  ];
-  return (
-    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--line-2)', boxShadow: '0 28px 64px rgba(0,0,0,0.22)', background: 'var(--bg)' }}>
-      {/* Window chrome */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', background: 'var(--bg-2)', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ display: 'flex', gap: 5 }}>
-          {['#ff5f57','#febc2e','#28c840'].map(c => <span key={c} style={{ width: 9, height: 9, borderRadius: 999, background: c, opacity: 0.75, display: 'block' }} />)}
-        </div>
-        <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-4)', marginLeft: 8 }}>app.ziadapos.com/dashboard</span>
-        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-4)' }}>
-          <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--good)', display: 'inline-block' }} /> live
-        </span>
-      </div>
-      {/* Content */}
-      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {kpis.map(k => (
-            <div key={k.label} style={{ padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--bg-2)' }}>
-              <div style={{ fontFamily: 'monospace', fontSize: 7.5, color: 'var(--fg-4)', letterSpacing: '0.06em', marginBottom: 4 }}>{k.label}</div>
-              <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: '-0.01em' }}>{k.v}</div>
-              <div style={{ fontFamily: 'monospace', fontSize: 8.5, color: 'var(--good)', marginTop: 3 }}>{k.delta}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.8fr', gap: 8, padding: '6px 12px', fontFamily: 'monospace', fontSize: 8, color: 'var(--fg-4)', letterSpacing: '0.06em', background: 'var(--bg-3)', borderBottom: '1px solid var(--line)' }}>
-            <span>TRANSACTION</span><span>AMOUNT</span><span>VIA</span>
-          </div>
-          {txns.map((t, i) => (
-            <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.8fr', gap: 8, padding: '8px 12px', fontSize: 11, alignItems: 'center', borderBottom: i < txns.length - 1 ? '1px solid var(--line)' : 0 }}>
-              <span style={{ fontFamily: 'monospace', fontSize: 9.5, color: 'var(--accent)' }}>{t.id}</span>
-              <span style={{ fontFamily: 'monospace', fontSize: 10, fontWeight: 500 }}>TZS {t.amt}</span>
-              <span style={{ fontFamily: 'monospace', fontSize: 8.5, padding: '2px 6px', borderRadius: 999, background: t.green ? 'rgba(16,185,129,0.1)' : 'var(--bg-3)', color: t.green ? '#10b981' : 'var(--fg-3)' }}>{t.via}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Left panel ─────────────────────────────────────────────────────────────────
 function LeftPanel() {
   return (
@@ -106,50 +53,62 @@ function LeftPanel() {
       <style>{`
         .auth-left {
           display: flex; flex-direction: column;
-          align-items: center; justify-content: space-between;
-          text-align: center;
-          padding: 44px 48px; background: var(--bg-2);
-          border-right: 1px solid var(--line);
+          align-items: flex-start; justify-content: space-between;
           min-height: 100vh; position: relative; overflow: hidden;
         }
-        .auth-left::before {
-          content: '';
-          position: absolute; inset: 0; pointer-events: none;
-          background-image:
-            linear-gradient(to right, var(--line) 1px, transparent 1px),
-            linear-gradient(to bottom, var(--line) 1px, transparent 1px);
-          background-size: 48px 48px;
-          mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 20%, transparent 75%);
+        .auth-left-img {
+          position: absolute; inset: 0;
+          width: 100%; height: 100%;
+          object-fit: cover; object-position: center top;
+        }
+        .auth-left-overlay {
+          position: absolute; inset: 0;
+          background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.52) 0%,
+            rgba(0,0,0,0.18) 40%,
+            rgba(0,0,0,0.36) 80%,
+            rgba(0,0,0,0.72) 100%
+          );
+        }
+        .auth-left-content {
+          position: relative; z-index: 1;
+          display: flex; flex-direction: column;
+          align-items: flex-start; justify-content: space-between;
+          width: 100%; height: 100%; min-height: 100vh;
+          padding: 36px 44px; box-sizing: border-box;
         }
         @media (max-width: 768px) { .auth-left { display: none; } }
       `}</style>
 
-      {/* Logo */}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
-        <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--sans)' }}>Ziada</span>
-      </div>
+      <img src="/ziadapos-login.jpeg" alt="" className="auth-left-img" />
+      <div className="auth-left-overlay" />
 
-      {/* Mockup + copy */}
-      <div style={{ position: 'relative', width: '100%', maxWidth: 380 }}>
-        <div style={{ marginBottom: 28 }}>
-          <DashMockup />
+      <div className="auth-left-content">
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(255,255,255,0.25), 0 3px 12px rgba(0,0,0,0.4)' }} />
+          <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--sans)', color: '#fff' }}>Ziada</span>
         </div>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 10px 4px 8px', border: '1px solid var(--line-2)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', marginBottom: 16 }}>
-          <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--accent)', boxShadow: '0 0 0 3px var(--accent-soft)', display: 'inline-block' }} />
-          Trusted by 1,247+ stores in Tanzania
-        </div>
-        <h2 style={{ margin: '0 0 10px', fontSize: 'clamp(22px, 2.4vw, 30px)', fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.15 }}>
-          The operating system<br />for your shop.
-        </h2>
-        <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-3)', lineHeight: 1.65 }}>
-          POS, inventory, credits, analytics and AI —<br />one calm platform built for Tanzania.
-        </p>
-      </div>
 
-      {/* Footer */}
-      <div style={{ position: 'relative', fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>
-        DAR ES SALAAM · ARUSHA · MWANZA · DODOMA
+        {/* Copy */}
+        <div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 10px 4px 8px', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 999, fontFamily: 'var(--mono)', fontSize: 11, color: 'rgba(255,255,255,0.7)', marginBottom: 16, backdropFilter: 'blur(6px)', background: 'rgba(255,255,255,0.08)' }}>
+            <span style={{ width: 6, height: 6, borderRadius: 999, background: '#34d399', boxShadow: '0 0 0 3px rgba(52,211,153,0.25)', display: 'inline-block' }} />
+            Trusted by 1,247+ stores in Tanzania
+          </div>
+          <h2 style={{ margin: '0 0 12px', fontSize: 'clamp(24px, 2.6vw, 34px)', fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#fff' }}>
+            The operating system<br />for your shop.
+          </h2>
+          <p style={{ margin: 0, fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.65 }}>
+            POS, inventory, credits, analytics and AI —<br />one calm platform built for Tanzania.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em' }}>
+          DAR ES SALAAM · ARUSHA · MWANZA · DODOMA
+        </div>
       </div>
     </div>
   );

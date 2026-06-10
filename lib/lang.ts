@@ -106,6 +106,22 @@ const dict = {
   ai_prop4_t:      { sw: 'Faragha',             en: 'Private'           },
   ai_prop4_d:      { sw: 'Data yako haifunzi mfano wowote wa AI.',      en: 'Your data never trains a foundation model.'   },
 
+  // AI chat mockup content
+  ai_chat_user_q:      { sw: 'Bidhaa 3 zinazouzwa zaidi wiki hii, na zipi zinaisha?',
+                          en: 'What were my top 3 fast movers this week, and which are running low?' },
+  ai_chat_ai_intro:    { sw: 'Bidhaa zinazouzwa zaidi wiki hii:',       en: 'This week your top movers were:'                              },
+  ai_chat_sold:        { sw: 'uuzwa',                                    en: 'sold'                                                         },
+  ai_chat_left:        { sw: 'zimebaki',                                 en: 'left'                                                         },
+  ai_chat_low:         { sw: 'CHINI',                                    en: 'LOW'                                                          },
+  ai_chat_ok:          { sw: 'SAWA',                                     en: 'OK'                                                           },
+  ai_chat_critical:    { sw: 'HATARI',                                   en: 'CRITICAL'                                                     },
+  ai_chat_reorder:     { sw: 'Sabuni ya OMO iko chini ya kiwango cha kuagiza — niandike agizo la kujaza?',
+                          en: 'Sabuni ya OMO is below reorder point — want me to draft a restock order?'  },
+  ai_chat_chip1:       { sw: 'Andika agizo',          en: 'Draft restock'        },
+  ai_chat_chip2:       { sw: 'Onyesha wasambazaji',   en: 'Show suppliers'       },
+  ai_chat_chip3:       { sw: 'Tathmini wiki ijayo',   en: 'Project next week'    },
+  ai_chat_input:       { sw: 'Uliza kuhusu duka lako…', en: 'Ask about your store…' },
+
   // ── Testimonials ─────────────────────────────────────────────────────────────
   test_label:      { sw: 'WAFANYABIASHARA',                    en: 'MERCHANTS'                  },
   test_h2:         { sw: 'Wanachosema wamiliki wa maduka.',    en: 'What store owners say.'     },

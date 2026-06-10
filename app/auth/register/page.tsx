@@ -200,51 +200,6 @@ function StepDots({ step, total }: { step: number; total: number }) {
   );
 }
 
-// ── POS mockup (register left panel visual) ────────────────────────────────────
-function POSMockup() {
-  const accent = '#6366f1';
-  const items: [string, number, number][] = [
-    ['Unga wa Sembe 10kg', 2, 28000],
-    ['Mafuta ya Cooking 5L', 1, 34000],
-    ['Sabuni OMO 1kg', 3, 6200],
-  ];
-  const total = items.reduce((s, [,q,p]) => s + q * p, 0);
-  const fmt = (n: number) => 'TZS ' + n.toLocaleString('en-US');
-  return (
-    <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid var(--line-2)', boxShadow: '0 28px 64px rgba(0,0,0,0.22)', background: 'var(--bg)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', background: 'var(--bg-2)', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ display: 'flex', gap: 5 }}>
-          {['#ff5f57','#febc2e','#28c840'].map(c => <span key={c} style={{ width: 9, height: 9, borderRadius: 999, background: c, opacity: 0.75, display: 'block' }} />)}
-        </div>
-        <span style={{ fontFamily: 'monospace', fontSize: 10, color: 'var(--fg-4)', marginLeft: 8 }}>app.ziadapos.com/pos</span>
-      </div>
-      <div style={{ padding: '14px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-          <span style={{ fontSize: 12, fontWeight: 500 }}>Current sale</span>
-          <span style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--fg-4)' }}>SALE #TXN-2043</span>
-        </div>
-        {items.map(([n, q, p]) => (
-          <div key={n} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 10, fontSize: 11, padding: '5px 0', borderBottom: '1px solid var(--line)' }}>
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n}</span>
-            <span style={{ fontFamily: 'monospace', color: 'var(--fg-3)', fontSize: 10 }}>×{q}</span>
-            <span style={{ fontFamily: 'monospace', fontSize: 10 }}>{fmt(q * p)}</span>
-          </div>
-        ))}
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0 10px', borderTop: '1px solid var(--line-2)', marginTop: 4 }}>
-          <span style={{ fontSize: 11.5, fontWeight: 500 }}>Net total</span>
-          <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: accent }}>{fmt(total)}</span>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 5, marginBottom: 10 }}>
-          {['Cash','M-Pesa','Bank','Credit'].map((m, i) => (
-            <div key={m} style={{ padding: '5px 4px', borderRadius: 5, fontSize: 9.5, textAlign: 'center', border: `1px solid ${i === 1 ? accent : 'var(--line)'}`, background: i === 1 ? `${accent}20` : 'transparent', color: i === 1 ? accent : 'var(--fg-3)' }}>{m}</div>
-          ))}
-        </div>
-        <div style={{ padding: '8px', borderRadius: 6, background: accent, color: '#fff', textAlign: 'center', fontSize: 11, fontWeight: 500 }}>Complete sale →</div>
-      </div>
-    </div>
-  );
-}
-
 // ── Left panel ─────────────────────────────────────────────────────────────────
 function LeftPanel() {
   return (
@@ -252,50 +207,61 @@ function LeftPanel() {
       <style>{`
         .auth-left-reg {
           display: flex; flex-direction: column;
-          align-items: center; justify-content: space-between;
-          text-align: center;
-          padding: 44px 48px; background: var(--bg-2);
-          border-right: 1px solid var(--line); min-height: 100vh;
-          position: relative; overflow: hidden;
+          align-items: flex-start; justify-content: space-between;
+          min-height: 100vh; position: relative; overflow: hidden;
         }
-        .auth-left-reg::before {
-          content: '';
-          position: absolute; inset: 0; pointer-events: none;
-          background-image:
-            linear-gradient(to right, var(--line) 1px, transparent 1px),
-            linear-gradient(to bottom, var(--line) 1px, transparent 1px);
-          background-size: 48px 48px;
-          mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 20%, transparent 75%);
+        .auth-left-reg-img {
+          position: absolute; inset: 0;
+          width: 100%; height: 100%;
+          object-fit: cover; object-position: center top;
+        }
+        .auth-left-reg-overlay {
+          position: absolute; inset: 0;
+          background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.52) 0%,
+            rgba(0,0,0,0.18) 40%,
+            rgba(0,0,0,0.36) 80%,
+            rgba(0,0,0,0.72) 100%
+          );
+        }
+        .auth-left-reg-content {
+          position: relative; z-index: 1;
+          display: flex; flex-direction: column;
+          align-items: flex-start; justify-content: space-between;
+          width: 100%; height: 100%; min-height: 100vh;
+          padding: 36px 44px; box-sizing: border-box;
         }
         @media (max-width: 900px) { .auth-left-reg { display: none; } }
       `}</style>
 
-      {/* Logo */}
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 8 }}>
-        <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 28, height: 28, borderRadius: 7, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(33,14,230,0.18), 0 3px 10px rgba(33,14,230,0.18)' }} />
-        <span style={{ fontSize: 15, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--sans)' }}>Ziada</span>
-      </div>
+      <img src="/reeeg.jpeg" alt="" className="auth-left-reg-img" />
+      <div className="auth-left-reg-overlay" />
 
-      {/* Mockup + copy */}
-      <div style={{ position: 'relative', width: '100%', maxWidth: 360 }}>
-        <div style={{ marginBottom: 24 }}>
-          <POSMockup />
+      <div className="auth-left-reg-content">
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <img src="/ziadaposicon.jpeg" alt="Ziada" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover', boxShadow: '0 0 0 1.5px rgba(255,255,255,0.25), 0 3px 12px rgba(0,0,0,0.4)' }} />
+          <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em', fontFamily: 'var(--sans)', color: '#fff' }}>Ziada</span>
         </div>
-        {/* Trial pill */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, border: '1px solid var(--accent-line)', background: 'var(--accent-soft)', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--accent)', marginBottom: 16 }}>
-          7 days free · TZS 10,000 activation
-        </div>
-        <h2 style={{ margin: '0 0 10px', fontSize: 'clamp(22px, 2.4vw, 30px)', fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1.15 }}>
-          Everything your<br />shop needs.
-        </h2>
-        <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-3)', lineHeight: 1.65 }}>
-          Account live in under 2 minutes.<br />All 5 modules on every plan.
-        </p>
-      </div>
 
-      {/* Footer */}
-      <div style={{ position: 'relative', fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>
-        DAR ES SALAAM · ARUSHA · MWANZA · DODOMA
+        {/* Copy */}
+        <div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.08)', fontFamily: 'var(--mono)', fontSize: 11, color: 'rgba(255,255,255,0.7)', marginBottom: 16, backdropFilter: 'blur(6px)' }}>
+            7 days free · TZS 10,000 activation
+          </div>
+          <h2 style={{ margin: '0 0 12px', fontSize: 'clamp(24px, 2.6vw, 34px)', fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.1, color: '#fff' }}>
+            Everything your<br />shop needs.
+          </h2>
+          <p style={{ margin: 0, fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.65 }}>
+            Account live in under 2 minutes.<br />All 5 modules on every plan.
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em' }}>
+          DAR ES SALAAM · ARUSHA · MWANZA · DODOMA
+        </div>
       </div>
     </div>
   );
