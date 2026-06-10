@@ -664,35 +664,6 @@ function Hero({ accent }: { accent: string }) {
   );
 }
 
-// ── Stats strip ────────────────────────────────────────────────────────────────
-function StatsStrip() {
-  const { lang } = useLang();
-  const stats = [
-    { labelKey: 'stat_stores' as const, v: '1,247'  },
-    { labelKey: 'stat_txns'   as const, v: '89,412' },
-    { labelKey: 'stat_tzs'    as const, v: '4.21B'  },
-    { labelKey: 'stat_ai'     as const, v: '12,094' },
-    { labelKey: 'stat_uptime' as const, v: '99.98%' },
-  ];
-  const ticker = [...stats, ...stats, ...stats];
-
-  return (
-    <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--bg-2)', overflow: 'hidden', position: 'relative' }}>
-      {/* Fade edges */}
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 80, background: 'linear-gradient(to right, var(--bg-2), transparent)', zIndex: 1, pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 80, background: 'linear-gradient(to left, var(--bg-2), transparent)', zIndex: 1, pointerEvents: 'none' }} />
-      <div style={{ display: 'flex', width: 'max-content', animation: 'mkt-ticker 32s linear infinite' }}>
-        {ticker.map((s, i) => (
-          <div key={i} style={{ padding: '22px 36px', borderRight: '1px solid var(--line)', flexShrink: 0, textAlign: 'center', minWidth: 160 }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 6, whiteSpace: 'nowrap' }}>{t(lang, s.labelKey)}</div>
-            <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', whiteSpace: 'nowrap' }}>{s.v}</div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 // ── Testimonials ───────────────────────────────────────────────────────────────
 function TestimonialsSection() {
   const { lang } = useLang();
@@ -1197,12 +1168,6 @@ export default function LandingPage() {
   return (
     <>
       <style>{`
-        /* ── Stats ticker ── */
-        @keyframes mkt-ticker {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-
         /* ── Dashboard mockup responsive ── */
         @media (max-width: 900px) {
           .dash-sidebar { display: none !important; }
@@ -1248,7 +1213,6 @@ export default function LandingPage() {
 
       <Hero accent={accent} />
       <FeatureCarousel />
-      <StatsStrip />
       <AISection accent={accent} />
       <PricingTeaser />
       <TestimonialsSection />
