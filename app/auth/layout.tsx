@@ -8,7 +8,12 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Ziada — Sign in',
+  title: {
+    default: 'Sign in — Ziada POS',
+    template: '%s | Ziada POS',
+  },
+  description: 'Sign in to your Ziada POS account. Manage your duka from anywhere — sales, inventory, credits and AI insights.',
+  robots: { index: true, follow: false },
 };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {

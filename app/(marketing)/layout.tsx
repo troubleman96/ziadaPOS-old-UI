@@ -5,11 +5,21 @@ import { LangProvider } from '@/components/LangContext';
 
 export const metadata: Metadata = {
   title: {
-    template: '%s · Ziada',
-    default: 'Ziada — The operating system for your shop',
+    default: 'Ziada POS — Point of Sale & Retail Management System for Tanzania',
+    template: '%s | Ziada POS Tanzania',
   },
   description:
-    'POS, inventory, credit, analytics and an AI that knows your store. Works offline. Built in Tanzania for East African retail.',
+    "Tanzania's leading POS and retail management platform. Manage sales, inventory, customer credit and get AI insights — offline-first. Supports M-Pesa, Tigo Pesa, Airtel Money. Built in Dar es Salaam for East African dukas and retail chains.",
+  alternates: {
+    canonical: 'https://www.ziadapos.com',
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://www.ziadapos.com',
+    siteName: 'Ziada POS',
+    locale: 'en_TZ',
+    images: [{ url: '/ziada-app.PNG', width: 1200, height: 1200, alt: 'Ziada POS — Retail Management Tanzania' }],
+  },
 };
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
