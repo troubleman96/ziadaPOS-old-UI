@@ -258,6 +258,113 @@ function getFeatures(lang: Lang) {
   ];
 }
 
+function FeatureIllustration({ id, color, bg }: { id: string; color: string; bg: string }) {
+  if (id === 'pos') return (
+    <div style={{ borderRadius: 10, border: `1px solid ${color}22`, background: bg, padding: '12px 14px', fontFamily: 'var(--mono)', width: '100%' }}>
+      <div style={{ fontSize: 8, color: 'var(--fg-4)', letterSpacing: '0.05em', marginBottom: 10 }}>RECEIPT · TXN-2047</div>
+      {[['Unga wa Sembe 2kg','×2','3,400'],['Mafuta Cooking 1L','×1','5,200'],['Sabuni OMO 1kg','×3','2,700']].map(([n,q,a]) => (
+        <div key={n} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+          <div>
+            <div style={{ fontSize: 9, color: 'var(--fg)', lineHeight: 1.3 }}>{n}</div>
+            <div style={{ fontSize: 8, color: 'var(--fg-4)' }}>{q}</div>
+          </div>
+          <div style={{ fontSize: 9.5, fontWeight: 600, color: 'var(--fg-2)' }}>{a}</div>
+        </div>
+      ))}
+      <div style={{ borderTop: `1px solid ${color}33`, marginTop: 4, paddingTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 8.5, color: 'var(--fg-4)' }}>JUMLA</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color }}>11,300</span>
+      </div>
+      <div style={{ marginTop: 8, borderRadius: 6, background: color, color: '#fff', fontSize: 9, fontWeight: 600, textAlign: 'center', padding: '6px 0', letterSpacing: '0.02em' }}>M-Pesa · Lipa ✓</div>
+    </div>
+  );
+
+  if (id === 'inventory') return (
+    <div style={{ width: '100%' }}>
+      <div style={{ fontSize: 8, fontFamily: 'var(--mono)', color: 'var(--fg-4)', letterSpacing: '0.05em', marginBottom: 10 }}>STOCK LEVELS</div>
+      {[['Unga wa Sembe',85,false],['Mafuta Cooking',34,false],['Sabuni OMO',11,true],['Sukari 1kg',72,false]].map(([n,pct,warn]) => (
+        <div key={n as string} style={{ marginBottom: 9 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+            <span style={{ fontSize: 9, color: warn ? color : 'var(--fg-2)', fontFamily: 'var(--mono)' }}>{n as string}</span>
+            {warn && <span style={{ fontSize: 7, color, border: `1px solid ${color}55`, borderRadius: 3, padding: '0 4px', fontFamily: 'var(--mono)' }}>LOW</span>}
+          </div>
+          <div style={{ height: 4, borderRadius: 999, background: 'var(--bg-3)', overflow: 'hidden' }}>
+            <div style={{ height: '100%', borderRadius: 999, background: warn ? color : `${color}88`, width: `${pct}%`, transition: 'width 0.4s' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
+  if (id === 'analytics') {
+    const bars = [28,42,60,78,95,82,70,55,88,64,74,90];
+    const max = Math.max(...bars);
+    return (
+      <div style={{ width: '100%' }}>
+        <div style={{ fontSize: 8, fontFamily: 'var(--mono)', color: 'var(--fg-4)', letterSpacing: '0.05em', marginBottom: 8 }}>MAPATO KWA SAA</div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 56 }}>
+          {bars.map((v,i) => (
+            <div key={i} style={{ flex: 1, borderRadius: '2px 2px 0 0', background: i === 9 ? color : `${color}50`, height: `${(v/max)*100}%`, transition: 'height 0.3s' }} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, marginBottom: 10 }}>
+          {['6am','9','12','3pm','6','9'].map(l => <span key={l} style={{ fontFamily: 'var(--mono)', fontSize: 7.5, color: 'var(--fg-4)' }}>{l}</span>)}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[['LEO','4.21M'],['FAIDA','1.12M']].map(([lbl,val]) => (
+            <div key={lbl} style={{ flex: 1, borderRadius: 6, border: `1px solid ${color}33`, background: bg, padding: '5px 7px', textAlign: 'center' }}>
+              <div style={{ fontSize: 7.5, color: 'var(--fg-4)', fontFamily: 'var(--mono)', marginBottom: 2 }}>{lbl}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: '-0.02em' }}>{val}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (id === 'credits') return (
+    <div style={{ width: '100%' }}>
+      <div style={{ fontSize: 8, fontFamily: 'var(--mono)', color: 'var(--fg-4)', letterSpacing: '0.05em', marginBottom: 8 }}>MIKOPO · HAI</div>
+      {[['Fatuma A.','45,000',12,false],['Juma M.','128,000',42,true],['Aisha K.','18,500',5,false]].map(([n,a,d,bad]) => (
+        <div key={n as string} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
+          <div>
+            <div style={{ fontSize: 9.5, color: 'var(--fg)', fontWeight: bad ? 600 : 400 }}>{n as string}</div>
+            <div style={{ fontSize: 8, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>siku {d as number}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, fontFamily: 'var(--mono)', color: bad ? color : 'var(--fg-2)' }}>{a as string}</div>
+            {bad && <div style={{ fontSize: 7, color, fontFamily: 'var(--mono)', border: `1px solid ${color}55`, borderRadius: 3, padding: '0 4px', display: 'inline-block', marginTop: 2 }}>LATE</div>}
+          </div>
+        </div>
+      ))}
+      <div style={{ marginTop: 7, padding: '5px 8px', borderRadius: 6, background: bg, border: `1px solid ${color}33`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 8, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>JUMLA DENI</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color, fontFamily: 'var(--mono)' }}>191,500</span>
+      </div>
+    </div>
+  );
+
+  if (id === 'ai') return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div style={{ alignSelf: 'flex-end', maxWidth: '85%', padding: '7px 10px', borderRadius: '10px 10px 2px 10px', background: 'var(--bg-3)', border: '1px solid var(--line)' }}>
+        <p style={{ margin: 0, fontSize: 9.5, color: 'var(--fg-2)', lineHeight: 1.4 }}>Top products this week?</p>
+      </div>
+      <div style={{ alignSelf: 'flex-start', maxWidth: '90%', padding: '8px 10px', borderRadius: '10px 10px 10px 2px', background: bg, border: `1px solid ${color}33` }}>
+        <p style={{ margin: 0, fontSize: 9.5, color: 'var(--fg)', lineHeight: 1.5 }}>Unga wa Sembe led with <strong style={{ color }}>TZS 1.42M</strong> — up 18% vs last week.</p>
+      </div>
+      <div style={{ alignSelf: 'flex-end', maxWidth: '75%', padding: '7px 10px', borderRadius: '10px 10px 2px 10px', background: 'var(--bg-3)', border: '1px solid var(--line)' }}>
+        <p style={{ margin: 0, fontSize: 9.5, color: 'var(--fg-2)', lineHeight: 1.4 }}>Draft a restock order</p>
+      </div>
+      <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 5 }}>
+        <span style={{ width: 6, height: 6, borderRadius: 999, background: color, display: 'inline-block', boxShadow: `0 0 0 3px ${color}33` }} />
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 8.5, color }}>drafting order...</span>
+      </div>
+    </div>
+  );
+
+  return null;
+}
+
 function FeatureCard({ f, wide }: { f: ReturnType<typeof getFeatures>[0]; wide?: boolean }) {
   const meta = MODULE_META[f.id] ?? MODULE_META.pos;
   const [hovered, setHovered] = React.useState(false);
@@ -268,34 +375,44 @@ function FeatureCard({ f, wide }: { f: ReturnType<typeof getFeatures>[0]; wide?:
       style={{
         border: `1px solid ${hovered ? meta.color + '88' : meta.color + '33'}`,
         borderRadius: 12,
-        padding: 22,
+        padding: 24,
         background: hovered ? meta.bg : 'var(--bg)',
         gridColumn: wide ? 'span 2' : undefined,
         transition: 'border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease',
         boxShadow: hovered ? `0 4px 24px ${meta.color}18` : 'none',
         cursor: 'default',
+        display: 'flex',
+        gap: 24,
+        alignItems: 'center',
       }}>
-      <div style={{ marginBottom: 14 }}>
-        <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
-          padding: '3px 10px', borderRadius: 999,
-          border: `1px solid ${meta.color}44`,
-          background: meta.bg,
-          fontFamily: 'var(--mono)', fontSize: 10.5,
-          color: meta.color, letterSpacing: '0.04em',
-        }}>
-          {f.n} · {f.id.toUpperCase()}
-        </span>
+      {/* Left: text */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ marginBottom: 14 }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '3px 10px', borderRadius: 999,
+            border: `1px solid ${meta.color}44`,
+            background: meta.bg,
+            fontFamily: 'var(--mono)', fontSize: 10.5,
+            color: meta.color, letterSpacing: '0.04em',
+          }}>
+            {f.n} · {f.id.toUpperCase()}
+          </span>
+        </div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg)', marginBottom: 8 }}>{f.title}</div>
+        <div style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.55, marginBottom: 14 }}>{f.tagline}</div>
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+          {f.bullets.map((b) => (
+            <li key={b} style={{ fontSize: 12, color: 'var(--fg-2)', padding: '3px 0', display: 'flex', gap: 4 }}>
+              <span style={{ color: meta.color, fontWeight: 600, flexShrink: 0 }}>›</span>{b}
+            </li>
+          ))}
+        </ul>
       </div>
-      <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--fg)', marginBottom: 8 }}>{f.title}</div>
-      <div style={{ fontSize: 13, color: 'var(--fg-2)', lineHeight: 1.55, marginBottom: 14 }}>{f.tagline}</div>
-      <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-        {f.bullets.map((b) => (
-          <li key={b} style={{ fontSize: 12, color: 'var(--fg-2)', padding: '3px 0', display: 'flex', gap: 4 }}>
-            <span style={{ color: meta.color, fontWeight: 600, flexShrink: 0 }}>›</span>{b}
-          </li>
-        ))}
-      </ul>
+      {/* Right: illustration */}
+      <div className="feat-illus" style={{ width: wide ? 220 : 170, flexShrink: 0 }}>
+        <FeatureIllustration id={f.id} color={meta.color} bg={meta.bg} />
+      </div>
     </article>
   );
 }
@@ -782,6 +899,7 @@ export default function LandingPage() {
           .z-modules { grid-template-columns: 1fr !important; }
           .z-modules article[style*="span 2"] { grid-column: span 1 !important; }
           .z-modules article ul { grid-template-columns: 1fr !important; }
+          .feat-illus { display: none !important; }
         }
         @media (max-width: 480px) {
           .ai-props { grid-template-columns: 1fr !important; }
