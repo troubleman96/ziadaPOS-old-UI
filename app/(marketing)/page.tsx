@@ -309,7 +309,7 @@ function Hero({ accent }: { accent: string }) {
       <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 900, height: 560, background: `radial-gradient(ellipse 70% 60% at 50% 0%, ${accent}22 0%, transparent 70%)`, pointerEvents: 'none' }} />
 
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', position: 'relative' }}>
-        <div style={{ maxWidth: 780, margin: '0 auto', textAlign: 'center' }}>
+        <div style={{ maxWidth: 2800, margin: '0 auto', textAlign: 'center' }}>
 
           {/* Badge */}
           <span style={{
@@ -721,7 +721,8 @@ function CTA() {
       <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', textAlign: 'center' }}>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-3)', letterSpacing: '0.08em' }}>{t(lang, 'cta_label')}</div>
         <h2 style={{ margin: '16px 0 18px', fontSize: 'clamp(36px, 4.5vw, 56px)', fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 1.02, fontFamily: 'var(--sans)' }}>
-          {t(lang, 'cta_h2')}
+          {t(lang, 'cta_h2a')}<br />
+          <span style={{ color: 'var(--accent)' }}>{t(lang, 'cta_h2b')}</span>
         </h2>
         <p style={{ margin: '0 auto', maxWidth: 520, fontSize: 16, color: 'var(--fg-2)' }}>
           {t(lang, 'cta_sub')}

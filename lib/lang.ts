@@ -169,6 +169,8 @@ const dict = {
   // ── CTA ──────────────────────────────────────────────────────────────────────
   cta_label:       { sw: '05 · PATA ZIADA',                              en: '05 · GET ZIADA'                         },
   cta_h2:          { sw: 'Endesha duka lako kwa programu tulivu.',       en: 'Run your shop on calm software.'        },
+  cta_h2a:         { sw: 'Endesha duka lako kwa',                        en: 'Run your shop on'                       },
+  cta_h2b:         { sw: 'programu tulivu.',                             en: 'calm software.'                         },
   cta_sub:         { sw: 'Siku saba, kipengele chochote, bila kadi. Maduka mengi yanaanza Ziada ndani ya saa moja.',
                      en: 'Seven days, every feature, no card. Most shops are live on Ziada in under an hour.'        },
   cta_trial:       { sw: 'Anza majaribio',       en: 'Start trial'       },
