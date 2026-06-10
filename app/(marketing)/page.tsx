@@ -376,30 +376,20 @@ function StatsStrip() {
     { labelKey: 'stat_ai'     as const, v: '12,094' },
     { labelKey: 'stat_uptime' as const, v: '99.98%' },
   ];
-  const ticker = [...stats, ...stats];
+  const ticker = [...stats, ...stats, ...stats];
 
   return (
-    <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--bg-2)', overflow: 'hidden' }}>
-      {/* Desktop: 5-col grid */}
-      <div className="stats-desktop" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)' }}>
-        {stats.map((s, i) => (
-          <div key={s.labelKey} style={{ padding: '28px 20px', borderLeft: i === 0 ? 0 : '1px solid var(--line)', textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 8 }}>{t(lang, s.labelKey)}</div>
-            <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-0.03em' }}>{s.v}</div>
+    <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--bg-2)', overflow: 'hidden', position: 'relative' }}>
+      {/* Fade edges */}
+      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 80, background: 'linear-gradient(to right, var(--bg-2), transparent)', zIndex: 1, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 80, background: 'linear-gradient(to left, var(--bg-2), transparent)', zIndex: 1, pointerEvents: 'none' }} />
+      <div style={{ display: 'flex', width: 'max-content', animation: 'mkt-ticker 32s linear infinite' }}>
+        {ticker.map((s, i) => (
+          <div key={i} style={{ padding: '22px 36px', borderRight: '1px solid var(--line)', flexShrink: 0, textAlign: 'center', minWidth: 160 }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 6, whiteSpace: 'nowrap' }}>{t(lang, s.labelKey)}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', whiteSpace: 'nowrap' }}>{s.v}</div>
           </div>
         ))}
-      </div>
-
-      {/* Mobile: horizontal ticker */}
-      <div className="stats-ticker" style={{ display: 'none' }}>
-        <div style={{ display: 'flex', width: 'max-content', animation: 'mkt-ticker 22s linear infinite' }}>
-          {ticker.map((s, i) => (
-            <div key={i} style={{ padding: '18px 28px', borderRight: '1px solid var(--line)', flexShrink: 0, textAlign: 'center' }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 5 }}>{t(lang, s.labelKey)}</div>
-              <div style={{ fontSize: 21, fontWeight: 700, letterSpacing: '-0.02em' }}>{s.v}</div>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -782,8 +772,6 @@ export default function LandingPage() {
 
         /* ── Section grids ── */
         @media (max-width: 768px) {
-          .stats-desktop { display: none !important; }
-          .stats-ticker  { display: block !important; }
           .ai-grid { grid-template-columns: 1fr !important; }
           .ai-props { grid-template-columns: 1fr 1fr !important; }
         }
@@ -801,8 +789,8 @@ export default function LandingPage() {
       `}</style>
 
       <Hero accent={accent} />
-      <StatsStrip />
       <FeatureGrid />
+      <StatsStrip />
       <AISection accent={accent} />
       <PricingTeaser />
       <TestimonialsSection />
