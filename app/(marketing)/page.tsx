@@ -804,8 +804,8 @@ export default function LandingPage() {
       <StatsStrip />
       <FeatureGrid />
       <AISection accent={accent} />
-      <TestimonialsSection />
       <PricingTeaser />
+      <TestimonialsSection />
       <FAQSection />
       <CTA />
     </>
