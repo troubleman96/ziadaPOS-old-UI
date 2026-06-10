@@ -2,9 +2,12 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
+
+const AI_ENABLED = false;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Message {
@@ -299,6 +302,26 @@ Ninajua duka lako vizuri: mapato ya leo, hali ya stoo, madeni ya wateja, na zaid
     }]);
   };
 
+  if (!AI_ENABLED) {
+    return (
+      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Ziada AI' }]}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 420, gap: 20, filter: 'grayscale(1)', opacity: 0.55, userSelect: 'none', pointerEvents: 'none' }}>
+          <div style={{ width: 72, height: 72, borderRadius: 20, overflow: 'hidden', flexShrink: 0 }}>
+            <Image src="/ziada-final.jpeg" alt="Ziada AI" width={72} height={72} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 20, fontWeight: 500, marginBottom: 8 }}>Ziada AI</div>
+            <div style={{ fontSize: 13.5, color: 'var(--fg-3)', marginBottom: 6 }}>This feature is not yet configured.</div>
+            <div style={{ fontSize: 12, color: 'var(--fg-4)' }}>Kipengele hiki bado hakijawezeshwa.</div>
+          </div>
+          <div style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--line-2)', fontSize: 12, color: 'var(--fg-4)' }}>
+            Coming soon
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell
       full
@@ -381,8 +404,8 @@ Ninajua duka lako vizuri: mapato ya leo, hali ya stoo, madeni ya wateja, na zaid
             {messages.length <= 1 && (
               <div style={{ marginBottom: 28 }}>
                 <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--accent)', display: 'grid', placeItems: 'center', margin: '0 auto 12px', fontSize: 24 }}>
-                    ✦
+                  <div style={{ width: 56, height: 56, borderRadius: 16, overflow: 'hidden', margin: '0 auto 12px', flexShrink: 0 }}>
+                    <Image src="/ziada-final.jpeg" alt="Ziada AI" width={56} height={56} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.01em' }}>Ziada AI</div>
                   <div style={{ fontSize: 13, color: 'var(--fg-3)', marginTop: 4 }}>Msaidizi wako wa biashara • Your business assistant</div>

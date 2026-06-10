@@ -57,38 +57,36 @@ function ThreeDotMenu() {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  const menuRow = (
-    icon: React.ReactNode,
-    label: React.ReactNode,
-    onClick?: () => void,
-    danger?: boolean,
-    right?: React.ReactNode,
-  ) => (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        width: '100%', padding: '8px 14px', border: 'none',
-        background: 'transparent', color: danger ? 'var(--bad)' : 'var(--fg)',
-        cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', fontSize: 13,
-      }}
-    >
-      <span style={{ color: danger ? 'var(--bad)' : 'var(--fg-3)', display: 'flex', flexShrink: 0 }}>{icon}</span>
-      <span style={{ flex: 1 }}>{label}</span>
-      {right}
-    </button>
-  );
-
-  const sectionLabel = (text: string) => (
-    <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', padding: '10px 14px 4px', letterSpacing: '0.08em' }}>
-      {text}
-    </div>
-  );
-
-  const divider = () => <div style={{ height: 1, background: 'var(--line)', margin: '4px 0' }} />;
-
   return (
     <div ref={ref} style={{ position: 'relative' }}>
+      <style>{`
+        @keyframes tdm-in {
+          from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0)   scale(1);    }
+        }
+        .tdm-panel {
+          animation: tdm-in 180ms cubic-bezier(0.16,1,0.3,1) forwards;
+          transform-origin: top right;
+        }
+        .tdm-row {
+          display: flex; align-items: center; gap: 10px;
+          width: 100%; padding: 8px 12px; border: none;
+          background: transparent; color: var(--fg);
+          cursor: pointer; text-align: left; font-family: inherit;
+          font-size: 13px; border-radius: 8px;
+          transition: background 120ms;
+        }
+        .tdm-row:hover { background: var(--bg-3); }
+        .tdm-row.danger { color: var(--bad); }
+        .tdm-row.danger .tdm-icon { color: var(--bad) !important; }
+        .tdm-notif-item {
+          display: flex; align-items: flex-start; gap: 10px;
+          padding: 8px 12px; border-radius: 8px; cursor: pointer;
+          transition: background 120ms;
+        }
+        .tdm-notif-item:hover { background: var(--bg-3); }
+      `}</style>
+
       {/* Trigger */}
       <button
         className="icon-btn"
@@ -99,157 +97,171 @@ function ThreeDotMenu() {
         {Icons.dotsVertical}
         {unread > 0 && !open && (
           <span style={{
-            position: 'absolute', top: 6, right: 6,
-            width: 6, height: 6, borderRadius: 999,
+            position: 'absolute', top: 5, right: 5,
+            width: 7, height: 7, borderRadius: 999,
             background: 'var(--bad)',
+            boxShadow: '0 0 0 2px var(--bg)',
           }} />
         )}
       </button>
 
-      {/* Dropdown panel */}
+      {/* Panel */}
       {open && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-          width: 272,
-          background: 'var(--bg-2)', border: '1px solid var(--line)',
-          borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
-          zIndex: 300, overflow: 'hidden',
+        <div className="tdm-panel" style={{
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+          width: 300,
+          background: 'var(--bg-2)',
+          border: '1px solid var(--line-2)',
+          borderRadius: 16,
+          boxShadow: '0 24px 64px -12px rgba(0,0,0,0.36), 0 4px 16px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.06)',
+          zIndex: 300,
+          overflow: 'hidden',
         }}>
 
-          {/* ── Ziada AI — mobile only (hidden on desktop via topbar-ai CSS) ── */}
-          <div className="three-dot-ai-row">
-            {menuRow(
-              <span style={{ color: 'var(--accent)' }}>{Icons.sparkles}</span>,
-              'Ask Ziada AI',
-              () => { router.push('/ai'); setOpen(false); },
-            )}
-            {divider()}
+          {/* ── Ask AI — mobile only ── */}
+          <div className="three-dot-ai-row" style={{ padding: '8px 8px 0' }}>
+            <button className="tdm-row" onClick={() => { router.push('/ai'); setOpen(false); }}>
+              <span className="tdm-icon" style={{ color: 'var(--accent)', display: 'flex', flexShrink: 0 }}>{Icons.sparkles}</span>
+              <span style={{ flex: 1 }}>Ask Ziada AI</span>
+              <span style={{ fontSize: 10.5, color: 'var(--fg-4)', fontFamily: 'var(--mono)' }}>⌘K</span>
+            </button>
+            <div style={{ height: 1, background: 'var(--line)', margin: '8px 4px' }} />
           </div>
 
           {/* ── Appearance ── */}
-          {sectionLabel('APPEARANCE')}
-          {menuRow(
-            theme === 'dark' ? Icons.sun : Icons.moon,
-            theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
-            () => { toggleTheme(); setOpen(false); },
-          )}
+          <div style={{ padding: '8px 8px 0' }}>
+            <div className="mono" style={{ fontSize: 9.5, color: 'var(--fg-4)', letterSpacing: '0.1em', padding: '2px 4px 6px' }}>APPEARANCE</div>
+            <button
+              className="tdm-row"
+              onClick={() => { toggleTheme(); setOpen(false); }}
+            >
+              <span className="tdm-icon" style={{ color: 'var(--fg-3)', display: 'flex', flexShrink: 0 }}>
+                {theme === 'dark' ? Icons.sun : Icons.moon}
+              </span>
+              <span style={{ flex: 1 }}>{theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}</span>
+            </button>
+          </div>
 
-          {divider()}
+          <div style={{ height: 1, background: 'var(--line)', margin: '8px 12px' }} />
 
           {/* ── Notifications ── */}
-          {sectionLabel('NOTIFICATIONS')}
-          <button
-            onClick={() => setNotifOpen(o => !o)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              width: '100%', padding: '8px 14px', border: 'none',
-              background: notifOpen ? 'var(--bg-3)' : 'transparent',
-              color: 'var(--fg)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
-            }}
-          >
-            <span style={{ color: 'var(--fg-3)', display: 'flex', flexShrink: 0 }}>{Icons.bell}</span>
-            <span style={{ flex: 1 }}>Notifications</span>
-            {unread > 0 && (
-              <span className="mono" style={{
-                fontSize: 10, background: 'var(--bad)', color: '#fff',
-                padding: '1px 6px', borderRadius: 999,
-              }}>{unread}</span>
-            )}
-            <span style={{ color: 'var(--fg-4)', display: 'flex', transform: notifOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>
-              {Icons.chevDown}
-            </span>
-          </button>
+          <div style={{ padding: '0 8px' }}>
+            <div className="mono" style={{ fontSize: 9.5, color: 'var(--fg-4)', letterSpacing: '0.1em', padding: '2px 4px 6px' }}>NOTIFICATIONS</div>
+            <button
+              className="tdm-row"
+              onClick={() => setNotifOpen(o => !o)}
+              style={{ background: notifOpen ? 'var(--bg-3)' : undefined }}
+            >
+              <span className="tdm-icon" style={{ color: 'var(--fg-3)', display: 'flex', flexShrink: 0 }}>{Icons.bell}</span>
+              <span style={{ flex: 1 }}>Notifications</span>
+              {unread > 0 && (
+                <span style={{
+                  fontSize: 10, fontFamily: 'var(--mono)', fontWeight: 600,
+                  background: 'var(--bad)', color: '#fff',
+                  padding: '1px 6px', borderRadius: 999, marginRight: 4,
+                }}>{unread}</span>
+              )}
+              <span style={{ color: 'var(--fg-4)', display: 'flex', transform: notifOpen ? 'rotate(180deg)' : 'none', transition: 'transform 150ms', flexShrink: 0 }}>
+                {Icons.chevDown}
+              </span>
+            </button>
 
-          {notifOpen && (
-            <div style={{ borderTop: '1px solid var(--line-2)' }}>
-              {notifications.map((n) => (
-                <div
-                  key={n.id}
-                  style={{
-                    display: 'flex', alignItems: 'flex-start', gap: 10,
-                    padding: '9px 14px',
-                    background: n.unread ? 'var(--bg-3)' : 'transparent',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <span style={{
-                    width: 22, height: 22, borderRadius: 999, flexShrink: 0,
-                    background: n.color + '22', border: `1px solid ${n.color}44`,
-                    color: n.color, fontSize: 10, fontWeight: 700,
-                    display: 'grid', placeItems: 'center', marginTop: 1,
-                  }}>{n.icon}</span>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: n.unread ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.title}</div>
-                    <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.sub}</div>
+            {notifOpen && (
+              <div style={{ padding: '4px 0 4px' }}>
+                {notifications.map((n) => (
+                  <div key={n.id} className="tdm-notif-item"
+                    style={{ background: n.unread ? 'var(--accent-soft)' : undefined }}
+                  >
+                    <span style={{
+                      width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                      background: n.color + '1a', border: `1px solid ${n.color}33`,
+                      color: n.color, fontSize: 11, fontWeight: 700,
+                      display: 'grid', placeItems: 'center', marginTop: 1,
+                    }}>{n.icon}</span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: n.unread ? 500 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.title}</div>
+                      <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.sub}</div>
+                    </div>
+                    <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', flexShrink: 0, marginTop: 2 }}>{n.time}</span>
                   </div>
-                  <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', flexShrink: 0, marginTop: 1 }}>{n.time}</span>
+                ))}
+                <div style={{ padding: '4px 4px 2px' }}>
+                  <Link href="#" onClick={() => setOpen(false)} style={{ fontSize: 12, color: 'var(--accent)' }}>
+                    View all notifications →
+                  </Link>
                 </div>
-              ))}
-              <div style={{ padding: '6px 14px 10px' }}>
-                <Link
-                  href="#"
-                  onClick={() => setOpen(false)}
-                  style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}
-                >
-                  View all notifications
-                </Link>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
-          {divider()}
+          <div style={{ height: 1, background: 'var(--line)', margin: '8px 12px' }} />
 
           {/* ── AI Credits ── */}
-          {sectionLabel('AI CREDITS · JUN')}
-          <div style={{ padding: '2px 14px 14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Usage this month</span>
-              <span className="mono" style={{ fontSize: 12, color: 'var(--fg)', fontWeight: 600 }}>2,418 <span style={{ color: 'var(--fg-4)', fontWeight: 400 }}>/ 5,000</span></span>
+          <div style={{ padding: '0 16px 4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+              <div className="mono" style={{ fontSize: 9.5, color: 'var(--fg-4)', letterSpacing: '0.1em' }}>AI CREDITS · JUN</div>
+              <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg)', fontWeight: 600 }}>
+                2,418 <span style={{ color: 'var(--fg-4)', fontWeight: 400 }}>/ 5,000</span>
+              </span>
             </div>
-            <div style={{ height: 5, borderRadius: 999, background: 'var(--bg-3)', overflow: 'hidden', marginBottom: 9 }}>
-              <div style={{ width: '48%', height: '100%', background: 'var(--accent)', borderRadius: 999 }} />
+            <div style={{ height: 4, borderRadius: 999, background: 'var(--bg-4)', overflow: 'hidden', margin: '8px 0 10px' }}>
+              <div style={{
+                width: '48%', height: '100%', borderRadius: 999,
+                background: 'linear-gradient(90deg, var(--accent), #a855f7)',
+              }} />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <a href="#" className="mono" onClick={() => setOpen(false)} style={{ fontSize: 11, color: 'var(--fg-3)', textDecoration: 'none' }}>View usage</a>
-              <a href="#" className="mono" onClick={() => setOpen(false)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#fff', textDecoration: 'none', background: 'var(--accent)', padding: '3px 9px', borderRadius: 5, fontWeight: 500 }}>Upgrade →</a>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8 }}>
+              <a href="#" className="mono" onClick={() => setOpen(false)} style={{ fontSize: 11, color: 'var(--fg-3)' }}>View usage</a>
+              <a href="#" className="mono" onClick={() => setOpen(false)} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                fontSize: 11, color: '#fff',
+                background: 'linear-gradient(135deg, var(--accent), #a855f7)',
+                padding: '4px 10px', borderRadius: 6, fontWeight: 500,
+              }}>Upgrade →</a>
             </div>
           </div>
 
-          {divider()}
-
           {/* ── Profile ── */}
-          {sectionLabel('PROFILE')}
-          <Link
-            href="/profile"
-            onClick={() => setOpen(false)}
-            style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
-          >
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 14px',
-              borderRadius: 6, margin: '0 4px',
-              cursor: 'pointer',
-            }}>
+          <div style={{ borderTop: '1px solid var(--line)', padding: '8px 8px 4px' }}>
+            <div className="mono" style={{ fontSize: 9.5, color: 'var(--fg-4)', letterSpacing: '0.1em', padding: '2px 4px 6px' }}>PROFILE</div>
+            <Link
+              href="/profile"
+              onClick={() => setOpen(false)}
+              style={{ display: 'block', borderRadius: 10, overflow: 'hidden' }}
+            >
               <div style={{
-                width: 34, height: 34, borderRadius: 999, flexShrink: 0,
-                background: 'linear-gradient(135deg, #6366f1, #a855f7)',
-                color: '#fff', display: 'grid', placeItems: 'center',
-                fontSize: 11, fontWeight: 600,
-              }}>HM</div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>Hamisi Mwakapaga</div>
-                <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>Owner · admin</div>
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '10px 12px', borderRadius: 10,
+                background: 'var(--bg-3)',
+                cursor: 'pointer',
+                transition: 'background 120ms',
+              }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: 999, flexShrink: 0,
+                  background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                  color: '#fff', display: 'grid', placeItems: 'center',
+                  fontSize: 11.5, fontWeight: 700,
+                  boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
+                }}>HM</div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, letterSpacing: '-0.01em' }}>Hamisi Mwakapaga</div>
+                  <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 1 }}>Owner · admin</div>
+                </div>
+                <span style={{ color: 'var(--fg-4)', display: 'flex', flexShrink: 0 }}>{Icons.chevRight}</span>
               </div>
-              <span style={{ color: 'var(--fg-4)', display: 'flex', flexShrink: 0 }}>{Icons.chevRight}</span>
-            </div>
-          </Link>
+            </Link>
+          </div>
 
-          {menuRow(
-            Icons.logout,
-            'Log out',
-            handleLogout,
-            true,
-          )}
+          {/* ── Log out ── */}
+          <div style={{ padding: '2px 8px 8px' }}>
+            <button
+              className="tdm-row danger"
+              onClick={handleLogout}
+            >
+              <span className="tdm-icon" style={{ display: 'flex', flexShrink: 0 }}>{Icons.logout}</span>
+              <span style={{ flex: 1 }}>Log out</span>
+            </button>
+          </div>
 
         </div>
       )}
