@@ -8,36 +8,19 @@ import { fmt, fmtShort } from '../../lib/utils';
 import { analyticsApi, transactionApi, type DashboardData, type TransactionListItem } from '../../lib/api';
 import { getCachedUser } from '../../lib/auth';
 
-// ── KPI Spark ─────────────────────────────────────────────────────────────────
-function KPISpark({ data, color }: { data: number[]; color: string }) {
-  const w = 200, h = 32;
-  const min = Math.min(...data), max = Math.max(...data);
-  const range = max - min || 1;
-  const pts = data.map((v, i) => {
-    const x = (i / (data.length - 1)) * w;
-    const y = h - ((v - min) / range) * (h - 6) - 3;
-    return [x, y];
-  });
-  const d    = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ');
-  const fill = d + ` L ${w},${h} L 0,${h} Z`;
-  return (
-    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
-      <path d={fill} fill={color} opacity="0.1" />
-      <path d={d} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
-}
-
 // ── KPI Card ──────────────────────────────────────────────────────────────────
-function KPI({ label, value, delta, deltaKind = 'good', subtitle, spark, accent = 'var(--accent)', compact }: {
+function KPI({ label, value, delta, deltaKind = 'good', subtitle, accent = 'var(--accent)' }: {
   label: string; value: string;
   delta?: string; deltaKind?: 'good' | 'bad' | 'warn';
-  subtitle?: string; spark?: number[]; accent?: string; compact?: boolean;
+  subtitle?: string; accent?: string;
 }) {
   return (
-    <div className="surface" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span className="mono" style={{ fontSize: 10.5, fontWeight: 500, color: 'var(--fg-3)', letterSpacing: '0.07em' }}>{label}</span>
+    <div className="surface kpi-card" style={{
+      display: 'flex', flexDirection: 'column',
+      borderTop: `3px solid ${accent}`,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span className="mono" style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>{label}</span>
         {delta && (
           <span className={'pill ' + deltaKind} style={{ gap: 3, display: 'flex', alignItems: 'center', fontSize: 10 }}>
             {deltaKind === 'good' ? Icons.arrowUpRight : deltaKind === 'bad' ? Icons.arrowDownRight : null}
@@ -45,15 +28,8 @@ function KPI({ label, value, delta, deltaKind = 'good', subtitle, spark, accent 
           </span>
         )}
       </div>
-      <div>
-        <div className="dash-kpi-v" style={{ fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
-        {subtitle && <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 3 }}>{subtitle}</div>}
-      </div>
-      {spark && spark.length > 1 && (
-        <div style={{ height: 28, marginTop: 'auto' }} className="page-sec">
-          <KPISpark data={spark} color={accent} />
-        </div>
-      )}
+      <div className="dash-kpi-v" style={{ fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
+      {subtitle && <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 8 }}>{subtitle}</div>}
     </div>
   );
 }
@@ -113,7 +89,6 @@ function AINudge({ item, onDismiss }: { item: { name: string; stock: number; min
 
 // ── Sales Chart ───────────────────────────────────────────────────────────────
 
-/** Format a TZS value for a chart axis: 0 → "0", 78000 → "78K", 1240000 → "1.24M" */
 function fmtAxis(v: number): string {
   if (v === 0) return '0';
   if (v >= 1_000_000) {
@@ -124,7 +99,6 @@ function fmtAxis(v: number): string {
   return String(Math.round(v));
 }
 
-/** Round up to a "nice" number (1/2/5 × 10^n) for clean Y-axis max. */
 function niceMax(v: number): number {
   if (v <= 0) return 100_000;
   const mag  = Math.pow(10, Math.floor(Math.log10(v)));
@@ -133,87 +107,124 @@ function niceMax(v: number): number {
   return nice * mag;
 }
 
+// Catmull-Rom → cubic Bézier for smooth curves through all data points
+function smoothCurve(pts: [number, number][]): string {
+  if (pts.length < 2) return '';
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(0, i - 1)];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[Math.min(pts.length - 1, i + 2)];
+    const cp1x = p1[0] + (p2[0] - p0[0]) / 6;
+    const cp1y = p1[1] + (p2[1] - p0[1]) / 6;
+    const cp2x = p2[0] - (p3[0] - p1[0]) / 6;
+    const cp2y = p2[1] - (p3[1] - p1[1]) / 6;
+    d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
+}
+
 function SalesChart({ hourly }: { hourly: { hour: number; label: string; revenue: number }[] }) {
-  // Build a full 24-hour array (0–23), filling missing hours with 0
-  const hourMap = new Map(hourly.map(h => [h.hour, h.revenue]));
+  const hourMap  = new Map(hourly.map(h => [h.hour, h.revenue]));
   const fullData = Array.from({ length: 24 }, (_, hr) => hourMap.get(hr) ?? 0);
 
-  const w = 920, h = 230, pad = { l: 52, r: 20, t: 20, b: 32 };
+  const w = 920, h = 240, pad = { l: 56, r: 24, t: 28, b: 36 };
   const rawMax  = Math.max(...fullData);
-  const axisMax = niceMax(rawMax || 10_000);   // at least 10K so chart has height
-  const stepX   = (w - pad.l - pad.r) / 23;   // 24 points → 23 gaps
+  const axisMax = niceMax(rawMax || 10_000);
+  const stepX   = (w - pad.l - pad.r) / 23;
   const yScale  = (v: number) => h - pad.b - (v / axisMax) * (h - pad.t - pad.b);
   const xScale  = (i: number) => pad.l + i * stepX;
 
-  const linePath = fullData.map((v, i) => (i === 0 ? 'M' : 'L') + xScale(i).toFixed(1) + ',' + yScale(v).toFixed(1)).join(' ');
-  const areaPath = linePath + ` L ${xScale(23)},${h - pad.b} L ${pad.l},${h - pad.b} Z`;
+  const pts: [number, number][] = fullData.map((v, i) => [xScale(i), yScale(v)]);
+  const linePath = smoothCurve(pts);
+  const areaPath = linePath + ` L${xScale(23).toFixed(1)},${(h - pad.b).toFixed(1)} L${pad.l},${(h - pad.b).toFixed(1)} Z`;
 
-  // 5 Y-axis ticks: 0, 25%, 50%, 75%, 100% of axisMax
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => Math.round(axisMax * f));
-
-  // Peak: ignore hour 0 (likely 0 revenue)
   const peakIdx = fullData.reduce((best, v, i) => v > fullData[best] ? i : best, 0);
   const hasPeak = rawMax > 0;
 
-  // Tooltip stays left of right edge, right of left edge
-  const tipW = 118, tipH = 30;
+  const tipW = 124, tipH = 52;
   const tipX = Math.min(Math.max(xScale(peakIdx) - tipW / 2, pad.l), w - pad.r - tipW);
-  const tipY = Math.max(yScale(rawMax) - tipH - 8, pad.t);
+  const tipY = Math.max(yScale(rawMax) - tipH - 14, pad.t);
 
   return (
-    <div className="sales-chart-container" style={{ padding: '8px 16px 16px' }}>
-      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
+    <div className="sales-chart-container" style={{ padding: '4px 16px 16px' }}>
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none"
+        style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
         <defs>
           <linearGradient id="salesFill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%"   stopColor="var(--accent)" stopOpacity="0.20" />
+            <stop offset="0%"   stopColor="var(--accent)" stopOpacity="0.32" />
+            <stop offset="60%"  stopColor="var(--accent)" stopOpacity="0.08" />
             <stop offset="100%" stopColor="var(--accent)" stopOpacity="0"    />
           </linearGradient>
+          <filter id="lineGlow" x="-20%" y="-40%" width="140%" height="180%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
         </defs>
 
         {/* Y-axis grid lines + labels */}
         {yTicks.map((t) => (
           <g key={t}>
             <line x1={pad.l} x2={w - pad.r} y1={yScale(t)} y2={yScale(t)}
-              stroke="var(--line)" strokeDasharray="2 5" strokeOpacity="0.6" />
-            <text x={pad.l - 8} y={yScale(t) + 4} textAnchor="end"
-              fontSize="10.5" fill="var(--fg-3)" fontFamily="var(--mono)">
+              stroke="var(--line)" strokeOpacity="0.6" strokeWidth="1" />
+            <text x={pad.l - 10} y={yScale(t) + 4} textAnchor="end"
+              fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">
               {fmtAxis(t)}
             </text>
           </g>
         ))}
 
-        {/* X-axis hour labels — every 2 hours: 00 02 04 … 22 */}
-        {fullData.map((_, i) => i % 2 === 0 && (
+        {/* X-axis labels every 3 hours */}
+        {[0, 3, 6, 9, 12, 15, 18, 21].map(i => (
           <text key={i} x={xScale(i)} y={h - 8} textAnchor="middle"
-            fontSize="10.5" fill="var(--fg-3)" fontFamily="var(--mono)">
+            fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">
             {String(i).padStart(2, '0')}
           </text>
         ))}
 
-        {/* Area fill + line */}
+        {/* Area fill */}
         <path d={areaPath} fill="url(#salesFill)" />
-        <path d={linePath} fill="none" stroke="var(--accent)"
-          strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
 
-        {/* Peak marker + tooltip */}
+        {/* Glow layer */}
+        <path d={linePath} fill="none" stroke="var(--accent)"
+          strokeWidth="4" strokeOpacity="0.18" strokeLinecap="round"
+          filter="url(#lineGlow)" />
+
+        {/* Main line */}
+        <path d={linePath} fill="none" stroke="var(--accent)"
+          strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Dots at non-zero hours */}
+        {fullData.map((v, i) => v > 0 && (
+          <circle key={i} cx={xScale(i)} cy={yScale(v)} r="3.5"
+            fill="var(--bg-2)" stroke="var(--accent)" strokeWidth="2" />
+        ))}
+
+        {/* Peak: dashed vertical + big dot + tooltip */}
         {hasPeak && (
           <>
-            <line
-              x1={xScale(peakIdx)} x2={xScale(peakIdx)}
+            <line x1={xScale(peakIdx)} x2={xScale(peakIdx)}
               y1={yScale(rawMax)} y2={h - pad.b}
-              stroke="var(--accent)" strokeDasharray="3 3" strokeOpacity="0.4"
-            />
-            <circle cx={xScale(peakIdx)} cy={yScale(rawMax)} r="4.5"
-              fill="var(--bg-2)" stroke="var(--accent)" strokeWidth="2" />
-            <g transform={`translate(${tipX}, ${tipY})`}>
-              <rect width={tipW} height={tipH} rx="6"
+              stroke="var(--accent)" strokeDasharray="4 4" strokeOpacity="0.45" />
+            <circle cx={xScale(peakIdx)} cy={yScale(rawMax)} r="5.5"
+              fill="var(--bg-2)" stroke="var(--accent)" strokeWidth="2.5" />
+            <circle cx={xScale(peakIdx)} cy={yScale(rawMax)} r="2.5"
+              fill="var(--accent)" />
+
+            {/* Tooltip card */}
+            <g transform={`translate(${tipX},${tipY})`}>
+              <rect width={tipW} height={tipH} rx="8"
                 fill="var(--bg)" stroke="var(--line-2)" strokeWidth="1" />
-              <text x="9" y="11.5" fontSize="9.5" fill="var(--fg-4)"
-                fontFamily="var(--mono)" letterSpacing="0.05em">
+              <text x="12" y="17" fontSize="9.5" fill="var(--fg-4)"
+                fontFamily="var(--mono)" letterSpacing="0.06em">
                 PEAK · {String(peakIdx).padStart(2, '0')}:00
               </text>
-              <text x="9" y="24" fontSize="12" fill="var(--fg)"
-                fontFamily="var(--mono)" fontWeight="600">
+              <line x1="12" x2={tipW - 12} y1="25" y2="25"
+                stroke="var(--line)" strokeWidth="1" />
+              <text x="12" y="41" fontSize="14" fill="var(--fg)"
+                fontFamily="var(--mono)" fontWeight="700" letterSpacing="-0.01em">
                 {fmtShort(rawMax)}
               </text>
             </g>
@@ -319,48 +330,55 @@ function RecentTransactions({ rows, loading, rangeLabel }: { rows: TransactionLi
 
           {/* Desktop table */}
           <div className="desktop-only table-scroll">
-            <div style={{ minWidth: 620 }}>
+            <div style={{ minWidth: 640 }}>
               {/* Header */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '110px 1fr 100px 140px 96px 52px',
-                columnGap: 12,
-                padding: '9px 18px',
+                gridTemplateColumns: '120px 1fr 120px 160px 88px 68px',
+                columnGap: 0,
+                padding: '8px 20px',
                 fontSize: 10, color: 'var(--fg-4)', fontFamily: 'var(--mono)',
                 letterSpacing: '0.08em', borderBottom: '1px solid var(--line)',
+                background: 'var(--bg-3)',
               }}>
                 <span>TXN ID</span>
                 <span>CUSTOMER</span>
                 <span>METHOD</span>
                 <span style={{ textAlign: 'right' }}>AMOUNT</span>
-                <span>STATUS</span>
+                <span style={{ textAlign: 'center' }}>STATUS</span>
                 <span style={{ textAlign: 'right' }}>TIME</span>
               </div>
               {/* Rows */}
               {rows.map((r, i) => (
                 <div key={r.id} style={{
                   display: 'grid',
-                  gridTemplateColumns: '110px 1fr 100px 140px 96px 52px',
-                  columnGap: 12,
-                  padding: '11px 18px',
-                  fontSize: 12.5, alignItems: 'center',
+                  gridTemplateColumns: '120px 1fr 120px 160px 88px 68px',
+                  columnGap: 0,
+                  padding: '13px 20px',
+                  alignItems: 'center',
                   borderBottom: i < rows.length - 1 ? '1px solid var(--line)' : 0,
-                }}>
+                  transition: 'background 120ms',
+                }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-3)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}
+                >
                   <Link href={`/transactions/${r.id}`} className="mono"
-                    style={{ color: 'var(--accent)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    style={{ color: 'var(--accent)', fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
                     {r.txn_number}
                   </Link>
-                  <span style={{ color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 13, color: 'var(--fg)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 12 }}>
                     {r.customer_name}
                   </span>
-                  <span className="mono" style={{ color: 'var(--fg-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <span className="mono" style={{ fontSize: 12.5, color: 'var(--fg-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {r.payment_method}
                   </span>
-                  <span className="mono" style={{ color: 'var(--fg)', fontWeight: 500, textAlign: 'right' }}>
+                  <span className="mono" style={{ fontSize: 13, color: 'var(--fg)', fontWeight: 600, textAlign: 'right', letterSpacing: '-0.01em' }}>
                     {fmt(r.total)}
                   </span>
-                  <span><StatusPill s={r.status} /></span>
-                  <span className="mono" style={{ color: 'var(--fg-3)', textAlign: 'right', fontSize: 11.5 }}>
+                  <span style={{ display: 'flex', justifyContent: 'center' }}>
+                    <StatusPill s={r.status} />
+                  </span>
+                  <span className="mono" style={{ color: 'var(--fg-3)', textAlign: 'right', fontSize: 12 }}>
                     {timeLabel(r.created_at)}
                   </span>
                 </div>
@@ -477,11 +495,11 @@ function TodaySummary({ kpis, credit, loading, rangeLabel }: { kpis: DashboardDa
   const cost     = kpis.revenue - kpis.profit - kpis.tax_collected;
 
   const rows = [
-    { label: 'Revenue',    value: fmt(kpis.revenue),       color: undefined    },
-    { label: 'Refunds',    value: kpis.refund_total > 0 ? `−${fmt(kpis.refund_total)}` : '—', color: kpis.refund_total > 0 ? 'var(--bad)' : undefined },
-    { label: 'Net sales',  value: fmt(netSales),            color: 'var(--fg)'  },
-    { label: 'Cost',       value: `−${fmt(cost)}`,          color: undefined    },
-    { label: 'Profit',     value: fmt(kpis.profit),         color: 'var(--good)'},
+    { label: 'Revenue',   value: fmt(kpis.revenue),       color: undefined    },
+    { label: 'Refunds',   value: kpis.refund_total > 0 ? `−${fmt(kpis.refund_total)}` : '—', color: kpis.refund_total > 0 ? 'var(--bad)' : undefined },
+    { label: 'Net sales', value: fmt(netSales),            color: 'var(--fg)'  },
+    { label: 'Cost',      value: `−${fmt(cost)}`,          color: 'var(--bad)' },
+    { label: 'Gross profit', value: fmt(kpis.profit),      color: 'var(--good)'},
   ] as const;
 
   return (
@@ -492,13 +510,24 @@ function TodaySummary({ kpis, credit, loading, rangeLabel }: { kpis: DashboardDa
       </div>
       <div style={{ padding: '4px 16px' }}>
         {rows.map(({ label, value, color }, i) => (
-          <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: i < rows.length - 1 ? '1px solid var(--line)' : 0, fontSize: 13 }}>
+          <div key={label} style={{
+            display: 'flex', justifyContent: 'space-between',
+            padding: '11px 0',
+            borderBottom: i < rows.length - 1 ? '1px solid var(--line)' : 0,
+            fontSize: 13,
+          }}>
             <span style={{ color: 'var(--fg-2)' }}>{label}</span>
-            <span className="mono" style={{ color: color ?? 'var(--fg)' }}>{value}</span>
+            <span className="mono" style={{ color: color ?? 'var(--fg)', fontWeight: i === rows.length - 1 ? 600 : 400 }}>{value}</span>
           </div>
         ))}
       </div>
-      <div style={{ padding: '14px 16px', borderTop: '1px solid var(--line)', display: 'flex', gap: 12, alignItems: 'center', background: 'var(--bg-3)', borderRadius: '0 0 10px 10px', flexWrap: 'wrap' }}>
+      <div style={{
+        padding: '14px 16px',
+        borderTop: '1px solid var(--line)',
+        display: 'flex', gap: 12, alignItems: 'center',
+        background: 'var(--bg-3)', borderRadius: '0 0 10px 10px',
+        flexWrap: 'wrap',
+      }}>
         {[
           ['MARGIN', kpis.margin_pct.toFixed(1) + '%'],
           ['SALES',  String(kpis.transaction_count)],
@@ -506,7 +535,7 @@ function TodaySummary({ kpis, credit, loading, rangeLabel }: { kpis: DashboardDa
         ].map(([lbl, val]) => (
           <div key={lbl} style={{ flex: 1, minWidth: 60 }}>
             <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>{lbl}</div>
-            <div style={{ fontSize: 17, fontWeight: 500, marginTop: 2 }}>{val}</div>
+            <div style={{ fontSize: 17, fontWeight: 600, marginTop: 3, letterSpacing: '-0.02em' }}>{val}</div>
           </div>
         ))}
       </div>
@@ -573,7 +602,6 @@ export default function DashboardPage() {
 
   const nudgeItem    = dash?.low_stock.find(p => p.stock === 0 || p.status === 'critical');
   const totalRevenue = dash?.kpis_today.revenue ?? 0;
-  const hourlySpark  = dash?.hourly_today.map(h => h.revenue) ?? [];
   const { label: rangeLabel } = getRangeDates(range);
 
   return (
@@ -585,16 +613,17 @@ export default function DashboardPage() {
           .sales-chart-container svg { height: 180px; }
         }
         .date-seg-wrap { display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+        .dash-kpi-grid .surface { padding-top:14px; }
+        .kpi-card { border-radius: 10px; }
       `}</style>
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>{greeting()}, {firstName}.</h1>
-            <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="dot-s" style={{ background: 'var(--good)', flexShrink: 0 }} />
-              live
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em' }}>{greeting()}, {firstName}.</h1>
+            <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--fg-3)' }}>
+              {new Date().toLocaleDateString('en-TZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </p>
           </div>
           <div className="dash-filter-row" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -609,7 +638,7 @@ export default function DashboardPage() {
                     color: range === i ? 'var(--fg)' : 'var(--fg-3)',
                     border: 0,
                     borderRight: i < RANGE_LABELS.length - 1 ? '1px solid var(--line)' : 0,
-                    cursor: 'pointer', fontFamily: 'inherit', fontWeight: range === i ? 500 : 400,
+                    cursor: 'pointer', fontFamily: 'inherit', fontWeight: range === i ? 600 : 400,
                     transition: 'background 100ms, color 100ms',
                   }}
                 >{l}</button>
@@ -629,14 +658,14 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* KPI row — 2×2 on mobile */}
+      {/* KPI row */}
       <style>{`
         .dash-kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
         @media (min-width:640px) { .dash-kpi-grid { grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; } }
-        .dash-kpi-grid .surface { padding:12px 14px; min-height:unset; }
-        @media (min-width:640px) { .dash-kpi-grid .surface { padding:16px 18px; min-height:130px; } }
-        .dash-kpi-v { font-size:20px; }
-        @media (min-width:640px) { .dash-kpi-v { font-size:26px; } }
+        .dash-kpi-grid .surface { padding:14px 16px; min-height:unset; }
+        @media (min-width:640px) { .dash-kpi-grid .surface { padding:16px 20px; min-height:110px; } }
+        .dash-kpi-v { font-size:22px; }
+        @media (min-width:640px) { .dash-kpi-v { font-size:28px; } }
       `}</style>
       <div className="dash-kpi-grid">
         <KPI
@@ -644,16 +673,14 @@ export default function DashboardPage() {
           value={loading ? '—' : fmtShort(totalRevenue)}
           delta={!loading && dash?.kpis_today.revenue_delta_pct != null ? `${dash.kpis_today.revenue_delta_pct > 0 ? '+' : ''}${dash.kpis_today.revenue_delta_pct}%` : undefined}
           deltaKind={(dash?.kpis_today.revenue_delta_pct ?? 0) >= 0 ? 'good' : 'bad'}
-          subtitle={loading ? undefined : rangeLabel}
-          spark={hourlySpark}
-          compact
+          subtitle={loading ? undefined : `${dash?.kpis_today.transaction_count ?? 0} transactions ${rangeLabel}`}
+          accent="var(--accent)"
         />
         <KPI
           label="PROFIT"
           value={loading ? '—' : fmtShort(dash?.kpis_today.profit ?? 0)}
           subtitle={loading ? undefined : `${dash?.kpis_today.margin_pct ?? 0}% margin`}
-          spark={hourlySpark.map(v => v * 0.22)}
-          compact
+          accent="#10b981"
         />
         <KPI
           label="TICKETS"
@@ -661,8 +688,7 @@ export default function DashboardPage() {
           delta={!loading && dash?.kpis_today.transaction_delta_pct != null ? `${dash.kpis_today.transaction_delta_pct > 0 ? '+' : ''}${dash.kpis_today.transaction_delta_pct}%` : undefined}
           deltaKind={(dash?.kpis_today.transaction_delta_pct ?? 0) >= 0 ? 'good' : 'bad'}
           subtitle={loading ? undefined : `avg ${fmtShort(dash?.kpis_today.avg_ticket ?? 0)}`}
-          spark={hourlySpark.map((_, i) => i)}
-          compact
+          accent="#60a5fa"
         />
         <KPI
           label="CREDIT"
@@ -670,7 +696,6 @@ export default function DashboardPage() {
           subtitle={loading ? undefined : `${dash?.credit_kpi.customer_count ?? 0} customers`}
           deltaKind="warn"
           accent="var(--warn)"
-          compact
         />
       </div>
 
