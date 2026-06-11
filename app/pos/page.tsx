@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
-import { inventoryApi, transactionApi, type POSProduct, type Category, type CompletedTransaction } from '../../lib/api';
+import { inventoryApi, transactionApi, customerApi, type POSProduct, type Category, type CompletedTransaction } from '../../lib/api';
 import { getCachedSubscription } from '../../lib/auth';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -24,14 +24,6 @@ interface POSCustomer {
   open_credit: number;
 }
 
-// Temporary mock customers until customers API is wired here
-const MOCK_CUSTOMERS: POSCustomer[] = [
-  { id: 'c1', name: 'Fatuma Ally',   phone: '+255 712 408 311', segment: 'VIP',        avatar_hue: 240, open_credit: 0     },
-  { id: 'c2', name: 'Juma Kifupi',   phone: '+255 754 992 110', segment: 'Regular',    avatar_hue: 160, open_credit: 28800 },
-  { id: 'c3', name: 'Asha Mwinyi',   phone: '+255 718 003 982', segment: 'Regular',    avatar_hue: 30,  open_credit: 0     },
-  { id: 'c4', name: 'Hassan Bakari', phone: '+255 765 442 119', segment: 'Occasional', avatar_hue: 300, open_credit: 12000 },
-  { id: 'c5', name: 'Mariam Said',   phone: '+255 715 880 442', segment: 'VIP',        avatar_hue: 200, open_credit: 0     },
-];
 
 const SEGMENT_COLORS: Record<string, { bg: string; color: string }> = {
   VIP:        { bg: 'rgba(251,191,36,0.14)', color: '#fbbf24' },
@@ -178,14 +170,29 @@ function CustomerPickerModal({ selected, onSelect, onClose }: {
   onClose: () => void;
 }) {
   const [query, setQuery] = useState('');
+  const [customers, setCustomers] = useState<POSCustomer[]>([]);
+  const [loading, setLoading] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    customerApi.getList().then((res) => {
+      if (res.success && res.data) {
+        setCustomers(res.data.map(c => ({
+          id: c.id, name: c.name, phone: c.phone,
+          segment: c.segment as POSCustomer['segment'],
+          avatar_hue: c.avatar_hue, open_credit: c.open_credit,
+        })));
+      }
+      setLoading(false);
+    });
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return MOCK_CUSTOMERS;
-    return MOCK_CUSTOMERS.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q));
-  }, [query]);
+    if (!q) return customers;
+    return customers.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q));
+  }, [query, customers]);
 
   const pick = useCallback((c: POSCustomer | null) => { onSelect(c); onClose(); }, [onSelect, onClose]);
 
@@ -216,7 +223,13 @@ function CustomerPickerModal({ selected, onSelect, onClose }: {
           </div>
 
           <div style={{ maxHeight: 320, overflowY: 'auto' }}>
-            {filtered.map(c => {
+            {loading ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--fg-4)', fontSize: 13 }}>Loading…</div>
+            ) : filtered.length === 0 ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--fg-4)', fontSize: 13 }}>
+                {query ? 'No customers match.' : 'No customers yet.'}
+              </div>
+            ) : filtered.map(c => {
               const sc = SEGMENT_COLORS[c.segment];
               return (
                 <div key={c.id} className={`cust-row${selected?.id === c.id ? ' selected' : ''}`} onClick={() => pick(c)}>
