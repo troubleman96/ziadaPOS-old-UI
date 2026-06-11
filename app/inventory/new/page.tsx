@@ -201,7 +201,7 @@ function makeEmpty(): ProductDraft {
     id: String(++_uid),
     name: '', sku: '', price: '', cost: '',
     category: '', barcode: '',
-    openStock: '0', minStock: '10', maxStock: '100',
+    openStock: '', minStock: '', maxStock: '',
     supplier: '', status: 'active',
     imageFile: null, imagePreview: null,
     errors: {}, saved: false, saving: false,
