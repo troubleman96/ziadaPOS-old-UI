@@ -892,9 +892,10 @@ export const discountApi = {
 // ── Analytics API ──────────────────────────────────────────────────────────────
 
 export const analyticsApi = {
-  async getDashboard(): Promise<ApiResult<DashboardData>> {
+  async getDashboard(params?: string): Promise<ApiResult<DashboardData>> {
     const token = await getUsableAccessToken();
-    return apiFetch<DashboardData>('/api/v1/analytics/dashboard/', {}, token ?? undefined);
+    const qs = params ? `?${params}` : '';
+    return apiFetch<DashboardData>(`/api/v1/analytics/dashboard/${qs}`, {}, token ?? undefined);
   },
   async getOverview(params?: string): Promise<ApiResult<AnalyticsOverview>> {
     const token = await getUsableAccessToken();

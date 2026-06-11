@@ -279,7 +279,7 @@ function StatusPill({ s }: { s: string }) {
   return <span className={'pill ' + (map[s] ?? '')} style={{ fontSize: 9.5 }}>{labels[s] ?? s}</span>;
 }
 
-function RecentTransactions({ rows, loading }: { rows: TransactionListItem[]; loading: boolean }) {
+function RecentTransactions({ rows, loading, rangeLabel }: { rows: TransactionListItem[]; loading: boolean; rangeLabel: string }) {
   function timeLabel(iso: string) {
     try { return new Date(iso).toLocaleTimeString('en-TZ', { hour: '2-digit', minute: '2-digit', hour12: false }); } catch { return ''; }
   }
@@ -287,7 +287,7 @@ function RecentTransactions({ rows, loading }: { rows: TransactionListItem[]; lo
   return (
     <div className="surface" style={{ overflow: 'hidden' }}>
       <div className="card-head">
-        <span className="card-title">Sales today</span>
+        <span className="card-title">Sales · {rangeLabel}</span>
         <Link href="/transactions" className="btn btn-ghost" style={{ padding: '5px 9px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>View all {Icons.chevRight}</Link>
       </div>
 
@@ -296,7 +296,7 @@ function RecentTransactions({ rows, loading }: { rows: TransactionListItem[]; lo
           <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid var(--line-2)', borderTopColor: 'var(--accent)', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
         </div>
       ) : rows.length === 0 ? (
-        <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>No transactions today.</div>
+        <div style={{ padding: '40px 16px', textAlign: 'center', color: 'var(--fg-3)', fontSize: 13 }}>No transactions for {rangeLabel}.</div>
       ) : (
         <>
           {/* Mobile card list */}
@@ -461,7 +461,7 @@ function LowStock({ items, loading }: { items: DashboardData['low_stock']; loadi
 }
 
 // ── Today Summary ─────────────────────────────────────────────────────────────
-function TodaySummary({ kpis, credit, loading }: { kpis: DashboardData['kpis_today'] | null; credit: DashboardData['credit_kpi'] | null; loading: boolean }) {
+function TodaySummary({ kpis, credit, loading, rangeLabel }: { kpis: DashboardData['kpis_today'] | null; credit: DashboardData['credit_kpi'] | null; loading: boolean; rangeLabel: string }) {
   if (loading || !kpis) {
     return (
       <div className="surface">
@@ -487,7 +487,7 @@ function TodaySummary({ kpis, credit, loading }: { kpis: DashboardData['kpis_tod
   return (
     <div className="surface">
       <div className="card-head">
-        <span className="card-title">Today</span>
+        <span className="card-title" style={{ textTransform: 'capitalize' }}>{rangeLabel}</span>
         <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>{new Date().toLocaleDateString('en-TZ', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase()}</span>
       </div>
       <div style={{ padding: '4px 16px' }}>
@@ -516,6 +516,22 @@ function TodaySummary({ kpis, credit, loading }: { kpis: DashboardData['kpis_tod
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+const RANGE_LABELS = ['Today', '7D', '30D', '90D', 'YTD'] as const;
+
+function getRangeDates(range: number): { dateFrom: string; dateTo: string; label: string } {
+  const today = new Date();
+  const pad   = (d: Date) => d.toISOString().slice(0, 10);
+  const todayStr = pad(today);
+  const sub   = (days: number) => { const d = new Date(today); d.setDate(d.getDate() - days); return pad(d); };
+  switch (range) {
+    case 1:  return { dateFrom: sub(6),   dateTo: todayStr, label: 'last 7 days'  };
+    case 2:  return { dateFrom: sub(29),  dateTo: todayStr, label: 'last 30 days' };
+    case 3:  return { dateFrom: sub(89),  dateTo: todayStr, label: 'last 90 days' };
+    case 4:  return { dateFrom: `${today.getFullYear()}-01-01`, dateTo: todayStr, label: 'year to date' };
+    default: return { dateFrom: todayStr, dateTo: todayStr, label: 'today'        };
+  }
+}
+
 function greeting() {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning';
@@ -536,21 +552,29 @@ export default function DashboardPage() {
   const firstName = user?.first_name || user?.full_name?.split(' ')[0] || 'there';
 
   useEffect(() => {
-    analyticsApi.getDashboard().then(res => {
+    const { dateFrom, dateTo } = getRangeDates(range);
+    const params = `date_from=${dateFrom}&date_to=${dateTo}`;
+
+    setLoading(true);
+    setTxnLoad(true);
+
+    analyticsApi.getDashboard(params).then(res => {
       if (res.success) setDash(res.data);
       setLoading(false);
     }).catch(() => setLoading(false));
 
-    transactionApi.getRecent(10).then(res => {
+    transactionApi.getList(
+      `date_from=${dateFrom}&date_to=${dateTo}&ordering=-created_at&page_size=20`
+    ).then(res => {
       if (res.success) setTxns(res.data);
       setTxnLoad(false);
     }).catch(() => setTxnLoad(false));
-  }, []);
+  }, [range]);
 
-  const nudgeItem = dash?.low_stock.find(p => p.stock === 0 || p.status === 'critical');
-
+  const nudgeItem    = dash?.low_stock.find(p => p.stock === 0 || p.status === 'critical');
   const totalRevenue = dash?.kpis_today.revenue ?? 0;
   const hourlySpark  = dash?.hourly_today.map(h => h.revenue) ?? [];
+  const { label: rangeLabel } = getRangeDates(range);
 
   return (
     <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '#' }, { label: 'Dashboard' }]}>
@@ -560,6 +584,7 @@ export default function DashboardPage() {
           .dash-filter-row { width: 100%; }
           .sales-chart-container svg { height: 180px; }
         }
+        .date-seg-wrap { display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
       `}</style>
 
       {/* Header */}
@@ -567,17 +592,32 @@ export default function DashboardPage() {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>{greeting()}, {firstName}.</h1>
-            <p className="desktop-only" style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span className="dot-s" style={{ background: 'var(--good)', flexShrink: 0 }}></span> live
+            <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--fg-3)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="dot-s" style={{ background: 'var(--good)', flexShrink: 0 }} />
+              live
             </p>
           </div>
           <div className="dash-filter-row" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <div className="date-seg-wrap">
-              {['Today', '7D', '30D', '90D', 'YTD'].map((l, i) => (
-                <button key={l} onClick={() => setRange(i)} className={range === i ? 'range-active' : ''} style={{ padding: '6px 12px', fontSize: 12.5, background: range === i ? 'var(--bg-3)' : 'transparent', color: range === i ? 'var(--fg)' : 'var(--fg-3)', border: 0, borderRight: i < 4 ? '1px solid var(--line)' : 0, cursor: 'pointer', fontFamily: 'inherit' }}>{l}</button>
+              {RANGE_LABELS.map((l, i) => (
+                <button
+                  key={l}
+                  onClick={() => setRange(i)}
+                  style={{
+                    padding: '6px 14px', fontSize: 12.5,
+                    background: range === i ? 'var(--bg-3)' : 'transparent',
+                    color: range === i ? 'var(--fg)' : 'var(--fg-3)',
+                    border: 0,
+                    borderRight: i < RANGE_LABELS.length - 1 ? '1px solid var(--line)' : 0,
+                    cursor: 'pointer', fontFamily: 'inherit', fontWeight: range === i ? 500 : 400,
+                    transition: 'background 100ms, color 100ms',
+                  }}
+                >{l}</button>
               ))}
             </div>
-            <button className="btn btn-ghost desktop-only" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{Icons.download} Export</button>
+            <button className="btn btn-ghost desktop-only" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {Icons.download} Export
+            </button>
           </div>
         </div>
       </div>
@@ -604,30 +644,30 @@ export default function DashboardPage() {
           value={loading ? '—' : fmtShort(totalRevenue)}
           delta={!loading && dash?.kpis_today.revenue_delta_pct != null ? `${dash.kpis_today.revenue_delta_pct > 0 ? '+' : ''}${dash.kpis_today.revenue_delta_pct}%` : undefined}
           deltaKind={(dash?.kpis_today.revenue_delta_pct ?? 0) >= 0 ? 'good' : 'bad'}
-          subtitle={loading ? undefined : 'today'}
+          subtitle={loading ? undefined : rangeLabel}
           spark={hourlySpark}
           compact
         />
         <KPI
           label="PROFIT"
-          value={loading ? '—' : fmtShort(dash!.kpis_today.profit)}
-          subtitle={loading ? undefined : `${dash!.kpis_today.margin_pct}% margin`}
+          value={loading ? '—' : fmtShort(dash?.kpis_today.profit ?? 0)}
+          subtitle={loading ? undefined : `${dash?.kpis_today.margin_pct ?? 0}% margin`}
           spark={hourlySpark.map(v => v * 0.22)}
           compact
         />
         <KPI
           label="TICKETS"
-          value={loading ? '—' : String(dash!.kpis_today.transaction_count)}
+          value={loading ? '—' : String(dash?.kpis_today.transaction_count ?? 0)}
           delta={!loading && dash?.kpis_today.transaction_delta_pct != null ? `${dash.kpis_today.transaction_delta_pct > 0 ? '+' : ''}${dash.kpis_today.transaction_delta_pct}%` : undefined}
           deltaKind={(dash?.kpis_today.transaction_delta_pct ?? 0) >= 0 ? 'good' : 'bad'}
-          subtitle={loading ? undefined : `avg ${fmtShort(dash!.kpis_today.avg_ticket)}`}
+          subtitle={loading ? undefined : `avg ${fmtShort(dash?.kpis_today.avg_ticket ?? 0)}`}
           spark={hourlySpark.map((_, i) => i)}
           compact
         />
         <KPI
           label="CREDIT"
           value={loading ? '—' : fmtShort(dash?.credit_kpi.total ?? 0)}
-          subtitle={loading ? undefined : `${dash?.credit_kpi.customer_count ?? 0} cust`}
+          subtitle={loading ? undefined : `${dash?.credit_kpi.customer_count ?? 0} customers`}
           deltaKind="warn"
           accent="var(--warn)"
           compact
@@ -640,7 +680,7 @@ export default function DashboardPage() {
           <div className="card-head">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span className="card-title">Sales by hour</span>
-              <span className="pill" style={{ background: 'var(--bg-3)' }}>today</span>
+              <span className="pill" style={{ background: 'var(--bg-3)' }}>{rangeLabel}</span>
             </div>
             {dash && (
               <span className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
@@ -653,16 +693,16 @@ export default function DashboardPage() {
         <div className="surface">
           <div className="card-head">
             <span className="card-title">Payment mix</span>
-            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>today</span>
+            <span className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)' }}>{rangeLabel}</span>
           </div>
           <PaymentMix slices={dash?.payment_mix ?? []} total={totalRevenue} />
         </div>
       </div>
 
-      {/* Recent txns + today summary */}
+      {/* Sales table + summary */}
       <div style={{ display: 'grid', gridTemplateColumns: 'var(--cols-dash-wide)', gap: 12, marginBottom: 16 }}>
-        <RecentTransactions rows={txns} loading={txnLoad} />
-        <TodaySummary kpis={dash?.kpis_today ?? null} credit={dash?.credit_kpi ?? null} loading={loading} />
+        <RecentTransactions rows={txns} loading={txnLoad} rangeLabel={rangeLabel} />
+        <TodaySummary kpis={dash?.kpis_today ?? null} credit={dash?.credit_kpi ?? null} loading={loading} rangeLabel={rangeLabel} />
       </div>
 
       {/* Top products + low stock */}
