@@ -948,6 +948,131 @@ export const analyticsApi = {
 
 // ── Tanzania constants (mirrored from backend) ─────────────────────────────────
 
+// ── Reports types ─────────────────────────────────────────────────────────────
+
+export interface ReportType {
+  id: string;
+  name: string;
+  desc: string;
+  color: string;
+  supports_date_range: boolean;
+}
+
+export interface ScheduledReportEntry {
+  id: string;
+  report_type: string;
+  name: string;
+  frequency: 'daily' | 'weekly' | 'monthly';
+  date_range_preset: string;
+  recipients: string[];
+  is_enabled: boolean;
+  last_sent_at: string | null;
+  next_send_at: string | null;
+  recipient_count?: number;
+  created_at: string;
+}
+
+export interface ReportExportEntry {
+  id: string;
+  report_type: string;
+  name: string;
+  period_label: string;
+  format: 'csv' | 'json';
+  date_from: string;
+  date_to: string;
+  file_size_bytes: number;
+  file_size_display: string;
+  created_by_name: string;
+  created_at: string;
+}
+
+export const reportsApi = {
+  async getTypes(): Promise<ApiResult<{ report_types: ReportType[] }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<{ report_types: ReportType[] }>('/api/v1/reports/types/', {}, token ?? undefined);
+  },
+
+  async generateCSV(reportType: string, range: string): Promise<boolean> {
+    const token = await getUsableAccessToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const res = await fetch(`${BASE_URL}/api/v1/reports/generate/`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ report_type: reportType, format: 'csv', range }),
+      });
+      if (!res.ok) return false;
+      const blob = await res.blob();
+      const cd = res.headers.get('Content-Disposition') ?? '';
+      const match = cd.match(/filename="([^"]+)"/);
+      const filename = match?.[1] ?? `${reportType}-report.csv`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return true;
+    } catch { return false; }
+  },
+
+  async generateJSON(reportType: string, range: string): Promise<ApiResult<{ report_type: string; period_label: string; date_from: string; date_to: string; store_name: string; report_name: string; report: Record<string, unknown> }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<{ report_type: string; period_label: string; date_from: string; date_to: string; store_name: string; report_name: string; report: Record<string, unknown> }>(
+      '/api/v1/reports/generate/',
+      { method: 'POST', body: JSON.stringify({ report_type: reportType, format: 'json', range }) },
+      token ?? undefined,
+    );
+  },
+
+  async getHistory(params?: string): Promise<ApiResult<{ exports: ReportExportEntry[]; total: number }>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<{ exports: ReportExportEntry[]; total: number }>(`/api/v1/reports/exports/${qs}`, {}, token ?? undefined);
+  },
+
+  async downloadExport(exportId: string, format: string): Promise<boolean> {
+    const token = await getUsableAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const res = await fetch(`${BASE_URL}/api/v1/reports/exports/${exportId}/download/`, { headers });
+      if (!res.ok) return false;
+      if (format === 'csv') {
+        const blob = await res.blob();
+        const cd = res.headers.get('Content-Disposition') ?? '';
+        const match = cd.match(/filename="([^"]+)"/);
+        const filename = match?.[1] ?? `report-${exportId}.csv`;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+      return true;
+    } catch { return false; }
+  },
+
+  async getScheduled(): Promise<ApiResult<{ scheduled_reports: ScheduledReportEntry[]; total: number; active_count: number }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<{ scheduled_reports: ScheduledReportEntry[]; total: number; active_count: number }>('/api/v1/reports/scheduled/', {}, token ?? undefined);
+  },
+
+  async createScheduled(data: { report_type: string; name: string; frequency: string; date_range_preset: string; recipients: string[]; is_enabled: boolean }): Promise<ApiResult<ScheduledReportEntry>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<ScheduledReportEntry>('/api/v1/reports/scheduled/', { method: 'POST', body: JSON.stringify(data) }, token ?? undefined);
+  },
+
+  async patchScheduled(id: string, data: Partial<ScheduledReportEntry>): Promise<ApiResult<ScheduledReportEntry>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<ScheduledReportEntry>(`/api/v1/reports/scheduled/${id}/`, { method: 'PATCH', body: JSON.stringify(data) }, token ?? undefined);
+  },
+
+  async deleteScheduled(id: string): Promise<ApiResult<null>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<null>(`/api/v1/reports/scheduled/${id}/`, { method: 'DELETE' }, token ?? undefined);
+  },
+};
+
 export const TANZANIA_REGIONS = [
   'Arusha', 'Dar es Salaam', 'Dodoma', 'Geita', 'Iringa', 'Kagera',
   'Katavi', 'Kigoma', 'Kilimanjaro', 'Lindi', 'Manyara', 'Mara',
