@@ -3,13 +3,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
-import { fmtDate, fmtDT } from '../../lib/utils';
+import { fmtDate } from '../../lib/utils';
 import {
   reportsApi,
   ReportType,
   ScheduledReportEntry,
   ReportExportEntry,
 } from '../../lib/api';
+import { openReportPrintWindow } from '../../lib/reportPdf';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 const RANGE_OPTIONS = [
@@ -65,53 +66,6 @@ function Spinner() {
   );
 }
 
-// ── Print-window PDF ──────────────────────────────────────────────────────────
-function openPrintWindow(data: Record<string, unknown>, meta: { report_name: string; store_name: string; period_label: string }) {
-  const w = window.open('', '_blank', 'width=900,height=700');
-  if (!w) return;
-  const kpis = (data.kpis as Record<string, unknown>) ?? {};
-  const rows = (data.products as unknown[]) ?? (data.rows as unknown[]) ?? [];
-  const sections: string[] = [];
-
-  if (Object.keys(kpis).length > 0) {
-    sections.push(`<h2>Summary</h2><table class="kpi"><tbody>` +
-      Object.entries(kpis).map(([k, v]) => `<tr><th>${k.replace(/_/g,' ')}</th><td>${v}</td></tr>`).join('') +
-      `</tbody></table>`);
-  }
-  if ((data.payment_mix as unknown[])?.length) {
-    sections.push(`<h2>Payment Mix</h2><table><thead><tr><th>Method</th><th>Amount</th><th>%</th></tr></thead><tbody>` +
-      (data.payment_mix as Record<string, unknown>[]).map(p => `<tr><td>${p.method}</td><td>${p.amount}</td><td>${p.pct}%</td></tr>`).join('') +
-      `</tbody></table>`);
-  }
-  if (rows.length > 0) {
-    const first = rows[0] as Record<string, unknown>;
-    const cols = Object.keys(first);
-    sections.push(`<h2>Data</h2><table><thead><tr>${cols.map(c => `<th>${c.replace(/_/g,' ')}</th>`).join('')}</tr></thead><tbody>` +
-      rows.map(r => `<tr>${cols.map(c => `<td>${(r as Record<string, unknown>)[c] ?? ''}</td>`).join('')}</tr>`).join('') +
-      `</tbody></table>`);
-  }
-
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>${meta.report_name} — ${meta.period_label}</title>
-<style>
-  body{font-family:sans-serif;font-size:12px;color:#111;padding:24px;max-width:900px;margin:0 auto}
-  h1{font-size:18px;margin:0 0 4px} .sub{color:#666;margin:0 0 20px}
-  h2{font-size:13px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:4px;margin:18px 0 10px}
-  table{width:100%;border-collapse:collapse;margin-bottom:16px}
-  th{text-align:left;font-size:11px;text-transform:uppercase;color:#666;padding:4px 8px;border-bottom:2px solid #eee}
-  td{padding:4px 8px;border-bottom:1px solid #f0f0f0;font-size:12px}
-  table.kpi th{width:180px} table.kpi td{font-weight:500}
-  @media print{body{padding:0}}
-</style></head><body>
-<h1>${meta.report_name}</h1>
-<p class="sub">${meta.store_name} &nbsp;·&nbsp; ${meta.period_label}</p>
-${sections.join('')}
-</body></html>`);
-  w.document.close();
-  w.focus();
-  setTimeout(() => w.print(), 400);
-}
-
 // ── QuickExportCard ───────────────────────────────────────────────────────────
 function QuickExportCard({
   rt, lastRun, onGenerated,
@@ -140,9 +94,18 @@ function QuickExportCard({
     setLoadingPDF(false);
     if (res.success && res.data) {
       const d = res.data as Record<string, unknown>;
-      openPrintWindow(
-        (d.report as Record<string, unknown>) ?? d,
-        { report_name: rt.name, store_name: String(d.store_name ?? ''), period_label: String(d.period_label ?? '') }
+      const reportData = (d.report as Record<string, unknown>) ?? d;
+      openReportPrintWindow(
+        rt.id,
+        reportData,
+        {
+          report_name:  String(reportData.report_name ?? rt.name),
+          store_name:   String(reportData.store_name  ?? ''),
+          period_label: String(d.period_label ?? reportData.period_label ?? range),
+          date_from:    String(d.date_from    ?? reportData.date_from ?? ''),
+          date_to:      String(d.date_to      ?? reportData.date_to   ?? ''),
+        },
+        `${window.location.origin}/ziada-final.jpeg`,
       );
       onGenerated();
     }
