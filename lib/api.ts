@@ -804,7 +804,7 @@ export interface CustomerAnalytics {
   daily_visits: { date: string; label: string; total: number; new_customers: number; returning: number }[];
   segments: { segment: string; count: number; spend: number; pct: number }[];
   retention_cohorts: { month: string; new: number; m1: number; m2: number; m3: number }[];
-  top_customers: { customer_id: string; customer_name: string; total_spent: number; txn_count: number; avg_ticket: number; segment: string }[];
+  top_customers: { customer_id: string; name: string; spent: number; visits: number; avg_ticket: number; last_seen_days: number | null; avatar_hue: number }[];
 }
 
 export interface CashflowAnalytics {

@@ -4,31 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
 import { fmtShort } from '../../../lib/utils';
-import { AnalyticsNav, AnalyticsHeader, AreaChart } from '../_shared';
+import { AnalyticsNav, AnalyticsHeader, AreaChart, Spinner, rangeToParams } from '../_shared';
 import { analyticsApi, SalesAnalytics } from '../../../lib/api';
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function rangeToParams(range: string): string {
-  const today = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const fmtD = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  const todayStr = fmtD(today);
-  if (range === '7d')  { const f = new Date(today); f.setDate(f.getDate()-6);  return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
-  if (range === '30d') { const f = new Date(today); f.setDate(f.getDate()-29); return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
-  if (range === '90d') { const f = new Date(today); f.setDate(f.getDate()-89); return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
-  if (range === 'ytd') { const f = new Date(today.getFullYear(), 0, 1);        return `date_from=${fmtD(f)}&date_to=${todayStr}`; }
-  return '';
-}
-
-// ── Spinner ───────────────────────────────────────────────────────────────────
-function Spinner() {
-  return (
-    <>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{width:20,height:20,borderRadius:'50%',border:'2px solid var(--line-2)',borderTopColor:'var(--accent)',animation:'spin 0.7s linear infinite',margin:'0 auto'}} />
-    </>
-  );
-}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function SalesAnalyticsPage() {

@@ -5,14 +5,7 @@ import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
 import { fmtShort } from '../../../lib/utils';
 import { analyticsApi, AnalyticsProduct } from '../../../lib/api';
-import { AnalyticsNav, AnalyticsHeader } from '../_shared';
-
-const SPINNER = (
-  <>
-    <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid var(--line-2)', borderTopColor: 'var(--accent)', animation: 'spin 0.7s linear infinite', margin: '0 auto' }} />
-  </>
-);
+import { AnalyticsNav, AnalyticsHeader, Spinner, rangeToParams } from '../_shared';
 
 const CAT_COLORS: Record<string, string> = {
   Grocery: 'var(--accent)', Beverage: '#10b981', Household: '#f59e0b',
@@ -29,7 +22,7 @@ export default function ProductsAnalyticsPage() {
 
   useEffect(() => {
     setLoading(true);
-    analyticsApi.getProducts(`range=${range}`).then((res) => {
+    analyticsApi.getProducts(rangeToParams(range)).then((res) => {
       setLoading(false);
       if (res.success) {
         const data = res.data as unknown as { results?: AnalyticsProduct[] } | AnalyticsProduct[];
@@ -132,7 +125,7 @@ export default function ProductsAnalyticsPage() {
           <span className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>{filtered.length} products</span>
         </div>
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center' }}>{SPINNER}</div>
+          <div style={{ padding: 48, textAlign: 'center' }}><Spinner /></div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--fg-3)' }}>
             <div className="mono" style={{ fontSize: 11 }}>NO DATA</div>
