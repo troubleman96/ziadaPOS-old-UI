@@ -6,6 +6,7 @@ import { Icons } from '../../components/icons';
 import { fmtDate } from '../../lib/utils';
 import {
   reportsApi,
+  authApi,
   ReportType,
   ScheduledReportEntry,
   ReportExportEntry,
@@ -169,19 +170,29 @@ function ToggleSwitch({ enabled, onChange }: { enabled: boolean; onChange: () =>
 function AddScheduleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({
     name: '', report_type: 'sales', frequency: 'weekly',
-    date_range_preset: '30d', recipients: '',
+    date_range_preset: '30d',
   });
+  // Up to 2 separate email fields
+  const [email1, setEmail1] = useState('');
+  const [email2, setEmail2] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  // Auto-populate the user's registered email on open
+  useEffect(() => {
+    authApi.me().then((res) => {
+      if (res.success && res.data?.user?.email) {
+        setEmail1(res.data.user.email);
+      }
+    });
+  }, []);
 
   function validate() {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = 'Name is required.';
-    if (!form.recipients.trim()) e.recipients = 'At least one recipient required.';
-    else {
-      const emails = form.recipients.split(',').map(s => s.trim()).filter(Boolean);
-      if (emails.some(e => !e.includes('@'))) e.recipients = 'Enter valid email addresses separated by commas.';
-    }
+    const recipients = [email1, email2].map(s => s.trim()).filter(Boolean);
+    if (recipients.length === 0) e.email1 = 'At least one recipient is required.';
+    else if (recipients.some(r => !r.includes('@'))) e.email1 = 'Enter a valid email address.';
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -189,7 +200,7 @@ function AddScheduleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
   async function handleSave() {
     if (!validate()) return;
     setSaving(true);
-    const recipients = form.recipients.split(',').map(s => s.trim()).filter(Boolean);
+    const recipients = [email1, email2].map(s => s.trim()).filter(Boolean);
     const res = await reportsApi.createScheduled({
       name: form.name.trim(),
       report_type: form.report_type,
@@ -249,11 +260,17 @@ function AddScheduleModal({ onClose, onSaved }: { onClose: () => void; onSaved: 
             </select>
           ))}
 
-          {field('recipients', 'Recipients (comma-separated emails)', (
-            <textarea style={{ ...inputStyle, resize: 'vertical', minHeight: 64 }} value={form.recipients}
-              placeholder="hamisi@duka.co.tz, accountant@firm.co.tz"
-              onChange={(e) => setForm(f => ({ ...f, recipients: e.target.value }))} />
-          ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <label style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--fg-2)' }}>
+              Recipients <span style={{ color: 'var(--fg-4)', fontWeight: 400 }}>(max 2)</span>
+            </label>
+            <input style={inputStyle} type="email" value={email1} placeholder="Primary email (auto-filled from your account)"
+              onChange={(e) => setEmail1(e.target.value)} />
+            {errors.email1 && <span style={{ fontSize: 11.5, color: 'var(--bad)' }}>{errors.email1}</span>}
+            <input style={{ ...inputStyle, marginTop: 4 }} type="email" value={email2}
+              placeholder="Optional 2nd recipient"
+              onChange={(e) => setEmail2(e.target.value)} />
+          </div>
         </div>
         <div style={{ padding: '14px 20px', borderTop: '1px solid var(--line)', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <button className="btn btn-ghost" onClick={onClose} disabled={saving}>Cancel</button>
@@ -297,9 +314,32 @@ function ScheduledTab() {
     if (res.success) setRows(r => r.filter(x => x.id !== id));
   }
 
+  const [sending, setSending] = useState<string | null>(null);
+  const [sendMsg, setSendMsg] = useState<string | null>(null);
+
+  async function handleSendNow(id: string) {
+    setSending(id);
+    setSendMsg(null);
+    const res = await reportsApi.sendScheduledNow(id);
+    setSending(null);
+    if (res.success && res.data) {
+      setSendMsg(`Sent to ${res.data.sent} recipient(s).`);
+      setTimeout(() => setSendMsg(null), 4000);
+      load();
+    } else {
+      setSendMsg('Send failed. Check recipients.');
+      setTimeout(() => setSendMsg(null), 4000);
+    }
+  }
+
   return (
     <>
       {showModal && <AddScheduleModal onClose={() => setShowModal(false)} onSaved={load} />}
+      {sendMsg && (
+        <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 500, padding: '10px 18px', borderRadius: 10, background: 'var(--bg-2)', border: '1px solid var(--line)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)', fontSize: 13, color: 'var(--fg)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: 'var(--good)' }}>✓</span> {sendMsg}
+        </div>
+      )}
       <div className="surface" style={{ overflow: 'hidden' }}>
         <div className="card-head">
           <div>
@@ -335,7 +375,7 @@ function ScheduledTab() {
                   <th>Last sent</th>
                   <th>Next send</th>
                   <th style={{ textAlign: 'center' }}>Active</th>
-                  <th style={{ width: 60 }}></th>
+                  <th style={{ width: 80 }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -372,10 +412,18 @@ function ScheduledTab() {
                       <ToggleSwitch enabled={r.is_enabled} onChange={() => handleToggle(r.id, r.is_enabled)} />
                     </td>
                     <td>
-                      <button className="btn btn-ghost" onClick={() => handleDelete(r.id)}
-                        style={{ fontSize: 12, padding: '4px 8px', color: 'var(--bad)' }}>
-                        Delete
-                      </button>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button className="btn btn-ghost" onClick={() => handleSendNow(r.id)}
+                          disabled={sending === r.id}
+                          title="Send report email now"
+                          style={{ fontSize: 11, padding: '4px 7px', color: 'var(--accent)', opacity: sending === r.id ? 0.5 : 1 }}>
+                          {sending === r.id ? '…' : 'Send'}
+                        </button>
+                        <button className="btn btn-ghost" onClick={() => handleDelete(r.id)}
+                          style={{ fontSize: 11, padding: '4px 7px', color: 'var(--bad)' }}>
+                          Del
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

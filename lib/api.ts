@@ -603,6 +603,7 @@ export interface StoreItem {
   today_txns: number;
   staff_on_duty: number;
   week_data: number[];
+  vat_enabled: boolean;
 }
 
 export interface StoreDetail extends StoreItem {
@@ -739,6 +740,11 @@ export const storesApi = {
   async getDetail(id: string): Promise<ApiResult<StoreDetail>> {
     const token = await getUsableAccessToken();
     return apiFetch<StoreDetail>(`/api/v1/stores/${id}/`, {}, token ?? undefined);
+  },
+
+  async patch(id: string, data: Partial<StoreItem>): Promise<ApiResult<StoreItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<StoreItem>(`/api/v1/stores/${id}/`, { method: 'PATCH', body: JSON.stringify(data) }, token ?? undefined);
   },
 };
 
@@ -1070,6 +1076,15 @@ export const reportsApi = {
   async deleteScheduled(id: string): Promise<ApiResult<null>> {
     const token = await getUsableAccessToken();
     return apiFetch<null>(`/api/v1/reports/scheduled/${id}/`, { method: 'DELETE' }, token ?? undefined);
+  },
+
+  async sendScheduledNow(id: string): Promise<ApiResult<{ sent: number; failed: number; recipients: string[] }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<{ sent: number; failed: number; recipients: string[] }>(
+      `/api/v1/reports/scheduled/${id}/send/`,
+      { method: 'POST', body: JSON.stringify({}) },
+      token ?? undefined,
+    );
   },
 };
 

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
-import { inventoryApi, transactionApi, customerApi, type POSProduct, type Category, type CompletedTransaction } from '../../lib/api';
+import { inventoryApi, transactionApi, customerApi, storesApi, type POSProduct, type Category, type CompletedTransaction } from '../../lib/api';
 import { getCachedSubscription } from '../../lib/auth';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -281,7 +281,7 @@ function CartBottomBar({ lines, count, subtotal, onOpen }: {
 
 // ── Mobile cart sheet ─────────────────────────────────────────────────────────
 
-function MobileCartSheet({ cart, setCart, payment, setPayment, onClose, onCompleteSale, completing, selectedCustomer, onOpenCustomerPicker }: {
+function MobileCartSheet({ cart, setCart, payment, setPayment, onClose, onCompleteSale, completing, selectedCustomer, onOpenCustomerPicker, vatEnabled }: {
   cart: Cart; setCart: React.Dispatch<React.SetStateAction<Cart>>;
   payment: string; setPayment: (p: string) => void;
   onClose: () => void;
@@ -289,10 +289,11 @@ function MobileCartSheet({ cart, setCart, payment, setPayment, onClose, onComple
   completing: boolean;
   selectedCustomer: POSCustomer | null;
   onOpenCustomerPicker: () => void;
+  vatEnabled: boolean;
 }) {
   const lines    = Object.values(cart);
   const subtotal = lines.reduce((s, l) => s + l.qty * l.product.price, 0);
-  const tax      = Math.round(subtotal * 0.18);
+  const tax      = vatEnabled ? Math.round(subtotal * 0.18) : 0;
   const total    = subtotal + tax;
 
   const updateQty = (id: string, d: number) => setCart(c => {
@@ -330,7 +331,7 @@ function MobileCartSheet({ cart, setCart, payment, setPayment, onClose, onComple
         ))}
       </div>
       <div style={{ borderTop: '1px solid var(--line)', flexShrink: 0, padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {[['Subtotal', fmt(subtotal)], ['VAT 18%', fmt(tax)]].map(([l, v]) => (
+        {[['Subtotal', fmt(subtotal)], [vatEnabled ? 'VAT 18%' : 'VAT (off)', fmt(tax)]].map(([l, v]) => (
           <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--fg-3)' }}>
             <span>{l}</span><span className="mono" style={{ color: 'var(--fg-2)' }}>{v}</span>
           </div>
@@ -539,7 +540,7 @@ function CartLineRow({ line, onInc, onDec, onRemove }: { line: CartItem; onInc: 
 
 // ── Cart panel ────────────────────────────────────────────────────────────────
 
-function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, isOpen, onClose, selectedCustomer, onOpenCustomerPicker, onCompleteSale, completing }: {
+function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, isOpen, onClose, selectedCustomer, onOpenCustomerPicker, onCompleteSale, completing, vatEnabled, onToggleVat }: {
   cart: Cart; setCart: React.Dispatch<React.SetStateAction<Cart>>;
   payment: string; setPayment: (p: string) => void;
   discount: number; setDiscount: (d: number) => void;
@@ -548,13 +549,15 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
   onOpenCustomerPicker: () => void;
   onCompleteSale: () => void;
   completing: boolean;
+  vatEnabled: boolean;
+  onToggleVat: () => void;
 }) {
   const lines       = Object.values(cart);
   const subtotal    = lines.reduce((s, l) => s + l.qty * l.product.price, 0);
   const discountAmt = Math.min(discount, subtotal);
   const discountPct = subtotal > 0 && discountAmt > 0 ? (discountAmt / subtotal * 100).toFixed(1) : null;
   const taxable     = subtotal - discountAmt;
-  const tax         = Math.round(taxable * 0.18);
+  const tax         = vatEnabled ? Math.round(taxable * 0.18) : 0;
   const total       = taxable + tax;
 
   const updateQty = (id: string, d: number) => setCart(c => {
@@ -651,9 +654,26 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
                 )}
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--fg-2)' }}>
-              <span>VAT 18%</span>
-              <span className="mono" style={{ color: 'var(--fg-3)' }}>{fmt(tax)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, color: 'var(--fg-2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ color: vatEnabled ? 'var(--fg-2)' : 'var(--fg-4)' }}>VAT 18%</span>
+                <button
+                  onClick={onToggleVat}
+                  title={vatEnabled ? 'Click to disable VAT' : 'Click to enable VAT'}
+                  style={{
+                    width: 30, height: 16, borderRadius: 8, border: 'none', cursor: 'pointer', padding: 0,
+                    background: vatEnabled ? 'var(--accent)' : 'var(--bg-3)',
+                    position: 'relative', transition: 'background 150ms', flexShrink: 0,
+                  }}
+                >
+                  <span style={{
+                    position: 'absolute', top: 2, left: vatEnabled ? 16 : 2,
+                    width: 12, height: 12, borderRadius: '50%',
+                    background: '#fff', transition: 'left 150ms',
+                  }} />
+                </button>
+              </div>
+              <span className="mono" style={{ color: vatEnabled ? 'var(--fg-3)' : 'var(--fg-4)' }}>{fmt(tax)}</span>
             </div>
           </div>
           <div className="cart-net-section" style={{ padding: '14px 18px', borderTop: '1px solid var(--line-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', background: 'var(--bg-3)' }}>
@@ -725,6 +745,10 @@ export default function POSPage() {
   const [completedTxn, setCompletedTxn] = useState<CompletedTransaction | null>(null);
   const [scanMode,   setScanMode]   = useState(false);
 
+  // VAT setting (loaded from store, persisted to backend when toggled)
+  const [vatEnabled, setVatEnabled] = useState(true);
+  const [storeId,    setStoreId]    = useState<string | null>(null);
+
   // Live data from API
   const [products,   setProducts]   = useState<POSProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -732,7 +756,7 @@ export default function POSPage() {
 
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Load products and categories on mount
+  // Load products, categories, and store VAT setting on mount
   useEffect(() => {
     let cancelled = false;
     setLoadingProducts(true);
@@ -740,10 +764,16 @@ export default function POSPage() {
     Promise.all([
       inventoryApi.getPOSProducts(),
       inventoryApi.getCategories(),
-    ]).then(([prodRes, catRes]) => {
+      storesApi.getList(),
+    ]).then(([prodRes, catRes, storeRes]) => {
       if (cancelled) return;
       if (prodRes.success)  setProducts(prodRes.data);
       if (catRes.success)   setCategories(catRes.data);
+      if (storeRes.success && Array.isArray(storeRes.data) && storeRes.data.length > 0) {
+        const myStore = storeRes.data[0];
+        setStoreId(myStore.id);
+        setVatEnabled(myStore.vat_enabled ?? true);
+      }
       setLoadingProducts(false);
     }).catch(() => {
       if (!cancelled) setLoadingProducts(false);
@@ -751,6 +781,17 @@ export default function POSPage() {
 
     return () => { cancelled = true; };
   }, []);
+
+  async function handleToggleVat() {
+    const next = !vatEnabled;
+    setVatEnabled(next);
+    if (storeId) {
+      storesApi.patch(storeId, { vat_enabled: next } as Parameters<typeof storesApi.patch>[1]).catch(() => {
+        // Revert on failure
+        setVatEnabled(!next);
+      });
+    }
+  }
 
   // '/' focuses search
   useEffect(() => {
@@ -882,6 +923,8 @@ export default function POSPage() {
           onOpenCustomerPicker={() => setCustPickerOpen(true)}
           onCompleteSale={handleCompleteSale}
           completing={completing}
+          vatEnabled={vatEnabled}
+          onToggleVat={handleToggleVat}
         />
       </div>
 
@@ -889,7 +932,7 @@ export default function POSPage() {
 
       <div className={'cart-sheet-backdrop' + (cartOpen ? ' open' : '')} onClick={() => setCartOpen(false)} />
       <div className={'cart-sheet' + (cartOpen ? ' open' : '')}>
-        <MobileCartSheet cart={cart} setCart={setCart} payment={payment} setPayment={setPayment} onClose={() => setCartOpen(false)} onCompleteSale={handleCompleteSale} completing={completing} selectedCustomer={selectedCustomer} onOpenCustomerPicker={() => { setCartOpen(false); setCustPickerOpen(true); }} />
+        <MobileCartSheet cart={cart} setCart={setCart} payment={payment} setPayment={setPayment} onClose={() => setCartOpen(false)} onCompleteSale={handleCompleteSale} completing={completing} selectedCustomer={selectedCustomer} onOpenCustomerPicker={() => { setCartOpen(false); setCustPickerOpen(true); }} vatEnabled={vatEnabled} />
       </div>
 
       {custPickerOpen && (
