@@ -23,6 +23,7 @@ export default function NewCustomerPage() {
     name: '',
     phone: '',
     email: '',
+    creditLimit: '',
     notes: '',
     segment: 'New' as Segment,
   });
@@ -41,6 +42,7 @@ export default function NewCustomerPage() {
     if (!form.name.trim()) e.name = 'Full name is required.';
     if (!form.phone.trim()) e.phone = 'Phone number is required.';
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email address.';
+    if (form.creditLimit && (isNaN(Number(form.creditLimit)) || Number(form.creditLimit) < 0)) e.creditLimit = 'Enter a valid amount in TZS.';
     return e;
   };
 
@@ -53,12 +55,13 @@ export default function NewCustomerPage() {
     setErrors({});
 
     const result = await customerApi.create({
-      name:       form.name.trim(),
-      phone:      form.phone.trim(),
-      email:      form.email.trim() || undefined,
-      notes:      form.notes.trim() || undefined,
-      segment:    form.segment,
-      avatar_hue: Math.floor(Math.random() * 360),
+      name:         form.name.trim(),
+      phone:        form.phone.trim(),
+      email:        form.email.trim() || undefined,
+      notes:        form.notes.trim() || undefined,
+      segment:      form.segment,
+      avatar_hue:   Math.floor(Math.random() * 360),
+      credit_limit: form.creditLimit ? Number(form.creditLimit) : undefined,
     });
 
     setSaving(false);
@@ -71,7 +74,7 @@ export default function NewCustomerPage() {
     // Map API field errors back to the form
     const apiErrs: typeof errors = {};
     const rawErrs = (result as { errors?: Record<string, unknown> }).errors ?? {};
-    const FIELDS = new Set(['name', 'phone', 'email', 'notes', 'segment']);
+    const FIELDS = new Set(['name', 'phone', 'email', 'notes', 'segment', 'credit_limit']);
     const unknown: string[] = [];
 
     for (const [k, v] of Object.entries(rawErrs)) {
@@ -183,6 +186,28 @@ export default function NewCustomerPage() {
                 </div>
 
                 <div style={fieldWrap}>
+                  <label style={labelStyle}>
+                    Credit limit <span style={{ color: 'var(--fg-4)', textTransform: 'none', letterSpacing: 0, fontFamily: 'var(--sans)' }}>(optional, TZS)</span>
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--fg-4)', fontFamily: 'var(--mono)', pointerEvents: 'none' }}>TZS</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1000"
+                      value={form.creditLimit}
+                      onChange={set('creditLimit')}
+                      placeholder="e.g. 500000"
+                      style={{ ...inputStyle(!!errors.creditLimit), paddingLeft: 44 }}
+                    />
+                  </div>
+                  {errors.creditLimit
+                    ? <span style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 4 }}>{errors.creditLimit}</span>
+                    : <span style={{ fontSize: 11.5, color: 'var(--fg-4)', marginTop: 4 }}>Leave blank for no credit limit.</span>
+                  }
+                </div>
+
+                <div style={fieldWrap}>
                   <label style={labelStyle}>Notes <span style={{ color: 'var(--fg-4)', textTransform: 'none', letterSpacing: 0, fontFamily: 'var(--sans)' }}>(optional)</span></label>
                   <textarea
                     value={form.notes}
@@ -247,6 +272,12 @@ export default function NewCustomerPage() {
                   <span className="k">Segment</span>
                   <span className="v">{form.segment}</span>
                 </div>
+                {form.creditLimit && (
+                  <div className="field-row">
+                    <span className="k">Credit limit</span>
+                    <span className="v mono" style={{ fontSize: 12 }}>TZS {Number(form.creditLimit).toLocaleString()}</span>
+                  </div>
+                )}
               </div>
             </div>
 

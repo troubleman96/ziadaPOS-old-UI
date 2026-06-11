@@ -107,7 +107,6 @@ function niceMax(v: number): number {
   return nice * mag;
 }
 
-// Catmull-Rom → cubic Bézier for smooth curves through all data points
 function smoothCurve(pts: [number, number][]): string {
   if (pts.length < 2) return '';
   let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
@@ -125,8 +124,47 @@ function smoothCurve(pts: [number, number][]): string {
   return d;
 }
 
-function SalesChart({ hourly }: { hourly: { hour: number; label: string; revenue: number }[] }) {
-  const hourMap  = new Map(hourly.map(h => [h.hour, h.revenue]));
+type ChartView = 'sales' | 'profit' | 'discounts' | 'credits';
+
+const CHART_VIEWS: { key: ChartView; label: string; color: string; field: 'revenue' | 'profit' | 'discount_amount' | 'credit_amount' }[] = [
+  { key: 'sales',     label: 'Sales',     color: 'var(--accent)', field: 'revenue'         },
+  { key: 'profit',    label: 'Profit',    color: '#10b981',       field: 'profit'          },
+  { key: 'discounts', label: 'Discounts', color: '#60a5fa',       field: 'discount_amount' },
+  { key: 'credits',   label: 'Credits',   color: '#fb7185',       field: 'credit_amount'   },
+];
+
+// Auto-cycles: Sales (5s) → Profit (4s) → Sales (5s) → Profit (4s) …
+// Discounts and Credits are manual-only — user pins them by clicking.
+const AUTO_CYCLE: ChartView[] = ['sales', 'profit'];
+const AUTO_DURATIONS: Record<ChartView, number> = { sales: 5000, profit: 4000, discounts: 0, credits: 0 };
+
+function SalesChart({ hourly }: { hourly: { hour: number; label: string; revenue: number; profit: number; discount_amount: number; credit_amount: number; txn_count: number }[] }) {
+  const [view,   setView]   = useState<ChartView>('sales');
+  const [pinned, setPinned] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-cycle between Sales and Profit when not pinned
+  useEffect(() => {
+    if (pinned) return;
+    const current = CHART_VIEWS.find(v => v.key === view) ?? CHART_VIEWS[0];
+    const duration = AUTO_DURATIONS[current.key];
+    if (!duration) return;
+    timerRef.current = setTimeout(() => {
+      const idx = AUTO_CYCLE.indexOf(view);
+      setView(AUTO_CYCLE[(idx + 1) % AUTO_CYCLE.length]);
+    }, duration);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [view, pinned]);
+
+  function handleTabClick(key: ChartView) {
+    setView(key);
+    setPinned(true);
+  }
+
+  const currentCfg = CHART_VIEWS.find(v => v.key === view) ?? CHART_VIEWS[0];
+  const color = currentCfg.color;
+
+  const hourMap  = new Map(hourly.map(h => [h.hour, h[currentCfg.field]]));
   const fullData = Array.from({ length: 24 }, (_, hr) => hourMap.get(hr) ?? 0);
 
   const w = 920, h = 240, pad = { l: 56, r: 24, t: 28, b: 36 };
@@ -148,23 +186,62 @@ function SalesChart({ hourly }: { hourly: { hour: number; label: string; revenue
   const tipX = Math.min(Math.max(xScale(peakIdx) - tipW / 2, pad.l), w - pad.r - tipW);
   const tipY = Math.max(yScale(rawMax) - tipH - 14, pad.t);
 
+  const gradId = `chartFill-${view}`;
+  const glowId = `chartGlow-${view}`;
+
   return (
     <div className="sales-chart-container" style={{ padding: '4px 16px 16px' }}>
+      {/* View tabs */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 12, flexWrap: 'wrap' }}>
+        {CHART_VIEWS.map(cv => (
+          <button
+            key={cv.key}
+            onClick={() => handleTabClick(cv.key)}
+            style={{
+              padding: '4px 11px',
+              fontSize: 11.5,
+              borderRadius: 6,
+              border: view === cv.key ? `1.5px solid ${cv.color}` : '1.5px solid var(--line)',
+              background: view === cv.key ? cv.color + '18' : 'transparent',
+              color: view === cv.key ? cv.color : 'var(--fg-3)',
+              cursor: 'pointer',
+              fontFamily: 'var(--mono)',
+              fontWeight: view === cv.key ? 600 : 400,
+              transition: 'all 140ms',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+            }}
+          >
+            {view === cv.key && !pinned && AUTO_CYCLE.includes(cv.key) && (
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: cv.color, display: 'inline-block', animation: 'pulse 1.4s ease-in-out infinite' }} />
+            )}
+            {cv.label}
+          </button>
+        ))}
+        {pinned && (
+          <button
+            onClick={() => { setPinned(false); setView('sales'); }}
+            style={{ padding: '4px 9px', fontSize: 11, borderRadius: 6, border: '1.5px solid var(--line)', background: 'transparent', color: 'var(--fg-4)', cursor: 'pointer', fontFamily: 'var(--mono)' }}
+            title="Resume auto-cycle"
+          >↺</button>
+        )}
+      </div>
+
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none"
         style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
         <defs>
-          <linearGradient id="salesFill" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%"   stopColor="var(--accent)" stopOpacity="0.32" />
-            <stop offset="60%"  stopColor="var(--accent)" stopOpacity="0.08" />
-            <stop offset="100%" stopColor="var(--accent)" stopOpacity="0"    />
+          <linearGradient id={gradId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%"   stopColor={color} stopOpacity="0.32" />
+            <stop offset="60%"  stopColor={color} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={color} stopOpacity="0"    />
           </linearGradient>
-          <filter id="lineGlow" x="-20%" y="-40%" width="140%" height="180%">
+          <filter id={glowId} x="-20%" y="-40%" width="140%" height="180%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
 
-        {/* Y-axis grid lines + labels */}
         {yTicks.map((t) => (
           <g key={t}>
             <line x1={pad.l} x2={w - pad.r} y1={yScale(t)} y2={yScale(t)}
@@ -176,7 +253,6 @@ function SalesChart({ hourly }: { hourly: { hour: number; label: string; revenue
           </g>
         ))}
 
-        {/* X-axis labels every 3 hours */}
         {[0, 3, 6, 9, 12, 15, 18, 21].map(i => (
           <text key={i} x={xScale(i)} y={h - 8} textAnchor="middle"
             fontSize="10" fill="var(--fg-4)" fontFamily="var(--mono)">
@@ -184,36 +260,27 @@ function SalesChart({ hourly }: { hourly: { hour: number; label: string; revenue
           </text>
         ))}
 
-        {/* Area fill */}
-        <path d={areaPath} fill="url(#salesFill)" />
-
-        {/* Glow layer */}
-        <path d={linePath} fill="none" stroke="var(--accent)"
+        <path d={areaPath} fill={`url(#${gradId})`} />
+        <path d={linePath} fill="none" stroke={color}
           strokeWidth="4" strokeOpacity="0.18" strokeLinecap="round"
-          filter="url(#lineGlow)" />
-
-        {/* Main line */}
-        <path d={linePath} fill="none" stroke="var(--accent)"
+          filter={`url(#${glowId})`} />
+        <path d={linePath} fill="none" stroke={color}
           strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
 
-        {/* Dots at non-zero hours */}
         {fullData.map((v, i) => v > 0 && (
           <circle key={i} cx={xScale(i)} cy={yScale(v)} r="3.5"
-            fill="var(--bg-2)" stroke="var(--accent)" strokeWidth="2" />
+            fill="var(--bg-2)" stroke={color} strokeWidth="2" />
         ))}
 
-        {/* Peak: dashed vertical + big dot + tooltip */}
         {hasPeak && (
           <>
             <line x1={xScale(peakIdx)} x2={xScale(peakIdx)}
               y1={yScale(rawMax)} y2={h - pad.b}
-              stroke="var(--accent)" strokeDasharray="4 4" strokeOpacity="0.45" />
+              stroke={color} strokeDasharray="4 4" strokeOpacity="0.45" />
             <circle cx={xScale(peakIdx)} cy={yScale(rawMax)} r="5.5"
-              fill="var(--bg-2)" stroke="var(--accent)" strokeWidth="2.5" />
+              fill="var(--bg-2)" stroke={color} strokeWidth="2.5" />
             <circle cx={xScale(peakIdx)} cy={yScale(rawMax)} r="2.5"
-              fill="var(--accent)" />
-
-            {/* Tooltip card */}
+              fill={color} />
             <g transform={`translate(${tipX},${tipY})`}>
               <rect width={tipW} height={tipH} rx="8"
                 fill="var(--bg)" stroke="var(--line-2)" strokeWidth="1" />
@@ -608,6 +675,7 @@ export default function DashboardPage() {
     <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '#' }, { label: 'Dashboard' }]}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
         @media (max-width: 640px) {
           .dash-filter-row { width: 100%; }
           .sales-chart-container svg { height: 180px; }
@@ -702,7 +770,7 @@ export default function DashboardPage() {
         <div className="surface">
           <div className="card-head">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="card-title">Sales by hour</span>
+              <span className="card-title">By hour</span>
               <span className="pill" style={{ background: 'var(--bg-3)' }}>{rangeLabel}</span>
             </div>
             {dash && (

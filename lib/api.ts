@@ -478,7 +478,7 @@ export interface DashboardKPIs {
 
 export interface DashboardData {
   kpis_today:   DashboardKPIs;
-  hourly_today: { hour: number; label: string; revenue: number; txn_count: number }[];
+  hourly_today: { hour: number; label: string; revenue: number; profit: number; discount_amount: number; credit_amount: number; txn_count: number }[];
   payment_mix:  { method: string; amount: number; pct: number }[];
   top_products: { product_id: string; product_name: string; product_sku: string; qty_sold: number; revenue: number; profit: number }[];
   low_stock:    { id: string; name: string; sku: string; stock: number; min_stock: number; status: string }[];
@@ -730,6 +730,7 @@ export interface CustomerListItem {
   avatar_hue: number; initials: string; segment: string;
   total_spent: number; last_visit: string | null;
   avg_ticket: number; open_credit: number; has_open_credit: boolean;
+  credit_limit: number | null;
   notes: string; is_active: boolean; created_at: string;
 }
 
