@@ -6,6 +6,7 @@ import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
 import { inventoryApi, transactionApi, type POSProduct, type Category, type CompletedTransaction } from '../../lib/api';
+import { getCachedSubscription } from '../../lib/auth';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -343,15 +344,15 @@ function MobileCartSheet({ cart, setCart, payment, setPayment, onClose, onComple
 
 // ── Trial banner ──────────────────────────────────────────────────────────────
 
-function TrialBanner({ onDismiss }: { onDismiss: () => void }) {
+function TrialBanner({ daysRemaining, onDismiss }: { daysRemaining: number; onDismiss: () => void }) {
   return (
     <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--line)', background: 'linear-gradient(90deg, rgba(251,191,36,0.08), transparent 60%)', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, minWidth: 0 }}>
       <span className="pill warn" style={{ fontSize: 10, flexShrink: 0 }}>TRIAL</span>
       <span style={{ fontSize: 12.5, color: 'var(--fg-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-        <span className="desktop-only">Trial ends in </span><strong style={{ color: 'var(--fg)' }}>5 days</strong><span className="desktop-only"> left.</span><span className="mobile-only" style={{ color: 'var(--fg-3)' }}> left</span>
+        <span className="desktop-only">Trial ends in </span><strong style={{ color: 'var(--fg)' }}>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''}</strong><span className="desktop-only"> left.</span><span className="mobile-only" style={{ color: 'var(--fg-3)' }}> left</span>
       </span>
       <div style={{ flex: 1 }} />
-      <button className="btn btn-primary" style={{ padding: '5px 10px', fontSize: 12, flexShrink: 0 }}>Upgrade</button>
+      <Link href="/settings?tab=billing" className="btn btn-primary" style={{ padding: '5px 10px', fontSize: 12, flexShrink: 0, textDecoration: 'none' }}>Upgrade</Link>
       <button onClick={onDismiss} className="icon-btn" style={{ width: 28, height: 28, fontSize: 18, flexShrink: 0 }}>×</button>
     </div>
   );
@@ -644,7 +645,9 @@ export default function POSPage() {
   const [cart,      setCart]      = useState<Cart>({});
   const [payment,   setPayment]   = useState('Cash');
   const [discount,  setDiscount]  = useState(0);
-  const [trial,     setTrial]     = useState(true);
+  const sub = getCachedSubscription();
+  const trialDaysLeft = sub?.is_trial && (sub.days_remaining ?? 0) <= 7 ? sub.days_remaining : null;
+  const [trialDismissed, setTrialDismissed] = useState(false);
   const [cartOpen,  setCartOpen]  = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<POSCustomer | null>(null);
   const [custPickerOpen,   setCustPickerOpen]   = useState(false);
@@ -754,7 +757,9 @@ export default function POSPage() {
     >
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {trial && <TrialBanner onDismiss={() => setTrial(false)} />}
+      {!trialDismissed && trialDaysLeft !== null && (
+        <TrialBanner daysRemaining={trialDaysLeft} onDismiss={() => setTrialDismissed(true)} />
+      )}
 
       {saleError && (
         <div style={{ padding: '8px 16px', background: 'rgba(251,113,133,0.12)', borderBottom: '1px solid rgba(251,113,133,0.2)', color: 'var(--bad)', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>

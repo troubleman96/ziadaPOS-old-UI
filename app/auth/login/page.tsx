@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import { saveTokens, cacheUser, cacheSubscription, isAuthenticated } from '@/lib/auth';
 import { DotsMenu } from '@/components/DotsMenu';
+import { useLang } from '@/components/LangContext';
+import { t } from '@/lib/lang';
 
 // ── Eye icon ───────────────────────────────────────────────────────────────────
 function EyeIcon({ open }: { open: boolean }) {
@@ -97,6 +99,8 @@ function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const phoneRef = useRef<HTMLInputElement>(null);
+
+  const { lang } = useLang();
 
   const [phone,    setPhone]    = useState('');
   const [password, setPassword] = useState('');
@@ -270,8 +274,8 @@ function LoginPageContent() {
 
             {/* Header */}
             <div style={{ marginBottom: 28 }}>
-              <h1 style={{ margin: '0 0 6px', fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em' }}>Welcome back</h1>
-              <p style={{ margin: 0, fontSize: 14, color: 'var(--fg-3)' }}>Sign in with your phone number and password.</p>
+              <h1 style={{ margin: '0 0 6px', fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em' }}>{t(lang, 'auth_login_h1')}</h1>
+              <p style={{ margin: 0, fontSize: 14, color: 'var(--fg-3)' }}>{t(lang, 'auth_login_sub')}</p>
             </div>
 
             {/* Global error */}
@@ -282,7 +286,7 @@ function LoginPageContent() {
               {/* Phone */}
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 7, color: 'var(--fg-2)' }}>
-                  Phone number
+                  {t(lang, 'auth_login_phone')}
                 </label>
                 <div className="phone-wrap">
                   <input
@@ -311,8 +315,8 @@ function LoginPageContent() {
               {/* Password */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
-                  <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-2)' }}>Password</label>
-                  <Link href="/auth/forgot-password" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>Forgot password?</Link>
+                  <label style={{ fontSize: 13, fontWeight: 500, color: 'var(--fg-2)' }}>{t(lang, 'auth_login_password')}</label>
+                  <Link href="/auth/forgot-password" style={{ fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>{t(lang, 'auth_login_forgot')}</Link>
                 </div>
                 <div className="auth-input-wrap">
                   <input
@@ -340,18 +344,18 @@ function LoginPageContent() {
 
               {/* Submit */}
               <button type="submit" className="auth-btn" disabled={loading} style={{ marginTop: 4 }}>
-                {loading ? <><div className="spinner" /> Signing in…</> : <>Sign in →</>}
+                {loading ? <><div className="spinner" /> {t(lang, 'auth_login_signing')}</> : <>{t(lang, 'auth_login_btn')}</>}
               </button>
             </form>
 
-            <div className="auth-divider">or</div>
+            <div className="auth-divider">{t(lang, 'auth_or')}</div>
 
             {/* Sign up link */}
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: 13.5, color: 'var(--fg-3)' }}>
-                New to Ziada?{' '}
+                {t(lang, 'auth_login_new')}{' '}
                 <Link href="/auth/register" style={{ color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
-                  Start your free 7-day trial
+                  {t(lang, 'auth_login_trial_link')}
                 </Link>
               </span>
             </div>

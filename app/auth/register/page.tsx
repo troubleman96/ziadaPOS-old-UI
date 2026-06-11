@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { authApi, TANZANIA_REGIONS, BUSINESS_TYPES } from '@/lib/api';
 import { saveTokens, cacheUser, cacheSubscription, isAuthenticated } from '@/lib/auth';
 import { DotsMenu } from '@/components/DotsMenu';
+import { useLang } from '@/components/LangContext';
+import { t } from '@/lib/lang';
 
 // ── Eye icon ───────────────────────────────────────────────────────────────────
 function EyeIcon({ open }: { open: boolean }) {
@@ -255,11 +257,12 @@ interface FieldProps {
 }
 
 function Field({ label, error, hint, required, children }: FieldProps) {
+  const { lang } = useLang();
   return (
     <div>
       <label style={{ display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 7, color: 'var(--fg-2)' }}>
         {label}
-        {!required && <span style={{ fontWeight: 400, color: 'var(--fg-4)', marginLeft: 5 }}>(optional)</span>}
+        {!required && <span style={{ fontWeight: 400, color: 'var(--fg-4)', marginLeft: 5 }}>{t(lang, 'auth_reg_optional')}</span>}
       </label>
       {children}
       {error && (
@@ -277,6 +280,7 @@ function Field({ label, error, hint, required, children }: FieldProps) {
 
 // ── Password strength ──────────────────────────────────────────────────────────
 function PasswordStrength({ password }: { password: string }) {
+  const { lang } = useLang();
   if (!password) return null;
   const checks = [
     password.length >= 8,
@@ -285,7 +289,7 @@ function PasswordStrength({ password }: { password: string }) {
   ];
   const score = checks.filter(Boolean).length;
   const colors = ['var(--bad)', 'var(--warn)', 'var(--good)'];
-  const labels = ['Weak', 'Fair', 'Strong'];
+  const labels = [t(lang, 'auth_reg_pw_weak'), t(lang, 'auth_reg_pw_fair'), t(lang, 'auth_reg_pw_strong')];
   return (
     <div style={{ marginTop: 7 }}>
       <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
@@ -306,6 +310,7 @@ const TOTAL_STEPS = 2;
 export default function RegisterPage() {
   const router = useRouter();
 
+  const { lang } = useLang();
   const [step, setStep] = useState(0); // 0 = personal, 1 = business
   const [loading, setLoading] = useState(false);
   const [globalError, setGlobalError] = useState('');
@@ -545,19 +550,17 @@ export default function RegisterPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
               <StepDots step={step + 1} total={TOTAL_STEPS} />
               <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-4)' }}>
-                Step {step + 1} of {TOTAL_STEPS}
+                {t(lang, 'auth_reg_step')} {step + 1} {t(lang, 'auth_reg_of')} {TOTAL_STEPS}
               </span>
             </div>
 
             {/* Header */}
             <div style={{ marginBottom: 24 }}>
               <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em' }}>
-                {step === 0 ? 'Create your account' : 'Set up your shop'}
+                {step === 0 ? t(lang, 'auth_reg_h1_0') : t(lang, 'auth_reg_h1_1')}
               </h1>
               <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-3)' }}>
-                {step === 0
-                  ? 'Your login credentials. Start your free 7-day trial.'
-                  : 'Tell us about your business so we can configure Ziada for you.'}
+                {step === 0 ? t(lang, 'auth_reg_sub_0') : t(lang, 'auth_reg_sub_1')}
               </p>
             </div>
 
@@ -569,7 +572,7 @@ export default function RegisterPage() {
               <form className="step-enter" onSubmit={handleNext} noValidate>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-                  <Field label="Full name" error={fieldErrors.full_name} hint="First and last name, e.g. Hamisi Mwakapaga" required>
+                  <Field label={t(lang, 'auth_reg_name')} error={fieldErrors.full_name} hint={t(lang, 'auth_reg_name_hint')} required>
                     <input
                       className={`auth-input${fieldErrors.full_name ? ' error' : ''}`}
                       type="text"
@@ -581,7 +584,7 @@ export default function RegisterPage() {
                     />
                   </Field>
 
-                  <Field label="Phone number" error={fieldErrors.phone} hint="10 digits, e.g. 0712345678" required>
+                  <Field label={t(lang, 'auth_reg_phone')} error={fieldErrors.phone} hint={t(lang, 'auth_reg_phone_hint')} required>
                     <div style={{ position: 'relative' }}>
                       <input
                         className={`auth-input${fieldErrors.phone ? ' error' : ''}`}
@@ -596,7 +599,7 @@ export default function RegisterPage() {
                     </div>
                   </Field>
 
-                  <Field label="Email" error={fieldErrors.email} hint="Used for receipts and account recovery">
+                  <Field label={t(lang, 'auth_reg_email')} error={fieldErrors.email} hint={t(lang, 'auth_reg_email_hint')}>
                     <input
                       className={`auth-input${fieldErrors.email ? ' error' : ''}`}
                       type="email"
@@ -608,12 +611,12 @@ export default function RegisterPage() {
                   </Field>
 
                   <div className="form-grid-2">
-                    <Field label="Password" error={fieldErrors.password} required>
+                    <Field label={t(lang, 'auth_reg_pw')} error={fieldErrors.password} required>
                       <div style={{ position: 'relative' }}>
                         <input
                           className={`auth-input has-toggle${fieldErrors.password ? ' error' : ''}`}
                           type={showPw ? 'text' : 'password'}
-                          placeholder="Min 8 characters"
+                          placeholder={t(lang, 'auth_reg_pw_min')}
                           value={password}
                           onChange={e => { setPassword(e.target.value); clearErr('password'); }}
                           autoComplete="new-password"
@@ -625,7 +628,7 @@ export default function RegisterPage() {
                       {password && <PasswordStrength password={password} />}
                     </Field>
 
-                    <Field label="Confirm password" error={fieldErrors.confirm_password} required>
+                    <Field label={t(lang, 'auth_reg_confirm')} error={fieldErrors.confirm_password} required>
                       <div style={{ position: 'relative' }}>
                         <input
                           className={`auth-input has-toggle${fieldErrors.confirm_password ? ' error' : ''}`}
@@ -648,7 +651,7 @@ export default function RegisterPage() {
                   </div>
 
                   <button type="submit" className="auth-btn" style={{ marginTop: 8 }}>
-                    Continue →
+                    {t(lang, 'auth_reg_next')}
                   </button>
                 </div>
               </form>
@@ -659,7 +662,7 @@ export default function RegisterPage() {
               <form className="step-enter" onSubmit={handleSubmit} noValidate>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-                  <Field label="Shop / business name" error={fieldErrors.main_shop_name} hint="This becomes your organisation and main store name" required>
+                  <Field label={t(lang, 'auth_reg_shop')} error={fieldErrors.main_shop_name} hint={lang === 'sw' ? 'Hii inakuwa jina la shirika lako na duka kuu' : 'This becomes your organisation and main store name'} required>
                     <input
                       className={`auth-input${fieldErrors.main_shop_name ? ' error' : ''}`}
                       type="text"
@@ -671,7 +674,7 @@ export default function RegisterPage() {
                   </Field>
 
                   <div className="form-grid-2">
-                    <Field label="Business type" error={fieldErrors.business_type} required>
+                    <Field label={t(lang, 'auth_reg_btype')} error={fieldErrors.business_type} required>
                       <select
                         className={`auth-select${fieldErrors.business_type ? ' error' : ''}`}
                         value={bizType}
@@ -684,7 +687,7 @@ export default function RegisterPage() {
                       </select>
                     </Field>
 
-                    <Field label="Region" error={fieldErrors.region} required>
+                    <Field label={t(lang, 'auth_reg_region')} error={fieldErrors.region} required>
                       <RegionCombobox
                         value={region}
                         onChange={v => { setRegion(v); if (v) clearErr('region'); }}
@@ -707,10 +710,10 @@ export default function RegisterPage() {
 
                   <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                     <button type="button" className="auth-btn-ghost" onClick={() => { setStep(0); setGlobalError(''); }} style={{ flex: '0 0 auto', width: 'auto', padding: '0 20px' }}>
-                      ← Back
+                      {t(lang, 'auth_reg_back')}
                     </button>
                     <button type="submit" className="auth-btn" disabled={loading}>
-                      {loading ? <><div className="spinner" /> Creating account…</> : <>Create account →</>}
+                      {loading ? <><div className="spinner" /> {t(lang, 'auth_reg_creating')}</> : <>{t(lang, 'auth_reg_btn')}</>}
                     </button>
                   </div>
                 </div>
@@ -728,9 +731,9 @@ export default function RegisterPage() {
             {/* Sign in link */}
             <div style={{ textAlign: 'center', marginTop: 12 }}>
               <span style={{ fontSize: 13.5, color: 'var(--fg-3)' }}>
-                Already have an account?{' '}
+                {t(lang, 'auth_reg_have')}{' '}
                 <Link href="/auth/login" style={{ color: 'var(--accent)', fontWeight: 500, textDecoration: 'none' }}>
-                  Sign in
+                  {t(lang, 'auth_reg_signin')}
                 </Link>
               </span>
             </div>
