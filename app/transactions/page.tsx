@@ -29,11 +29,12 @@ function MethodPill({ method }: { method: string }) {
 
 function StatusPill({ status }: { status: string }) {
   const map: Record<string, { kind: string; label: string }> = {
-    paid:     { kind: 'good', label: 'Paid' },
-    credit:   { kind: 'warn', label: 'Credit' },
-    refunded: { kind: 'bad',  label: 'Refunded' },
-    held:     { kind: 'info', label: 'Held' },
-    void:     { kind: '',     label: 'Void' },
+    paid:            { kind: 'good', label: 'Paid' },
+    credit:          { kind: 'warn', label: 'Credit' },
+    partially_paid:  { kind: 'warn', label: 'Partial' },
+    refunded:        { kind: 'bad',  label: 'Refunded' },
+    held:            { kind: 'info', label: 'Held' },
+    void:            { kind: '',     label: 'Void' },
   };
   const m = map[status] || { kind: 'good', label: status };
   return <span className={'pill ' + m.kind}>{m.label}</span>;

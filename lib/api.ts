@@ -523,6 +523,16 @@ export interface TransactionDetail extends TransactionListItem {
     line_cost: number;
     line_profit: number;
   }[];
+  credit_info: {
+    tab_id: string;
+    tab_status: string;
+    amount: number;
+    amount_paid: number;
+    balance: number;
+    due_date: string | null;
+    is_overdue: boolean;
+    payments: { amount: number; method: string; reference: string; created_at: string }[];
+  } | null;
 }
 
 // ── Credits types ─────────────────────────────────────────────────────────────

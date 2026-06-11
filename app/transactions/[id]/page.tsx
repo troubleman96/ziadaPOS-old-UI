@@ -15,8 +15,12 @@ const SPINNER = (
   </>
 );
 
-function StatusBig({ status }: { status: string }) {
+function StatusBig({ status, creditInfo }: { status: string; creditInfo?: { tab_status: string; balance: number } | null }) {
+  if (status === 'paid' && creditInfo?.tab_status === 'partially_paid')
+    return <span className="pill warn" style={{ fontSize: 11.5, padding: '3px 10px', display: 'inline-flex', alignItems: 'center', gap: 5 }}><span className="dot-s" style={{ background: 'var(--warn)' }}></span> Partially paid</span>;
   if (status === 'paid')     return <span className="pill good"   style={{ fontSize: 11.5, padding: '3px 10px', display: 'inline-flex', alignItems: 'center', gap: 5 }}><span className="dot-s" style={{ background: 'var(--good)' }}></span> Paid in full</span>;
+  if (status === 'credit' && creditInfo?.tab_status === 'partially_paid')
+    return <span className="pill warn" style={{ fontSize: 11.5, padding: '3px 10px', display: 'inline-flex', alignItems: 'center', gap: 5 }}><span className="dot-s" style={{ background: 'var(--warn)' }}></span> Partially paid</span>;
   if (status === 'credit')   return <span className="pill warn"   style={{ fontSize: 11.5, padding: '3px 10px', display: 'inline-flex', alignItems: 'center', gap: 5 }}><span className="dot-s" style={{ background: 'var(--warn)' }}></span> Outstanding credit</span>;
   if (status === 'refunded') return <span className="pill bad"    style={{ fontSize: 11.5, padding: '3px 10px', display: 'inline-flex', alignItems: 'center', gap: 5 }}><span className="dot-s" style={{ background: 'var(--bad)'  }}></span> Refunded</span>;
   return <span className="pill">{status}</span>;
@@ -120,7 +124,7 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
               <h1 style={{ margin: 0, fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>
                 <span className="mono" style={{ color: 'var(--accent)' }}>{t.txn_number}</span>
               </h1>
-              <StatusBig status={t.status} />
+              <StatusBig status={t.status} creditInfo={t.credit_info} />
             </div>
             <div style={{ fontSize: 13.5, color: 'var(--fg-2)' }}>
               {fmtDT(ts)}
@@ -214,6 +218,76 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
               <span className="mono" style={{ fontSize: 16, fontWeight: 500, color: 'var(--fg)' }}>{fmt(t.total)}</span>
             </div>
           </div>
+
+          {/* Credit balance — shown for credit transactions that have a credit_info */}
+          {t.credit_info && (
+            <div className="surface" style={{ marginBottom: 14, borderTop: '3px solid var(--warn)' }}>
+              <div className="card-head">
+                <span className="card-title">Credit balance</span>
+                <Link href={`/credits/${t.customer}`} className="mono" style={{ fontSize: 11, color: 'var(--accent)' }}>
+                  View credit profile →
+                </Link>
+              </div>
+              <div style={{ padding: '14px 16px' }}>
+                {/* Balance bar */}
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--fg-3)', marginBottom: 6 }}>
+                    <span>Paid</span>
+                    <span>Outstanding</span>
+                  </div>
+                  <div style={{ height: 6, background: 'var(--bg-3)', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      width: t.credit_info.amount > 0 ? (t.credit_info.amount_paid / t.credit_info.amount * 100) + '%' : '0%',
+                      background: t.credit_info.balance === 0 ? 'var(--good)' : 'var(--warn)',
+                      borderRadius: 3,
+                      transition: 'width 0.4s',
+                    }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 13 }}>
+                    <span className="mono" style={{ color: 'var(--good)' }}>{fmt(t.credit_info.amount_paid)}</span>
+                    <span className="mono" style={{ color: t.credit_info.balance > 0 ? 'var(--warn)' : 'var(--fg-4)', fontWeight: t.credit_info.balance > 0 ? 600 : 400 }}>
+                      {t.credit_info.balance > 0 ? fmt(t.credit_info.balance) + ' owed' : 'Settled ✓'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Status + due date */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: t.credit_info.payments.length > 0 ? 12 : 0, flexWrap: 'wrap' }}>
+                  <span className={'pill ' + (t.credit_info.tab_status === 'settled' ? 'good' : t.credit_info.is_overdue ? 'bad' : 'warn')}>
+                    {t.credit_info.tab_status === 'open' ? 'Open' :
+                     t.credit_info.tab_status === 'partially_paid' ? 'Partially paid' :
+                     t.credit_info.tab_status === 'settled' ? 'Settled' : t.credit_info.tab_status}
+                  </span>
+                  {t.credit_info.due_date && (
+                    <span className="mono" style={{ fontSize: 11, color: t.credit_info.is_overdue ? 'var(--bad)' : 'var(--fg-3)', alignSelf: 'center' }}>
+                      {t.credit_info.is_overdue ? 'Overdue · ' : 'Due '}
+                      {new Date(t.credit_info.due_date).toLocaleDateString('en-TZ', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  )}
+                </div>
+
+                {/* Payment history */}
+                {t.credit_info.payments.length > 0 && (
+                  <div style={{ borderTop: '1px solid var(--line)', paddingTop: 10 }}>
+                    <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.06em', marginBottom: 8 }}>PAYMENTS RECEIVED</div>
+                    {t.credit_info.payments.map((p, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: i < t.credit_info!.payments.length - 1 ? '1px solid var(--line)' : 0, fontSize: 12.5 }}>
+                        <div>
+                          <span style={{ color: 'var(--fg)' }}>{p.method}</span>
+                          {p.reference && <span className="mono" style={{ color: 'var(--fg-4)', fontSize: 11, marginLeft: 6 }}>· {p.reference}</span>}
+                          <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 2 }}>
+                            {new Date(p.created_at).toLocaleString('en-TZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })}
+                          </div>
+                        </div>
+                        <span className="mono" style={{ color: 'var(--good)', fontWeight: 500 }}>+{fmt(p.amount)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Timeline */}
           <div className="surface">
