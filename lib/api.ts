@@ -628,12 +628,21 @@ export interface AnalyticsProduct {
   product_id: string;
   product_name: string;
   product_sku: string;
-  category_name: string;
-  qty_sold: number;
+  category: string;
+  units_sold: number;
   revenue: number;
   cost: number;
   profit: number;
   margin_pct: number;
+  trend_pct: number | null;
+  revenue_share_pct: number;
+}
+
+export interface AnalyticsProductsResponse {
+  date_from: string;
+  date_to: string;
+  totals: { revenue: number; profit: number; margin_pct: number; units_sold: number; sku_count: number };
+  products: AnalyticsProduct[];
 }
 
 // ── Transactions API ───────────────────────────────────────────────────────────
@@ -915,10 +924,10 @@ export const analyticsApi = {
     const qs = params ? `?${params}` : '';
     return apiFetch<AnalyticsOverview>(`/api/v1/analytics/overview/${qs}`, {}, token ?? undefined);
   },
-  async getProducts(params?: string): Promise<ApiResult<AnalyticsProduct[]>> {
+  async getProducts(params?: string): Promise<ApiResult<AnalyticsProductsResponse>> {
     const token = await getUsableAccessToken();
     const qs = params ? `?${params}` : '';
-    return apiFetch<AnalyticsProduct[]>(`/api/v1/analytics/products/${qs}`, {}, token ?? undefined);
+    return apiFetch<AnalyticsProductsResponse>(`/api/v1/analytics/products/${qs}`, {}, token ?? undefined);
   },
   async getSales(params?: string): Promise<ApiResult<SalesAnalytics>> {
     const token = await getUsableAccessToken();
