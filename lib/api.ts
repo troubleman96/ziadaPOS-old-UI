@@ -470,6 +470,8 @@ export interface DashboardKPIs {
   avg_ticket: number;
   tax_collected: number;
   refund_total: number;
+  discount_amount: number;
+  discounted_count: number;
   revenue_delta_pct: number | null;
   transaction_delta_pct: number | null;
 }

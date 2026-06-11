@@ -683,11 +683,9 @@ export default function DashboardPage() {
           accent="#10b981"
         />
         <KPI
-          label="TICKETS"
-          value={loading ? '—' : String(dash?.kpis_today.transaction_count ?? 0)}
-          delta={!loading && dash?.kpis_today.transaction_delta_pct != null ? `${dash.kpis_today.transaction_delta_pct > 0 ? '+' : ''}${dash.kpis_today.transaction_delta_pct}%` : undefined}
-          deltaKind={(dash?.kpis_today.transaction_delta_pct ?? 0) >= 0 ? 'good' : 'bad'}
-          subtitle={loading ? undefined : `avg ${fmtShort(dash?.kpis_today.avg_ticket ?? 0)}`}
+          label="DISCOUNTS"
+          value={loading ? '—' : fmtShort(dash?.kpis_today.discount_amount ?? 0)}
+          subtitle={loading ? undefined : (dash?.kpis_today.discounted_count ?? 0) > 0 ? `${dash?.kpis_today.discounted_count} discounted sales` : 'no discounts today'}
           accent="#60a5fa"
         />
         <KPI

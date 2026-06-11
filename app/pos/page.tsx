@@ -395,7 +395,7 @@ function TrialBanner({ daysRemaining, onDismiss }: { daysRemaining: number; onDi
 
 // ── Products sticky header ────────────────────────────────────────────────────
 
-function ProductsSticky({ query, setQuery, cat, setCat, categories, resultCount, totalCount, inputRef, cartCount, cartSubtotal, onOpenCart }: {
+function ProductsSticky({ query, setQuery, cat, setCat, categories, resultCount, totalCount, inputRef, cartCount, cartSubtotal, onOpenCart, scanMode, setScanMode, onScanEnter }: {
   query: string; setQuery: (q: string) => void;
   cat: string;   setCat:   (c: string) => void;
   categories: Category[];
@@ -403,6 +403,9 @@ function ProductsSticky({ query, setQuery, cat, setCat, categories, resultCount,
   inputRef: React.RefObject<HTMLInputElement | null>;
   cartCount: number; cartSubtotal: number;
   onOpenCart: () => void;
+  scanMode: boolean;
+  setScanMode: (v: boolean) => void;
+  onScanEnter: (q: string) => void;
 }) {
   return (
     <div className="products-sticky">
@@ -420,14 +423,25 @@ function ProductsSticky({ query, setQuery, cat, setCat, categories, resultCount,
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-        <div className="pos-search" style={{ flex: 1 }}>
-          <span style={{ color: 'var(--fg-4)' }}>{Icons.search}</span>
-          <input ref={inputRef} placeholder="Search or scan…" value={query} onChange={e => setQuery(e.target.value)} />
+        <div className="pos-search" style={{ flex: 1, outline: scanMode ? '2px solid var(--accent)' : 'none', outlineOffset: -1, borderRadius: 8 }}>
+          <span style={{ color: scanMode ? 'var(--accent)' : 'var(--fg-4)' }}>{scanMode ? <BarcodeIcon /> : Icons.search}</span>
+          <input
+            ref={inputRef}
+            placeholder={scanMode ? 'Point scanner at barcode…' : 'Search or scan…'}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); onScanEnter(query); } }}
+            onBlur={() => { if (!query) setScanMode(false); }}
+          />
           {query && <span className="mono page-sec" style={{ fontSize: 10.5, color: 'var(--fg-4)' }}>{resultCount}</span>}
-          <span className="kbd page-sec">/</span>
+          {!scanMode && <span className="kbd page-sec">/</span>}
         </div>
-        <button className="btn btn-soft" style={{ height: 40, padding: '0 11px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          <BarcodeIcon /><span className="page-sec">Scan</span>
+        <button
+          onClick={() => { setScanMode(!scanMode); inputRef.current?.focus(); }}
+          className="btn btn-soft"
+          style={{ height: 40, padding: '0 11px', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, background: scanMode ? 'var(--accent-soft)' : undefined, border: scanMode ? '1px solid var(--accent-line)' : undefined, color: scanMode ? 'var(--accent)' : undefined }}
+        >
+          <BarcodeIcon /><span className="page-sec">{scanMode ? 'Scanning…' : 'Scan'}</span>
         </button>
         <button className="btn btn-soft pos-hide-mobile" style={{ height: 40, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6 }}>
           {Icons.plus} Custom
@@ -709,6 +723,7 @@ export default function POSPage() {
   const [completing, setCompleting] = useState(false);
   const [saleError,  setSaleError]  = useState('');
   const [completedTxn, setCompletedTxn] = useState<CompletedTransaction | null>(null);
+  const [scanMode,   setScanMode]   = useState(false);
 
   // Live data from API
   const [products,   setProducts]   = useState<POSProduct[]>([]);
@@ -764,6 +779,20 @@ export default function POSPage() {
   const addProduct = (p: POSProduct) => {
     setCart(c => ({ ...c, [p.id]: { product: p, qty: (c[p.id]?.qty || 0) + 1 } }));
   };
+
+  function handleScanEnter(q: string) {
+    const code = q.trim();
+    if (!code) return;
+    // Exact barcode match first, then exact SKU, then single partial match
+    const match = products.find(p => p.barcode === code)
+      ?? products.find(p => p.sku.toLowerCase() === code.toLowerCase())
+      ?? (() => { const m = products.filter(p => p.barcode.includes(code)); return m.length === 1 ? m[0] : undefined; })();
+    if (match) {
+      addProduct(match);
+      setQuery('');
+      setScanMode(false);
+    }
+  }
 
   // ── Complete sale ──────────────────────────────────────────────────────────
   async function handleCompleteSale() {
@@ -835,6 +864,9 @@ export default function POSPage() {
             cartCount={cartCount}
             cartSubtotal={cartSubtotal}
             onOpenCart={() => setCartOpen(true)}
+            scanMode={scanMode}
+            setScanMode={setScanMode}
+            onScanEnter={handleScanEnter}
           />
           <div className="products-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <ProductGrid items={items} cartMap={cartMap} onAdd={addProduct} loading={loadingProducts} />

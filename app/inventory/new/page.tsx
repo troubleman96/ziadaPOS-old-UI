@@ -257,6 +257,55 @@ const SECTION_HEAD: React.CSSProperties = {
   background: 'var(--bg-3)',
 };
 
+function BarcodeField({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [scanning, setScanning] = useState(false);
+
+  return (
+    <div style={{ position: 'relative', display: 'flex' }}>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') e.preventDefault(); }}
+        onFocus={() => setScanning(true)}
+        onBlur={() => setScanning(false)}
+        placeholder="Scan or type EAN-13 / QR"
+        disabled={disabled}
+        style={{
+          ...INPUT,
+          fontFamily: 'var(--mono)',
+          flex: 1,
+          paddingRight: 38,
+          outline: scanning ? '2px solid var(--accent)' : undefined,
+          outlineOffset: scanning ? -2 : undefined,
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => { inputRef.current?.focus(); }}
+        disabled={disabled}
+        title="Click then scan barcode"
+        style={{
+          position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+          width: 28, height: 28, border: 0, borderRadius: 5, cursor: 'pointer',
+          background: scanning ? 'var(--accent-soft)' : 'transparent',
+          color: scanning ? 'var(--accent)' : 'var(--fg-4)',
+          display: 'grid', placeItems: 'center',
+          transition: 'all 120ms',
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <g stroke="currentColor" strokeWidth="1.4">
+            <path d="M2 3v10" /><path d="M4 3v10" /><path d="M6 3v10" />
+            <path d="M9 3v10" /><path d="M11 3v10" /><path d="M13 3v10" />
+          </g>
+        </svg>
+      </button>
+    </div>
+  );
+}
+
 function ProductCard({ draft, index, canRemove, onUpdate, onRemove }: ProductCardProps) {
   const { name, sku, price, cost, category, barcode, openStock, minStock, maxStock, supplier, status, imagePreview, errors, saved, saving } = draft;
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -327,8 +376,7 @@ function ProductCard({ draft, index, canRemove, onUpdate, onRemove }: ProductCar
               </div>
               <div>
                 <label style={LABEL}>BARCODE <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>· optional</span></label>
-                <input value={barcode} onChange={e => onUpdate({ barcode: e.target.value })} placeholder="Scan or type EAN-13"
-                  style={{ ...INPUT, fontFamily: 'var(--mono)' }} disabled={saved} />
+                <BarcodeField value={barcode} onChange={v => onUpdate({ barcode: v })} disabled={saved} />
               </div>
             </div>
           </div>
