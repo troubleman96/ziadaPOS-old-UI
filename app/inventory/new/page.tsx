@@ -562,13 +562,18 @@ export default function NewProductPage() {
         }));
       } else {
         const result = res.data as BulkCreateResult;
+        const CARD_FIELDS = new Set(['name', 'price', 'cost', 'sku', 'barcode', 'stock', 'min_stock', 'max_stock', 'is_active', 'category', 'category_name_input']);
         // Map per-item errors by their index in the submitted array
         const errorsByIndex: Record<number, Record<string, string>> = {};
         for (const e of (result.errors ?? [])) {
           const flat: Record<string, string> = {};
+          const unknown: string[] = [];
           for (const [k, v] of Object.entries(e.errors)) {
-            flat[k] = Array.isArray(v) ? v[0] : String(v);
+            const msg = Array.isArray(v) ? (v as string[])[0] : String(v);
+            if (CARD_FIELDS.has(k)) flat[k] = msg;
+            else unknown.push(msg);
           }
+          if (unknown.length) flat._submit = unknown.join('; ');
           errorsByIndex[e.index] = flat;
         }
 

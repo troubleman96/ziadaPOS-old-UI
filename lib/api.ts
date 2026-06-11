@@ -386,7 +386,7 @@ export const inventoryApi = {
       const res = await fetch(`${BASE_URL}/api/v1/inventory/products/bulk-create/`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(products),
+        body: JSON.stringify(products.map(({ image: _i, imageFile: _f, imagePreview: _p, ...rest }) => rest)),
       });
       const json = await res.json() as Record<string, unknown>;
       if (!res.ok) {
