@@ -268,12 +268,14 @@ function CartBottomBar({ lines, count, subtotal, onOpen }: {
 
 // ── Mobile cart sheet ─────────────────────────────────────────────────────────
 
-function MobileCartSheet({ cart, setCart, payment, setPayment, onClose, onCompleteSale, completing }: {
+function MobileCartSheet({ cart, setCart, payment, setPayment, onClose, onCompleteSale, completing, selectedCustomer, onOpenCustomerPicker }: {
   cart: Cart; setCart: React.Dispatch<React.SetStateAction<Cart>>;
   payment: string; setPayment: (p: string) => void;
   onClose: () => void;
   onCompleteSale: () => void;
   completing: boolean;
+  selectedCustomer: POSCustomer | null;
+  onOpenCustomerPicker: () => void;
 }) {
   const lines    = Object.values(cart);
   const subtotal = lines.reduce((s, l) => s + l.qty * l.product.price, 0);
@@ -325,15 +327,35 @@ function MobileCartSheet({ cart, setCart, payment, setPayment, onClose, onComple
           <span className="mono" style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', letterSpacing: '-0.02em' }}>{fmt(total)}</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginTop: 4 }}>
-          {['Cash', 'M-Pesa', 'Bank', 'Credit'].map(m => (
-            <button key={m} onClick={() => setPayment(m)} style={{ padding: '10px 4px', borderRadius: 7, fontSize: 13, fontWeight: 500, border: '1px solid ' + (payment === m ? 'var(--accent-line)' : 'var(--line)'), background: payment === m ? 'var(--accent-soft)' : 'var(--bg)', color: payment === m ? 'var(--fg)' : 'var(--fg-2)', cursor: 'pointer', transition: 'all 120ms' }}>{m}</button>
-          ))}
+          {['Cash', 'M-Pesa', 'Bank', 'Credit'].map(m => {
+            const creditLocked = m === 'Credit' && !selectedCustomer;
+            return (
+              <button key={m}
+                onClick={() => creditLocked ? (setPayment(m), onClose(), onOpenCustomerPicker()) : setPayment(m)}
+                title={creditLocked ? 'Select a customer to sell on credit' : undefined}
+                style={{
+                  padding: '10px 4px', borderRadius: 7, fontSize: 13, fontWeight: 500,
+                  border: '1px solid ' + (payment === m ? 'var(--accent-line)' : creditLocked ? 'var(--warn-line, var(--line))' : 'var(--line)'),
+                  background: payment === m ? 'var(--accent-soft)' : 'var(--bg)',
+                  color: payment === m ? 'var(--fg)' : creditLocked ? 'var(--fg-4)' : 'var(--fg-2)',
+                  cursor: 'pointer', transition: 'all 120ms', position: 'relative',
+                }}
+              >{m}</button>
+            );
+          })}
         </div>
+        {payment === 'Credit' && !selectedCustomer && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', fontSize: 12, color: 'var(--warn)' }}>
+            <span style={{ flexShrink: 0 }}>⚠</span>
+            <span style={{ flex: 1 }}>Credit requires a customer.</span>
+            <button onClick={() => { onClose(); onOpenCustomerPicker(); }} style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--warn)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>Add →</button>
+          </div>
+        )}
         <button
-          disabled={lines.length === 0 || completing}
+          disabled={lines.length === 0 || completing || (payment === 'Credit' && !selectedCustomer)}
           onClick={onCompleteSale}
           className="btn btn-primary"
-          style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', padding: '14px', fontSize: 15, fontWeight: 600, opacity: (lines.length === 0 || completing) ? 0.4 : 1 }}
+          style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', padding: '14px', fontSize: 15, fontWeight: 600, opacity: (lines.length === 0 || completing || (payment === 'Credit' && !selectedCustomer)) ? 0.4 : 1 }}
         >
           {completing ? 'Processing…' : lines.length > 0 ? `Pay ${fmt(total)}` : 'Pay'}
         </button>
@@ -615,20 +637,40 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
       )}
 
       {/* Payment + CTA */}
-      <div className="cart-payment-section" style={{ padding: '14px 18px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="cart-payment-section" style={{ padding: '14px 18px', borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div>
           <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', marginBottom: 8 }}>PAYMENT</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
-            {['Cash', 'M-Pesa', 'Bank', 'Credit'].map(m => (
-              <button key={m} onClick={() => setPayment(m)} style={{ padding: '8px 6px', borderRadius: 6, border: '1px solid ' + (payment === m ? 'var(--accent-line)' : 'var(--line)'), background: payment === m ? 'var(--accent-soft)' : 'var(--bg)', color: payment === m ? 'var(--fg)' : 'var(--fg-2)', fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 120ms' }}>{m}</button>
-            ))}
+            {['Cash', 'M-Pesa', 'Bank', 'Credit'].map(m => {
+              const creditLocked = m === 'Credit' && !selectedCustomer;
+              return (
+                <button key={m}
+                  onClick={() => setPayment(m)}
+                  title={creditLocked ? 'Select a customer above to sell on credit' : undefined}
+                  style={{
+                    padding: '8px 6px', borderRadius: 6, fontFamily: 'inherit',
+                    border: '1px solid ' + (payment === m ? 'var(--accent-line)' : 'var(--line)'),
+                    background: payment === m ? 'var(--accent-soft)' : 'var(--bg)',
+                    color: payment === m ? 'var(--fg)' : creditLocked ? 'var(--fg-4)' : 'var(--fg-2)',
+                    fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 120ms',
+                  }}
+                >{m}</button>
+              );
+            })}
           </div>
         </div>
+        {payment === 'Credit' && !selectedCustomer && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', fontSize: 12 }}>
+            <span style={{ color: 'var(--warn)', flexShrink: 0 }}>⚠</span>
+            <span style={{ color: 'var(--fg-2)', flex: 1 }}>Credit requires a registered customer.</span>
+            <button onClick={onOpenCustomerPicker} style={{ fontSize: 12, fontWeight: 600, color: 'var(--warn)', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>Add customer →</button>
+          </div>
+        )}
         <button
-          disabled={lines.length === 0 || completing}
+          disabled={lines.length === 0 || completing || (payment === 'Credit' && !selectedCustomer)}
           onClick={onCompleteSale}
           className="btn btn-primary"
-          style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', padding: '13px 12px', fontSize: 15, fontWeight: 600, opacity: (lines.length === 0 || completing) ? 0.4 : 1, cursor: (lines.length === 0 || completing) ? 'not-allowed' : 'pointer', letterSpacing: '-0.01em' }}
+          style={{ width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', padding: '13px 12px', fontSize: 15, fontWeight: 600, opacity: (lines.length === 0 || completing || (payment === 'Credit' && !selectedCustomer)) ? 0.4 : 1, cursor: (lines.length === 0 || completing || (payment === 'Credit' && !selectedCustomer)) ? 'not-allowed' : 'pointer', letterSpacing: '-0.01em' }}
         >
           {completing ? 'Processing…' : lines.length > 0 ? `Pay ${fmt(total)}` : 'Pay'}
         </button>
@@ -802,7 +844,7 @@ export default function POSPage() {
 
       <div className={'cart-sheet-backdrop' + (cartOpen ? ' open' : '')} onClick={() => setCartOpen(false)} />
       <div className={'cart-sheet' + (cartOpen ? ' open' : '')}>
-        <MobileCartSheet cart={cart} setCart={setCart} payment={payment} setPayment={setPayment} onClose={() => setCartOpen(false)} onCompleteSale={handleCompleteSale} completing={completing} />
+        <MobileCartSheet cart={cart} setCart={setCart} payment={payment} setPayment={setPayment} onClose={() => setCartOpen(false)} onCompleteSale={handleCompleteSale} completing={completing} selectedCustomer={selectedCustomer} onOpenCustomerPicker={() => { setCartOpen(false); setCustPickerOpen(true); }} />
       </div>
 
       {custPickerOpen && (
