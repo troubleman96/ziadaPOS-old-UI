@@ -215,6 +215,7 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
     { id: 'txn',       label: 'Transactions',   icon: Icons.txn,        href: '/transactions' },
     { id: 'inventory', label: 'Inventory',      icon: Icons.inventory,  href: '/inventory',    badge: { color: 'var(--warn)' } },
     { id: 'discounts', label: 'Discounts',      icon: Icons.discount,   href: '/discounts' },
+    { id: 'expenses', label: 'Expenses',   icon: Icons.expense,   href: '/expenses' },
     { id: 'credits',   label: 'Credits',        icon: Icons.credit,     href: '/credits',      badge: '14' },
   ];
   const insights = [

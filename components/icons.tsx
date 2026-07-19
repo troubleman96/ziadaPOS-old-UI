@@ -265,6 +265,16 @@ export const Icons = {
       <path d="M6 9.5h4" />
     </>} />
   ),
+  expense: (
+    <Icon d={<>
+      <rect x="3" y="1.5" width="10" height="13" rx="1.5" />
+      <path d="M5.5 5.5h5" />
+      <path d="M5.5 8h5" />
+      <path d="M5.5 10.5h3" />
+      <path d="M10.5 10.5l1.5 1.5" />
+      <path d="M12 10.5l-1.5 1.5" />
+    </>} />
+  ),
 };
 
 export type IconName = keyof typeof Icons;

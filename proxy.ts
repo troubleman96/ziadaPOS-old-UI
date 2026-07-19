@@ -33,6 +33,7 @@ const PROTECTED_PREFIXES = [
   '/credits',
   '/stores',
   '/suppliers',
+  '/expenses',
   '/analytics',
   '/reports',
   '/settings',

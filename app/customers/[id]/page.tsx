@@ -8,6 +8,15 @@ import { Icons } from '../../../components/icons';
 import { fmt, fmtShort } from '../../../lib/utils';
 import { customerApi, CustomerListItem } from '../../../lib/api';
 
+// ── SMS icon (matches the inline WhatsApp icon style below) ────────────────────
+const SmsIcon = (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+    <g stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3.5h12v7H6l-2.5 2.5V10.5H2v-7z" />
+    </g>
+  </svg>
+);
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function daysAgoLabel(dateStr: string | null) {
   if (!dateStr) return 'Never';

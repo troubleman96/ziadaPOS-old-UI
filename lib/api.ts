@@ -55,6 +55,9 @@ export interface Organisation {
   region: string;
   plan: string;
   max_stores: number;
+  sendafrica_api_key_masked?: string;
+  sms_sender_id?: string;
+  sms_configured?: boolean;
 }
 
 export interface SubscriptionInfo {
@@ -251,6 +254,25 @@ export const authApi = {
 
   async mySubscription(accessToken?: string) {
     return apiFetch<SubscriptionInfo>('/api/v1/subscriptions/my-subscription/', {}, accessToken ?? await getUsableAccessToken() ?? undefined);
+  },
+};
+
+// ── Organisation API ───────────────────────────────────────────────────────────
+
+export const organisationApi = {
+  async get(): Promise<ApiResult<Organisation>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<Organisation>('/api/v1/accounts/organisation/', {}, token ?? undefined);
+  },
+
+  async patch(payload: Partial<{ sendafrica_api_key: string; sms_sender_id: string }>): Promise<ApiResult<Organisation>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<Organisation>('/api/v1/accounts/organisation/', { method: 'PATCH', body: JSON.stringify(payload) }, token ?? undefined);
+  },
+
+  async getSmsBalance(): Promise<ApiResult<{ balance: number }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<{ balance: number }>('/api/v1/accounts/organisation/sms-balance/', {}, token ?? undefined);
   },
 };
 
@@ -681,6 +703,18 @@ export const transactionApi = {
 
 // ── Credits API ────────────────────────────────────────────────────────────────
 
+export interface SendReminderResult {
+  id: string;
+  channel: string;
+  direction: string;
+  body: string;
+  sent_by_name: string;
+  created_at: string;
+  sms_sent?: boolean;
+  sms_error?: string;
+  sms_credits_used?: number;
+}
+
 export const creditsApi = {
   async getDashboard(params?: string): Promise<ApiResult<CreditsDashboard>> {
     const token = await getUsableAccessToken();
@@ -696,6 +730,15 @@ export const creditsApi = {
   async recordPayment(customerId: string, payload: { amount: number; method: string; reference?: string; note?: string }): Promise<ApiResult<unknown>> {
     const token = await getUsableAccessToken();
     return apiFetch(`/api/v1/credits/customers/${customerId}/record-payment/`, { method: 'POST', body: JSON.stringify(payload) }, token ?? undefined);
+  },
+
+  async sendReminder(customerId: string, payload: { kind: 'sms' | 'whatsapp' | 'call'; body: string; direction?: 'in' | 'out' }): Promise<ApiResult<SendReminderResult>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<SendReminderResult>(
+      `/api/v1/credits/customers/${customerId}/send-reminder/`,
+      { method: 'POST', body: JSON.stringify({ direction: 'out', ...payload }) },
+      token ?? undefined,
+    );
   },
 };
 
@@ -864,6 +907,10 @@ export const customerApi = {
   async update(id: string, payload: Record<string, unknown>): Promise<ApiResult<CustomerListItem>> {
     const token = await getUsableAccessToken();
     return apiFetch<CustomerListItem>(`/api/v1/customers/${id}/`, { method: 'PATCH', body: JSON.stringify(payload) }, token ?? undefined);
+  },
+  async sendSms(id: string, message: string): Promise<ApiResult<{ message_id: string; status: string; credits_used: number }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch(`/api/v1/customers/${id}/send-sms/`, { method: 'POST', body: JSON.stringify({ message }) }, token ?? undefined);
   },
 };
 
@@ -1102,3 +1149,95 @@ export const BUSINESS_TYPES = [
   { value: 'wholesale', label: 'Wholesale (Jumla)' },
   { value: 'pharmacy',  label: 'Pharmacy (Duka la Dawa)' },
 ] as const;
+
+// ── Expense types ─────────────────────────────────────────────────────────────
+
+export interface ExpenseItem {
+  id: string;
+  title: string;
+  category: string;
+  amount: number;
+  payment_method: string;
+  payment_reference: string;
+  notes: string;
+  receipt_url: string | null;
+  recorded_by_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExpenseSummary {
+  total_amount: number;
+  total_count: number;
+  by_category: { category: string; amount: number; count: number; pct: number }[];
+  by_method: { method: string; amount: number; count: number; pct: number }[];
+  recent: ExpenseItem[];
+}
+
+// ── Expense API ───────────────────────────────────────────────────────────────
+
+export const expenseApi = {
+  async getList(params?: string): Promise<ApiResult<ExpenseItem[]>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<ExpenseItem[]>(`/api/v1/expenses/${qs}`, {}, token ?? undefined);
+  },
+
+  async getDetail(id: string): Promise<ApiResult<ExpenseItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<ExpenseItem>(`/api/v1/expenses/${id}/`, {}, token ?? undefined);
+  },
+
+  async create(payload: {
+    title: string;
+    category: string;
+    amount: number;
+    payment_method: string;
+    payment_reference?: string;
+    notes?: string;
+    receipt_url?: string;
+  }): Promise<ApiResult<ExpenseItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<ExpenseItem>(
+      '/api/v1/expenses/',
+      { method: 'POST', body: JSON.stringify(payload) },
+      token ?? undefined,
+    );
+  },
+
+  async update(id: string, payload: Partial<{
+    title: string;
+    category: string;
+    amount: number;
+    payment_method: string;
+    payment_reference: string;
+    notes: string;
+  }>): Promise<ApiResult<ExpenseItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<ExpenseItem>(
+      `/api/v1/expenses/${id}/`,
+      { method: 'PATCH', body: JSON.stringify(payload) },
+      token ?? undefined,
+    );
+  },
+
+  async delete(id: string): Promise<ApiResult<null>> {
+    const token = await getUsableAccessToken();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    try {
+      const res = await fetch(`${BASE_URL}/api/v1/expenses/${id}/`, { method: 'DELETE', headers });
+      if (res.status === 204 || res.ok) return { success: true, message: 'Expense deleted.', data: null };
+      const json = await res.json() as Record<string, unknown>;
+      return { success: false, status: res.status, message: (json.message ?? json.detail ?? 'Delete failed.') as string };
+    } catch {
+      return { success: false, message: 'Network error. Please check your connection.' };
+    }
+  },
+
+  async getSummary(params?: string): Promise<ApiResult<ExpenseSummary>> {
+    const token = await getUsableAccessToken();
+    const qs = params ? `?${params}` : '';
+    return apiFetch<ExpenseSummary>(`/api/v1/expenses/summary/${qs}`, {}, token ?? undefined);
+  },
+};

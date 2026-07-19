@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
+import { organisationApi, Organisation } from '../../lib/api';
 
 // ── Types & shared atoms ──────────────────────────────────────────────────────
 
@@ -468,10 +469,137 @@ function NotificationsPanel() {
   );
 }
 
+function IntegrationsPanel() {
+  const [org, setOrg] = useState<Organisation | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [apiKey, setApiKey] = useState('');
+  const [senderId, setSenderId] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [balanceErr, setBalanceErr] = useState<string | null>(null);
+  const [checkingBalance, setCheckingBalance] = useState(false);
+
+  function refreshBalance() {
+    setCheckingBalance(true);
+    setBalanceErr(null);
+    organisationApi.getSmsBalance().then((res) => {
+      setCheckingBalance(false);
+      if (res.success) setBalance(res.data.balance);
+      else { setBalance(null); setBalanceErr(res.message); }
+    });
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    organisationApi.get().then((res) => {
+      setLoading(false);
+      if (res.success) {
+        setOrg(res.data);
+        setSenderId(res.data.sms_sender_id ?? '');
+        if (res.data.sms_configured) refreshBalance();
+      }
+    });
+  }, []);
+
+  async function save() {
+    if (!apiKey.trim() && senderId === (org?.sms_sender_id ?? '')) return;
+    setSaving(true);
+    setSaveMsg(null);
+    setSaveErr(null);
+    const payload: { sendafrica_api_key?: string; sms_sender_id?: string } = { sms_sender_id: senderId };
+    if (apiKey.trim()) payload.sendafrica_api_key = apiKey.trim();
+    const res = await organisationApi.patch(payload);
+    setSaving(false);
+    if (res.success) {
+      setOrg(res.data);
+      setApiKey('');
+      setSaveMsg('Saved!');
+      setTimeout(() => setSaveMsg(null), 2500);
+      if (res.data.sms_configured) refreshBalance();
+    } else {
+      setSaveErr(res.message);
+    }
+  }
+
+  const connected = !!org?.sms_configured;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div>
+        <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 500 }}>Integrations</h2>
+        <p style={{ margin: 0, fontSize: 13.5, color: 'var(--fg-3)' }}>Connect third-party services used for customer communication.</p>
+      </div>
+
+      <div className="surface" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--accent-soft)', border: '1px solid var(--accent-line)', display: 'grid', placeItems: 'center', color: 'var(--accent)', flexShrink: 0 }}>
+              {Icons.bell}
+            </div>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 500 }}>SendAfrica SMS</div>
+              <div style={{ fontSize: 12.5, color: 'var(--fg-3)', marginTop: 2 }}>
+                Sends credit reminders and customer SMS. Get an API key at{' '}
+                <a href="https://docs.sendafrica.online" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>docs.sendafrica.online</a>.
+              </div>
+            </div>
+          </div>
+          {!loading && (
+            connected
+              ? <span className="pill good" style={{ fontSize: 11, flexShrink: 0 }}>Connected</span>
+              : <span className="pill" style={{ fontSize: 11, flexShrink: 0, background: 'var(--bg-3)', color: 'var(--fg-3)' }}>Not connected</span>
+          )}
+        </div>
+
+        {connected && (
+          <div style={{ padding: 14, borderRadius: 8, background: 'var(--good-soft)', border: '1px solid rgba(52,211,153,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: 'var(--good)' }}>{Icons.check}</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--good)' }}>API key {org?.sendafrica_api_key_masked}</span>
+              </div>
+              <button className="btn btn-ghost" onClick={refreshBalance} disabled={checkingBalance} style={{ padding: '4px 10px', fontSize: 11.5 }}>
+                {checkingBalance ? 'Checking…' : 'Refresh balance'}
+              </button>
+            </div>
+            <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 6 }}>
+              {balanceErr ? balanceErr : balance !== null ? `${balance.toLocaleString()} SMS credits remaining` : '—'}
+            </div>
+          </div>
+        )}
+
+        <div className="form-grid-2">
+          <TextInput
+            label={connected ? 'Replace API key' : 'SendAfrica API key'}
+            value={apiKey}
+            onChange={setApiKey}
+            placeholder="SA-••••••••••••••••"
+          />
+          <TextInput
+            label="Sender ID (optional)"
+            value={senderId}
+            onChange={setSenderId}
+            placeholder="Defaults to 'SendAfrika'"
+            note="Must be pre-approved"
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button className="btn btn-primary" onClick={save} disabled={saving} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {saveMsg ? Icons.check : Icons.edit} {saving ? 'Saving…' : saveMsg ?? 'Save'}
+          </button>
+          {saveErr && <span style={{ fontSize: 12.5, color: 'var(--bad)' }}>{saveErr}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PlaceholderPanel({ id }: { id: string }) {
   const labels: Record<string, string> = {
     staff: 'Staff & permissions',
-    integrations: 'Integrations',
     billing: 'Billing & subscription',
   };
   return (
@@ -501,6 +629,7 @@ export default function SettingsPage() {
       case 'payments':      return <PaymentsPanel />;
       case 'receipt':       return <ReceiptPanel />;
       case 'notifications': return <NotificationsPanel />;
+      case 'integrations':  return <IntegrationsPanel />;
       default:              return <PlaceholderPanel id={active} />;
     }
   }

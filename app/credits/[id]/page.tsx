@@ -27,6 +27,15 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const [reminderOpen, setReminderOpen] = useState(false);
+  const [reminderBody, setReminderBody] = useState('');
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [reminderErr, setReminderErr] = useState<string | null>(null);
+
+  function reload() {
+    creditsApi.getCustomerProfile(id).then(r => { if (r.success) setProfile(r.data); });
+  }
+
   useEffect(() => {
     setLoading(true);
     creditsApi.getCustomerProfile(id).then((res) => {
@@ -44,9 +53,35 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
     if (res.success) {
       setPaymentOpen(false);
       setAmount('');
-      // reload
-      creditsApi.getCustomerProfile(id).then(r => { if (r.success) setProfile(r.data); });
+      reload();
     }
+  }
+
+  function openReminder() {
+    if (!profile) return;
+    setReminderBody(`Habari ${profile.customer.name}, unadaiwa TZS ${profile.customer.open_credit.toLocaleString()} katika Duka Kuu. Tafadhali lipa deni lako. Asante.`);
+    setReminderErr(null);
+    setReminderOpen(true);
+  }
+
+  async function sendReminder() {
+    if (!profile || !reminderBody.trim()) return;
+    setSendingReminder(true);
+    setReminderErr(null);
+    const res = await creditsApi.sendReminder(profile.customer.id, { kind: 'sms', body: reminderBody.trim() });
+    setSendingReminder(false);
+    if (res.success && res.data.sms_error) {
+      setReminderErr(res.data.sms_error);
+      reload();
+      return;
+    }
+    if (!res.success) {
+      setReminderErr(res.message);
+      return;
+    }
+    setReminderOpen(false);
+    setReminderBody('');
+    reload();
   }
 
   if (loading) {
@@ -84,7 +119,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
       crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Credits', href: '/credits' }, { label: c.name }]}
       actions={
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }}>Send reminder</button>
+          <button onClick={openReminder} className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }}>Send reminder</button>
           <button onClick={() => setPaymentOpen(true)} className="btn btn-primary" style={{ padding: '7px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
             Record payment
           </button>
@@ -307,7 +342,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
           {messages.length === 0 ? (
             <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--fg-3)' }}>
               <div style={{ fontSize: 14, marginBottom: 8 }}>No messages sent yet</div>
-              <button className="btn btn-soft" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{Icons.sparkles} Draft reminder in Swahili</button>
+              <button onClick={openReminder} className="btn btn-soft" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>{Icons.sparkles} Draft reminder in Swahili</button>
             </div>
           ) : (
             <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -354,6 +389,50 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
               </div>
               <button onClick={handlePayment} disabled={saving} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '10px', fontSize: 13.5, display: 'flex', alignItems: 'center' }}>
                 {saving ? 'Saving…' : 'Confirm payment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send reminder drawer */}
+      {reminderOpen && (
+        <div className="drawer-overlay" onClick={() => setReminderOpen(false)}>
+          <div className="drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-head">
+              <span style={{ fontSize: 15, fontWeight: 500 }}>Send SMS reminder</span>
+              <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => setReminderOpen(false)}>×</button>
+            </div>
+            <div style={{ padding: '16px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 0', borderBottom: '1px solid var(--line)', marginBottom: 16 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 999, background: `hsl(${c.avatar_hue}, 60%, 50%)`, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 600 }}>
+                  {initials}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 500 }}>{c.name}</div>
+                  <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{c.phone}</div>
+                </div>
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', letterSpacing: '0.06em', display: 'block', marginBottom: 6 }}>MESSAGE</label>
+                <textarea
+                  value={reminderBody}
+                  onChange={(e) => setReminderBody(e.target.value)}
+                  rows={4}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--line-2)', borderRadius: 7, background: 'var(--bg)', color: 'var(--fg)', fontSize: 13.5, outline: 0, boxSizing: 'border-box', fontFamily: 'inherit', resize: 'vertical' }}
+                />
+                <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 4 }}>{reminderBody.length} chars · {Math.ceil(reminderBody.length / 160) || 1} SMS part(s)</div>
+              </div>
+              {reminderErr && (
+                <div style={{ marginBottom: 14, padding: '10px 12px', borderRadius: 7, background: 'var(--bad-soft)', border: '1px solid rgba(248,113,113,0.25)', fontSize: 12.5, color: 'var(--bad)' }}>
+                  {reminderErr}
+                  {reminderErr.toLowerCase().includes('not configured') && (
+                    <> — <Link href="/settings" style={{ color: 'var(--bad)', textDecoration: 'underline' }}>configure in Settings</Link></>
+                  )}
+                </div>
+              )}
+              <button onClick={sendReminder} disabled={sendingReminder || !reminderBody.trim()} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '10px', fontSize: 13.5, display: 'flex', alignItems: 'center' }}>
+                {sendingReminder ? 'Sending…' : 'Send SMS'}
               </button>
             </div>
           </div>
