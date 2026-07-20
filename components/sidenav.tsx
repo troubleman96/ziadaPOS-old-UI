@@ -5,19 +5,43 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Icons } from './icons';
 import { useStore } from './app-shell';
-import { STORES } from '../lib/data';
+import { authApi } from '../lib/api';
+import { cacheUser } from '../lib/auth';
 
 interface SidenavProps {
   navOpen: boolean;
   onClose: () => void;
 }
 
+// Stable per-store colour — hashed from the store id, not backend-provided.
+const STORE_PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#60a5fa', '#fb7185', '#a855f7'];
+function colorFor(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return STORE_PALETTE[h % STORE_PALETTE.length];
+}
+
 function StoreSwitcher({ onClose }: { onClose: () => void }) {
   const [open, setOpen] = useState(false);
-  const { activeStoreId, setActiveStoreId } = useStore();
+  const [switching, setSwitching] = useState<string | null>(null);
+  const { activeStoreId, setActiveStoreId, stores, activeStore } = useStore();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const activeStore = STORES.find(s => s.id === activeStoreId) ?? STORES[0];
+  async function handleSwitch(storeId: string) {
+    if (storeId === activeStoreId || switching) return;
+    setSwitching(storeId);
+    const res = await authApi.switchStore(storeId);
+    if (res.success) {
+      cacheUser(res.data);
+      setActiveStoreId(storeId);
+      // Every store-scoped page fetches on mount — a full reload is the
+      // simplest way to make the new store's data show up everywhere.
+      window.location.reload();
+    } else {
+      setSwitching(null);
+      alert(res.message || 'Could not switch store.');
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -29,6 +53,10 @@ function StoreSwitcher({ onClose }: { onClose: () => void }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  if (!activeStore) {
+    return <div style={{ margin: '12px 12px 8px', height: 50 }} />;
+  }
 
   return (
     <div ref={containerRef} style={{ position: 'relative', margin: '12px 12px 8px' }}>
@@ -48,22 +76,19 @@ function StoreSwitcher({ onClose }: { onClose: () => void }) {
       >
         <div style={{
           width: 28, height: 28, borderRadius: 6,
-          background: activeStore.color, color: '#fff',
+          background: colorFor(activeStore.id), color: '#fff',
           display: 'grid', placeItems: 'center',
           fontSize: 12, fontWeight: 600, flexShrink: 0,
-        }}>{activeStore.shortName[0]}</div>
+        }}>{activeStore.name[0]}</div>
 
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {activeStore.shortName}
+              {activeStore.name}
             </span>
-            {activeStore.badge && (
-              <span className="pill" style={{ fontSize: 9, padding: '0 5px', flexShrink: 0 }}>{activeStore.badge}</span>
-            )}
           </div>
           <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-3)', marginTop: 1 }}>
-            {STORES.length} stores
+            {stores.length} store{stores.length !== 1 ? 's' : ''}
           </div>
         </div>
 
@@ -95,37 +120,33 @@ function StoreSwitcher({ onClose }: { onClose: () => void }) {
             SWITCH STORE
           </div>
 
-          {STORES.map((store) => {
+          {stores.map((store) => {
             const isActive = store.id === activeStoreId;
+            const color = colorFor(store.id);
             return (
               <button
                 key={store.id}
-                onClick={() => { setActiveStoreId(store.id); setOpen(false); }}
+                disabled={!!switching}
+                onClick={() => handleSwitch(store.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   width: '100%', padding: '9px 14px', border: 'none',
                   background: isActive ? 'var(--accent-soft)' : 'transparent',
-                  color: 'var(--fg)', cursor: 'pointer', textAlign: 'left',
-                  fontFamily: 'inherit',
+                  color: 'var(--fg)', cursor: switching ? 'wait' : 'pointer', textAlign: 'left',
+                  fontFamily: 'inherit', opacity: switching && switching !== store.id ? 0.5 : 1,
                 }}
               >
                 <div style={{
                   width: 26, height: 26, borderRadius: 6, flexShrink: 0,
-                  background: store.color + '22',
-                  border: `1.5px solid ${store.color}55`,
+                  background: color + '22',
+                  border: `1.5px solid ${color}55`,
                   display: 'grid', placeItems: 'center',
-                  color: store.color, fontSize: 11, fontWeight: 700,
-                }}>{store.shortName[0]}</div>
+                  color, fontSize: 11, fontWeight: 700,
+                }}>{store.name[0]}</div>
 
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 12.5, fontWeight: isActive ? 500 : 400 }}>
-                    {store.shortName}
-                    {store.badge && (
-                      <span className="mono" style={{
-                        marginLeft: 5, fontSize: 9, background: 'var(--accent)',
-                        color: '#fff', padding: '1px 4px', borderRadius: 3,
-                      }}>{store.badge}</span>
-                    )}
+                    {store.name}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
                     <span style={{
@@ -133,8 +154,8 @@ function StoreSwitcher({ onClose }: { onClose: () => void }) {
                       background: store.status === 'open' ? 'var(--good)' : 'var(--warn)',
                       display: 'inline-block',
                     }} />
-                    <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)' }}>
-                      {store.statusLabel} · {store.address.split(',')[0]}
+                    <span className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', textTransform: 'capitalize' }}>
+                      {store.status} · {store.region}
                     </span>
                   </div>
                 </div>
@@ -216,7 +237,7 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
     { id: 'inventory', label: 'Inventory',      icon: Icons.inventory,  href: '/inventory',    badge: { color: 'var(--warn)' } },
     { id: 'discounts', label: 'Discounts',      icon: Icons.discount,   href: '/discounts' },
     { id: 'expenses', label: 'Expenses',   icon: Icons.expense,   href: '/expenses' },
-    { id: 'credits',   label: 'Credits',        icon: Icons.credit,     href: '/credits',      badge: '14' },
+    { id: 'credits',   label: 'Debts',          icon: Icons.credit,     href: '/credits' },
   ];
   const insights = [
     { id: 'analytics', label: 'Analytics',  icon: Icons.analytics, href: '/analytics' },
@@ -226,7 +247,7 @@ export function Sidenav({ navOpen, onClose }: SidenavProps) {
   const directory = [
     { id: 'customers', label: 'Customers', icon: Icons.customers, href: '/customers' },
     { id: 'suppliers', label: 'Suppliers', icon: Icons.suppliers, href: '/suppliers' },
-    { id: 'stores',    label: 'Stores',    icon: Icons.store,     href: '/stores',   badge: '3' },
+    { id: 'stores',    label: 'Stores',    icon: Icons.store,     href: '/stores' },
   ];
   const tools = [
     { id: 'staff',    label: 'Staff',    icon: Icons.staff,    href: '/staff'    },

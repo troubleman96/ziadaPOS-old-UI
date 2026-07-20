@@ -4,9 +4,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidenav } from './sidenav';
 import { Topbar } from './topbar';
-import { STORES } from '../lib/data';
-import { isAuthenticated, getCachedSubscription, cacheSubscription, getAccessToken } from '../lib/auth';
-import { authApi } from '../lib/api';
+import { BottomNav } from './bottom-nav';
+import { isAuthenticated, getCachedUser } from '../lib/auth';
+import { storesApi, StoreItem } from '../lib/api';
 import { ReviewPrompt } from './review-prompt';
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
@@ -32,11 +32,15 @@ export function useTheme() {
 interface StoreContextValue {
   activeStoreId: string;
   setActiveStoreId: (id: string) => void;
+  stores: StoreItem[];
+  activeStore: StoreItem | null;
 }
 
 const StoreContext = createContext<StoreContextValue>({
-  activeStoreId: 'kariakoo',
+  activeStoreId: '',
   setActiveStoreId: () => {},
+  stores: [],
+  activeStore: null,
 });
 
 export function useStore() {
@@ -95,7 +99,8 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
   const router = useRouter();
   const [theme, setTheme] = useState<Theme>('light');
   const [navOpen, setNavOpen] = useState(false);
-  const [activeStoreId, setActiveStoreIdState] = useState('kariakoo');
+  const [activeStoreId, setActiveStoreIdState] = useState('');
+  const [stores, setStores] = useState<StoreItem[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>(INITIAL_NOTIFICATIONS);
   // Guard: hide content while we verify auth to avoid a flash of protected UI
   const [authChecked, setAuthChecked] = useState(false);
@@ -110,35 +115,9 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
       return;
     }
 
-    // Subscription guard — always verify with the API so a stale cache
-    // (e.g. admin activated the trial while the user was on /activate)
-    // doesn't keep the user stuck forever.
-    const cachedSub = getCachedSubscription();
-    const subLooksInactive =
-      cachedSub && (cachedSub.status === 'pending_payment' || cachedSub.is_active_now === false);
-
-    if (subLooksInactive) {
-      // Cache says inactive — verify with the live API before blocking
-      const token = getAccessToken();
-      if (token) {
-        const result = await authApi.mySubscription();
-        if (result.success) {
-          cacheSubscription(result.data);
-          if (!result.data.is_active_now) {
-            router.replace('/activate');
-            return;
-          }
-          // API says active — fall through and let the user in
-        } else {
-          // Can't reach API or 402 — send to activate to be safe
-          router.replace('/activate');
-          return;
-        }
-      } else {
-        router.replace('/activate');
-        return;
-      }
-    }
+    // Subscription guard — disabled while the app is pre-launch (no paywall
+    // enforcement yet; see apps/subscriptions/middleware.py on the API side).
+    // Re-enable this block once the real subscription/billing model ships.
 
     setAuthChecked(true);
 
@@ -146,10 +125,29 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
     const current = document.documentElement.getAttribute('data-theme') as Theme | null;
     setTheme(current || stored || 'light');
 
+    // Restore the last-selected store id; corrected below once the real
+    // store list loads, in case it's stale (deleted store, different account).
     const storedStore = localStorage.getItem('ziada-store');
-    if (storedStore && STORES.some(s => s.id === storedStore)) {
+    if (storedStore) {
       setActiveStoreIdState(storedStore);
     }
+
+    storesApi.getList().then((res) => {
+      if (!res.success || !res.data.length) return;
+      setStores(res.data);
+      setActiveStoreIdState((current) => {
+        if (res.data.some(s => s.id === current)) return current;
+        // No valid saved preference — default to the account's real assigned
+        // store (from /accounts/me/, cached at login) rather than an
+        // arbitrary first-in-list store, so the sidenav label always matches
+        // the store the backend is actually scoping data to.
+        const realStoreId = getCachedUser()?.store;
+        if (realStoreId && res.data.some(s => s.id === String(realStoreId))) {
+          return String(realStoreId);
+        }
+        return res.data[0].id;
+      });
+    });
     })();
   }, [router]);
 
@@ -168,6 +166,8 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
   const addNotification = (n: AppNotification) => {
     setNotifications(prev => [n, ...prev]);
   };
+
+  const activeStore = stores.find(s => s.id === activeStoreId) ?? null;
 
   const openNav  = () => setNavOpen(true);
   const closeNav = () => setNavOpen(false);
@@ -192,7 +192,7 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
 
   return (
     <NotifContext.Provider value={{ notifications, addNotification }}>
-      <StoreContext.Provider value={{ activeStoreId, setActiveStoreId }}>
+      <StoreContext.Provider value={{ activeStoreId, setActiveStoreId, stores, activeStore }}>
         <ThemeContext.Provider value={{ theme, toggleTheme }}>
           <div
             className={`mobile-nav-overlay${navOpen ? ' visible' : ''}`}
@@ -211,6 +211,7 @@ export function AppShell({ children, crumbs, actions, search, full = false }: Ap
               {full ? children : <div className="body">{children}</div>}
             </div>
           </div>
+          <BottomNav />
           <ReviewPrompt />
         </ThemeContext.Provider>
       </StoreContext.Provider>

@@ -33,6 +33,7 @@
   --nav-w: 248px;
   --topbar-h: 56px;
   --cart-w: 380px;
+  --bottom-nav-h: 60px;
 }
 
 html[data-theme="light"] {
@@ -524,6 +525,9 @@ input, select, textarea { font-family: inherit; }
 }
 .mobile-nav-overlay.visible { display: block; }
 
+/* ─── Bottom nav (mobile only) ───────────────────────────────────────────────── */
+.bottom-nav { display: none; }
+
 /* ─── Mobile breakpoint ──────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   body { overflow: auto; }
@@ -548,7 +552,40 @@ input, select, textarea { font-family: inherit; }
   .three-dot-ai-row { display: block; }
   .topbar-actions .btn { padding-inline: 9px !important; }
 
-  .body { padding: 16px 14px 72px; }
+  .body { padding: 16px 14px calc(16px + var(--bottom-nav-h)); }
+  .main { padding-bottom: var(--bottom-nav-h); }
+
+  .bottom-nav {
+    display: flex; align-items: flex-end; justify-content: space-around;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 160;
+    height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--bg-2); border-top: 1px solid var(--line);
+    box-shadow: 0 -2px 16px rgba(0,0,0,0.12);
+  }
+  .bottom-nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; height: var(--bottom-nav-h); color: var(--fg-3); text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bottom-nav-item.active { color: var(--accent); }
+  .bottom-nav-icon { display: flex; }
+  .bottom-nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.01em; }
+  .bottom-nav-item-center { position: relative; }
+  .bottom-nav-fab {
+    display: grid; place-items: center;
+    width: 46px; height: 46px; border-radius: 999px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: #fff; margin-top: -22px;
+    box-shadow: 0 4px 16px rgba(99,102,241,0.45), 0 0 0 4px var(--bg-2);
+    transition: transform 120ms;
+  }
+  .bottom-nav-item-center:active .bottom-nav-fab { transform: scale(0.94); }
+  .bottom-nav-item-center .bottom-nav-label { color: var(--fg-3); }
+  .bottom-nav-fab.active { box-shadow: 0 4px 20px rgba(99,102,241,0.6), 0 0 0 4px var(--bg-2); }
+
+  /* POS's floating cart summary bar floats above the tab bar, not under it */
+  .cart-bottom-bar { bottom: var(--bottom-nav-h); }
 
   /* Segment pills: allow horizontal scroll */
   .filter-bar { flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
@@ -810,16 +847,18 @@ input, select, textarea { font-family: inherit; }
 /* Bottom-sheet backdrop */
 .cart-sheet-backdrop {
   display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.52); z-index: 95;
+  background: rgba(0,0,0,0.52); z-index: 169;
   opacity: 0; pointer-events: none;
   transition: opacity 260ms ease;
 }
 .cart-sheet-backdrop.open { opacity: 1; pointer-events: auto; }
 
-/* Bottom sheet — full screen on mobile */
+/* Bottom sheet — full screen on mobile. z-index above .bottom-nav (160) since
+   it's a full-screen checkout takeover — it should cover the tab bar, not
+   sit underneath it. */
 .cart-sheet {
   display: none;
-  position: fixed; inset: 0; z-index: 96;
+  position: fixed; inset: 0; z-index: 170;
   background: var(--bg-2);
   flex-direction: column;
   transform: translateY(100%);

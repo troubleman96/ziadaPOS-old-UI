@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Icons } from './icons';
-import { useTheme, useNotifications } from './app-shell';
+import { useTheme, useNotifications, useStore } from './app-shell';
 import { clearTokens } from '../lib/auth';
+import { aiApi, AICreditsStatus } from '../lib/api';
 
 interface Crumb {
   label: string;
@@ -44,6 +45,7 @@ function ThreeDotMenu() {
   }
 
   const unread = notifications.filter(n => n.unread).length;
+  const [aiCredits, setAiCredits] = useState<AICreditsStatus | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -56,6 +58,11 @@ function ThreeDotMenu() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  useEffect(() => {
+    if (!open || aiCredits) return;
+    aiApi.getSuggestions().then((res) => { if (res.success) setAiCredits(res.data.ai_credits); });
+  }, [open, aiCredits]);
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -264,12 +271,16 @@ function ThreeDotMenu() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                     <span style={{ color: 'var(--accent)', display: 'flex' }}>{Icons.sparkles}</span>
-                    <span style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: '-0.01em' }}>Growth Plan</span>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, letterSpacing: '-0.01em' }}>Ziada AI</span>
                   </div>
-                  <div className="mono" style={{ fontSize: 9.5, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>AI CREDITS · JUN 2026</div>
+                  <div className="mono" style={{ fontSize: 9.5, color: 'var(--fg-4)', letterSpacing: '0.06em' }}>
+                    AI CREDITS · {new Date().toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }).toUpperCase()}
+                  </div>
                 </div>
                 <a
-                  href="#"
+                  href="https://ngamia.cc"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => setOpen(false)}
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: 4,
@@ -283,25 +294,25 @@ function ThreeDotMenu() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                <span className="mono" style={{ fontSize: 10, color: 'var(--fg-3)' }}>2,418 used</span>
+                <span className="mono" style={{ fontSize: 10, color: 'var(--fg-3)' }}>{(aiCredits?.used ?? 0).toLocaleString()} used</span>
                 <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>
-                  2,418 <span style={{ color: 'var(--fg-4)', fontWeight: 400, fontSize: 10.5 }}>/ 5,000</span>
+                  {(aiCredits?.used ?? 0).toLocaleString()} <span style={{ color: 'var(--fg-4)', fontWeight: 400, fontSize: 10.5 }}>/ {(aiCredits?.allocated ?? 500).toLocaleString()}</span>
                 </span>
               </div>
 
               <div style={{ height: 5, borderRadius: 999, background: 'var(--bg-4)', overflow: 'hidden', marginBottom: 6 }}>
                 <div style={{
-                  width: '48.4%', height: '100%', borderRadius: 999,
+                  width: `${Math.min(aiCredits?.pct_used ?? 0, 100)}%`, height: '100%', borderRadius: 999,
                   background: 'linear-gradient(90deg, #6366f1, #a855f7)',
                   boxShadow: '0 0 8px rgba(99,102,241,0.4)',
                 }} />
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="mono" style={{ fontSize: 9.5, color: 'var(--fg-4)' }}>2,582 credits remaining</span>
-                <a href="#" onClick={() => setOpen(false)} className="mono" style={{ fontSize: 10.5, color: 'var(--accent)', textDecoration: 'none' }}>
+                <span className="mono" style={{ fontSize: 9.5, color: 'var(--fg-4)' }}>{(aiCredits?.remaining ?? 0).toLocaleString()} credits remaining</span>
+                <Link href="/ai/usage" onClick={() => setOpen(false)} className="mono" style={{ fontSize: 10.5, color: 'var(--accent)', textDecoration: 'none' }}>
                   View usage →
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -349,11 +360,17 @@ function ThreeDotMenu() {
 }
 
 export function Topbar({ crumbs, actions, search = true, onMenuToggle }: TopbarProps) {
-  const items: Crumb[] = crumbs || [
+  const { activeStore } = useStore();
+  const raw: Crumb[] = crumbs || [
     { label: 'ziada', href: '/' },
     { label: 'Duka Kuu', href: '#' },
     { label: 'Dashboard' },
   ];
+  // Every page's crumbs still hardcode "Duka Kuu" as a placeholder store
+  // name — swap in the real one here rather than editing every page.
+  const items: Crumb[] = activeStore
+    ? raw.map(c => (c.label === 'Duka Kuu' ? { ...c, label: activeStore.name } : c))
+    : raw;
 
   return (
     <header className="topbar">
