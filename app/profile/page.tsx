@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
+import { authApi, UserProfile } from '../../lib/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -98,6 +99,121 @@ function PermBadge({ granted, label }: { granted: boolean; label: string }) {
         fontSize: 9, color: granted ? '#fff' : 'var(--fg-4)',
       }}>{granted ? '✓' : '✕'}</span>
       <span style={{ fontSize: 13, color: granted ? 'var(--fg)' : 'var(--fg-3)' }}>{label}</span>
+    </div>
+  );
+}
+
+// ── Verification card (real data — email + phone verified independently) ──────
+
+function VerificationCard() {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<string | null>(null);
+  const [emailErr, setEmailErr] = useState<string | null>(null);
+
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpMsg, setOtpMsg] = useState<string | null>(null);
+  const [otpErr, setOtpErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    authApi.me().then((res) => {
+      setLoading(false);
+      if (res.success) setUser(res.data.user);
+    });
+  }, []);
+
+  async function resendEmail() {
+    setEmailSending(true); setEmailErr(null); setEmailMsg(null);
+    const res = await authApi.resendEmailConfirmation();
+    setEmailSending(false);
+    if (res.success) setEmailMsg('Confirmation email sent — check your inbox.');
+    else setEmailErr(res.message);
+  }
+
+  async function sendOtp() {
+    setOtpSending(true); setOtpErr(null); setOtpMsg(null);
+    const res = await authApi.sendPhoneOtp();
+    setOtpSending(false);
+    if (res.success) { setOtpOpen(true); setOtpMsg(`Code sent to ${user?.phone}.`); }
+    else setOtpErr(res.message);
+  }
+
+  async function verifyOtp() {
+    if (!otpCode.trim()) return;
+    setOtpVerifying(true); setOtpErr(null);
+    const res = await authApi.verifyPhoneOtp(otpCode.trim());
+    setOtpVerifying(false);
+    if (res.success) {
+      setOtpOpen(false); setOtpCode(''); setOtpMsg('Phone verified!');
+      setUser((u) => (u ? { ...u, is_phone_verified: true } : u));
+    } else {
+      setOtpErr(res.message);
+    }
+  }
+
+  if (loading || !user) return null;
+
+  return (
+    <div className="surface" style={{ padding: '20px 20px 16px' }}>
+      <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Verification</div>
+      <div className="mono" style={{ fontSize: 11, color: 'var(--fg-4)', marginBottom: 14 }}>Confirm your email and phone — each is independent.</div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500 }}>Email</div>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>{user.email || 'No email on file'}</div>
+        </div>
+        {user.is_email_verified ? (
+          <span className="pill good" style={{ fontSize: 10.5, display: 'flex', alignItems: 'center', gap: 4 }}>{Icons.check} Verified</span>
+        ) : user.email ? (
+          <button className="btn btn-soft" onClick={resendEmail} disabled={emailSending} style={{ fontSize: 12, padding: '5px 10px' }}>
+            {emailSending ? 'Sending…' : 'Resend link'}
+          </button>
+        ) : (
+          <span className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>—</span>
+        )}
+      </div>
+      {emailMsg && <div style={{ fontSize: 11.5, color: 'var(--good)', marginTop: 6 }}>{emailMsg}</div>}
+      {emailErr && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 6 }}>{emailErr}</div>}
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0' }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 500 }}>Phone</div>
+          <div className="mono" style={{ fontSize: 11, color: 'var(--fg-4)' }}>{user.phone}</div>
+        </div>
+        {user.is_phone_verified ? (
+          <span className="pill good" style={{ fontSize: 10.5, display: 'flex', alignItems: 'center', gap: 4 }}>{Icons.check} Verified</span>
+        ) : (
+          <button className="btn btn-soft" onClick={sendOtp} disabled={otpSending} style={{ fontSize: 12, padding: '5px 10px' }}>
+            {otpSending ? 'Sending…' : otpOpen ? 'Resend code' : 'Send code'}
+          </button>
+        )}
+      </div>
+
+      {otpOpen && !user.is_phone_verified && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <input
+            value={otpCode}
+            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="6-digit code"
+            style={{
+              flex: 1, padding: '8px 10px', borderRadius: 7, border: '1px solid var(--line)',
+              background: 'var(--bg)', color: 'var(--fg)', fontSize: 14, fontFamily: 'var(--mono)',
+              letterSpacing: '0.15em', outline: 0, boxSizing: 'border-box',
+            }}
+          />
+          <button className="btn btn-primary" onClick={verifyOtp} disabled={otpVerifying || otpCode.length !== 6} style={{ fontSize: 12, padding: '5px 12px' }}>
+            {otpVerifying ? 'Verifying…' : 'Verify'}
+          </button>
+        </div>
+      )}
+      {otpMsg && <div style={{ fontSize: 11.5, color: 'var(--good)', marginTop: 6 }}>{otpMsg}</div>}
+      {otpErr && <div style={{ fontSize: 11.5, color: 'var(--bad)', marginTop: 6 }}>{otpErr}</div>}
     </div>
   );
 }
@@ -224,6 +340,8 @@ export default function ProfilePage() {
 
           {/* Right — read-only meta + permissions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <VerificationCard />
+
             <div className="surface" style={{ padding: '20px 20px 16px' }}>
               <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 14 }}>Account info</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

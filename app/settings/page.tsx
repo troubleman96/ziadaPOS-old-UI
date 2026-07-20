@@ -481,6 +481,12 @@ function IntegrationsPanel() {
   const [balanceErr, setBalanceErr] = useState<string | null>(null);
   const [checkingBalance, setCheckingBalance] = useState(false);
 
+  // Ngamia AI — separate state, same pattern
+  const [ngamiaKey, setNgamiaKey] = useState('');
+  const [ngamiaSaving, setNgamiaSaving] = useState(false);
+  const [ngamiaSaveMsg, setNgamiaSaveMsg] = useState<string | null>(null);
+  const [ngamiaSaveErr, setNgamiaSaveErr] = useState<string | null>(null);
+
   function refreshBalance() {
     setCheckingBalance(true);
     setBalanceErr(null);
@@ -523,7 +529,25 @@ function IntegrationsPanel() {
     }
   }
 
+  async function saveNgamia() {
+    if (!ngamiaKey.trim()) return;
+    setNgamiaSaving(true);
+    setNgamiaSaveMsg(null);
+    setNgamiaSaveErr(null);
+    const res = await organisationApi.patch({ ngamia_api_key: ngamiaKey.trim() });
+    setNgamiaSaving(false);
+    if (res.success) {
+      setOrg(res.data);
+      setNgamiaKey('');
+      setNgamiaSaveMsg('Saved!');
+      setTimeout(() => setNgamiaSaveMsg(null), 2500);
+    } else {
+      setNgamiaSaveErr(res.message);
+    }
+  }
+
   const connected = !!org?.sms_configured;
+  const ngamiaConnected = !!org?.ngamia_configured;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -591,6 +615,53 @@ function IntegrationsPanel() {
             {saveMsg ? Icons.check : Icons.edit} {saving ? 'Saving…' : saveMsg ?? 'Save'}
           </button>
           {saveErr && <span style={{ fontSize: 12.5, color: 'var(--bad)' }}>{saveErr}</span>}
+        </div>
+      </div>
+
+      <div className="surface" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--accent-soft)', border: '1px solid var(--accent-line)', display: 'grid', placeItems: 'center', color: 'var(--accent)', flexShrink: 0 }}>
+              {Icons.sparkles}
+            </div>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 500 }}>Ngamia AI</div>
+              <div style={{ fontSize: 12.5, color: 'var(--fg-3)', marginTop: 2 }}>
+                Every store gets {(org?.ai_credits_monthly ?? 500).toLocaleString()} free AI credits a month. Once they run out,
+                paste your own key from{' '}
+                <a href="https://ngamia.cc" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>ngamia.cc</a>{' '}
+                to keep using Ziada AI unlimited, on your own balance.
+              </div>
+            </div>
+          </div>
+          {!loading && (
+            ngamiaConnected
+              ? <span className="pill good" style={{ fontSize: 11, flexShrink: 0 }}>Connected</span>
+              : <span className="pill" style={{ fontSize: 11, flexShrink: 0, background: 'var(--bg-3)', color: 'var(--fg-3)' }}>Using free credits</span>
+          )}
+        </div>
+
+        {ngamiaConnected && (
+          <div style={{ padding: 14, borderRadius: 8, background: 'var(--good-soft)', border: '1px solid rgba(52,211,153,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: 'var(--good)' }}>{Icons.check}</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--good)' }}>API key {org?.ngamia_api_key_masked}</span>
+            </div>
+          </div>
+        )}
+
+        <TextInput
+          label={ngamiaConnected ? 'Replace API key' : 'Ngamia API key'}
+          value={ngamiaKey}
+          onChange={setNgamiaKey}
+          placeholder="ngm_••••••••••••••••"
+        />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button className="btn btn-primary" onClick={saveNgamia} disabled={ngamiaSaving} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {ngamiaSaveMsg ? Icons.check : Icons.edit} {ngamiaSaving ? 'Saving…' : ngamiaSaveMsg ?? 'Save'}
+          </button>
+          {ngamiaSaveErr && <span style={{ fontSize: 12.5, color: 'var(--bad)' }}>{ngamiaSaveErr}</span>}
         </div>
       </div>
     </div>
