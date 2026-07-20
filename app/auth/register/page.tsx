@@ -410,7 +410,7 @@ export default function RegisterPage() {
     saveTokens(result.data.access, result.data.refresh);
     cacheUser(result.data.user);
     cacheSubscription(result.data.subscription);
-    router.push('/activate');
+    router.push('/dashboard');
   }
 
   return (

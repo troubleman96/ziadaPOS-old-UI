@@ -149,12 +149,7 @@ function LoginPageContent() {
     const sub = result.data.subscription;
     if (sub) cacheSubscription(sub);
 
-    // If subscription isn't active, send them to the activation page first
-    if (!sub || sub.status === 'pending_payment' || sub.is_active_now === false) {
-      router.push('/activate');
-      return;
-    }
-
+    // Subscription/paywall gate is disabled pre-launch — see components/app-shell.tsx.
     const next = searchParams.get('next');
     router.push(next && next.startsWith('/') ? next : '/dashboard');
   }
