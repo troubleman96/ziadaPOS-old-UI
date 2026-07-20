@@ -6,8 +6,8 @@ import Image from 'next/image';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
-
-const AI_ENABLED = false;
+import { aiApi, AIConversationListItem, AICreditsStatus, AISuggestion, AIMessage } from '../../lib/api';
+import { getCachedUser } from '../../lib/auth';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Message {
@@ -19,105 +19,30 @@ interface Message {
   sources?: string[];
 }
 
-interface Chat {
-  id: string;
-  title: string;
-  lastMsg: string;
-  ts: Date;
-  messages: Message[];
-}
-
-// ── Canned AI responses (simulated) ───────────────────────────────────────────
-const AI_RESPONSES: Record<string, string> = {
-  default: `Nimesikia swali lako. Kwa mujibu wa data ya duka lako la **Duka Kuu**, hapa kuna jibu:
-
-**Muhtasari wa sasa:**
-- Leo umepata mapato ya **TZS 1,842,000** (ongezeko la 12% kuliko jana)
-- Bidhaa 3 ziko chini ya kiwango cha chini: Sabuni ya OMO, Chai Bora, Mafuta Cooking 1L
-- Madeni ya wateja: **TZS 330,000** kutoka kwa wateja 5
-
-Je, ungependa nijieleze zaidi kuhusu jambo lolote kati ya hizi?`,
-
-  sales: `**Uchambuzi wa Mauzo — Wiki hii**
-
-Duka lako limefanya vizuri wiki hii! Hapa ni muhtasari:
-
-| Siku | Mapato | Miamala |
-|------|--------|---------|
-| Jumatatu | TZS 1,240,000 | 58 |
-| Jumanne | TZS 980,000 | 44 |
-| Jumatano | TZS 1,580,000 | 71 |
-| Alhamisi | TZS 1,820,000 | 86 |
-| Ijumaa | TZS 2,140,000 | 98 |
-
-**Ijumaa** ndiyo siku bora zaidi — 2× wastani wa siku za kawaida. Napendekeza uongeze wafanyakazi saa 14:00–16:00 siku za Ijumaa.
-
-**Bidhaa bora:** Unga wa Sembe 10kg (TZS 342,000), Mafuta ya Cooking 5L (TZS 272,000), Soda Coca-Cola 500ml (TZS 180,000)`,
-
-  stock: `**Hali ya Stoo — Leo**
-
-Bidhaa zinazohitaji kununuliwa haraka:
-
-🔴 **Nje ya Stoo:** Hakuna bidhaa kwa sasa
-🟡 **Karibu Kumalizika:**
-- Sabuni ya OMO 1kg → **Imebaki 3** (chini ya kiwango cha 15)
-- Chai Bora 500g → **Imebaki 5** (chini ya 10)
-- Mafuta Cooking 1L → **Imebaki 12** (chini ya 15)
-
-**Mapendekezo ya Ununuzi:**
-Ninapendekeza upeleke order kwa **Unilever EA** wiki hii. Kwa bei ya sasa, unahitaji TZS 450,000 kwa bidhaa zote 3.
-
-Je, niandike order request kwa Unilever EA?`,
-
-  credit: `**Hali ya Madeni — Wateja wa Credit**
-
-Jumla ya madeni: **TZS 330,000** kutoka kwa wateja 5
-
-⚠️ **Imepitwa tarehe (Overdue):**
-- Asha Mwinyi — TZS 28,800 (imepitwa siku 14)
-- Fatuma Ally — TZS 32,500 (imepitwa siku 6)
-
-⏰ **Karibu kulipwa:**
-- Mariam Said — TZS 18,500 (siku 2 zimebaki)
-- Juma Kifupi — TZS 49,200 (siku 6 zimebaki)
-
-**Ushauri:** Tuma ujumbe wa WhatsApp kwa Asha Mwinyi leo. Amekuwa hajibu simu. Jibu la karibuni kabla ya hatua zaidi.
-
-Je, niandike ujumbe wa WhatsApp kwa Asha sasa?`,
-
-  profit: `**Uchambuzi wa Faida — Mwezi huu**
-
-Mapato ya jumla: **TZS 32,400,000**
-Gharama za bidhaa: TZS 24,800,000 (76.5%)
-**Faida ghafi: TZS 7,600,000 (23.5%)**
-
-**Bidhaa zenye faida zaidi:**
-1. Lotion Nivea 400ml — margin 34.4%
-2. Soda Coca-Cola 500ml — margin 46.7%
-3. Biskuti ya Glucose — margin 31.3%
-
-**Bidhaa zenye faida kidogo:**
-- Mafuta Cooking 1L — margin 17.6% ⚠️ (chini ya lengo la 18%)
-- Sukari 2kg — margin 20% (ikianguka)
-
-Napendekeza upandishe bei ya Mafuta Cooking 1L kutoka TZS 8,500 → TZS 9,200 ili urejeshe margin ya 23%.`,
-};
-
-const SUGGESTED_PROMPTS = [
+// Fallback prompts shown before /ai/suggestions/ has loaded
+const DEFAULT_PROMPTS: AISuggestion[] = [
   { icon: '📊', label: 'Nionyeshe uchambuzi wa mauzo wiki hii', key: 'sales' },
   { icon: '📦', label: 'Bidhaa zipi zinahitaji kununuliwa sasa?', key: 'stock' },
   { icon: '💳', label: 'Hali ya madeni ya wateja wangu', key: 'credit' },
   { icon: '💰', label: 'Uchambuzi wa faida mwezi huu', key: 'profit' },
-  { icon: '📈', label: 'Toa ripoti ya leo kwa WhatsApp', key: 'default' },
-  { icon: '🔮', label: 'Tabiri mauzo ya wiki ijayo', key: 'default' },
 ];
 
-const CHAT_HISTORY: Chat[] = [
-  { id: 'c1', title: 'Uchambuzi wa mauzo — Mei', lastMsg: 'Ijumaa ndiyo siku bora zaidi', ts: new Date(2026, 4, 24, 9, 14), messages: [] },
-  { id: 'c2', title: 'Hali ya madeni ya wateja', lastMsg: 'Asha Mwinyi ana deni la...', ts: new Date(2026, 4, 23, 16, 30), messages: [] },
-  { id: 'c3', title: 'Mapendekezo ya bidhaa mpya', lastMsg: 'Unga wa Sembe 20kg...', ts: new Date(2026, 4, 21, 11, 0), messages: [] },
-  { id: 'c4', title: 'Ukaguzi wa bei — Unilever', lastMsg: 'Bei mpya zimeingia mnamo...', ts: new Date(2026, 4, 18, 14, 20), messages: [] },
-];
+function welcomeMessage(firstName: string): Message {
+  return {
+    id: 'm0', role: 'assistant', ts: new Date(),
+    content: `Habari, **${firstName}**! Mimi ni Ziada AI — msaidizi wako wa biashara. 🏪
+
+Ninajua duka lako vizuri: mapato ya leo, hali ya stoo, madeni ya wateja, na zaidi. Niambie unachohitaji — kwa Kiswahili au Kiingereza.
+
+**Ninaweza kukusaidia na:**
+- Uchambuzi wa mauzo na faida
+- Hali ya stoo na mapendekezo ya ununuzi
+- Usimamizi wa madeni ya wateja
+- Ripoti na utabiri wa biashara
+- Maswali yoyote kuhusu duka lako`,
+    sources: ['Sales data', 'Inventory', 'Credits'],
+  };
+}
 
 // ── Components ────────────────────────────────────────────────────────────────
 function ThinkingDots() {
@@ -230,28 +155,34 @@ function renderInline(text: string): React.ReactNode {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function AIPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'm0', role: 'assistant', ts: new Date(),
-      content: `Habari, **Hamisi**! Mimi ni Ziada AI — msaidizi wako wa biashara. 🏪
-
-Ninajua duka lako vizuri: mapato ya leo, hali ya stoo, madeni ya wateja, na zaidi. Niambie unachohitaji — kwa Kiswahili au Kiingereza.
-
-**Ninaweza kukusaidia na:**
-- Uchambuzi wa mauzo na faida
-- Hali ya stoo na mapendekezo ya ununuzi
-- Usimamizi wa madeni ya wateja
-- Ripoti na utabiri wa biashara
-- Maswali yoyote kuhusu duka lako`,
-      sources: ['Sales data', 'Inventory', 'Credits'],
-    }
-  ]);
+  const firstName = getCachedUser()?.first_name || 'there';
+  const [messages, setMessages] = useState<Message[]>([welcomeMessage(firstName)]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [listening, setListening] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const [conversations, setConversations] = useState<AIConversationListItem[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<AISuggestion[]>(DEFAULT_PROMPTS);
+  const [aiCredits, setAiCredits] = useState<AICreditsStatus | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  const loadConversations = useCallback(() => {
+    aiApi.getConversations().then((res) => { if (res.success) setConversations(res.data); });
+  }, []);
+
+  useEffect(() => {
+    loadConversations();
+    aiApi.getSuggestions().then((res) => {
+      if (res.success) {
+        if (res.data.suggestions.length) setSuggestions(res.data.suggestions);
+        setAiCredits(res.data.ai_credits);
+      }
+    });
+  }, [loadConversations]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -264,29 +195,40 @@ Ninajua duka lako vizuri: mapato ya leo, hali ya stoo, madeni ya wateja, na zaid
     setMessages(m => [...m, userMsg, thinkMsg]);
     setInput('');
     setLoading(true);
+    setSendError(null);
 
-    // Simulate AI thinking (1.5–2.5s)
-    const delay = 1500 + Math.random() * 1000;
-    await new Promise(r => setTimeout(r, delay));
-
-    // Pick a response based on keywords
-    const lower = text.toLowerCase();
-    let key = 'default';
-    if (lower.includes('mauzo') || lower.includes('sales') || lower.includes('wiki')) key = 'sales';
-    else if (lower.includes('stoo') || lower.includes('stock') || lower.includes('bidhaa')) key = 'stock';
-    else if (lower.includes('deni') || lower.includes('credit') || lower.includes('wateja')) key = 'credit';
-    else if (lower.includes('faida') || lower.includes('profit') || lower.includes('margin')) key = 'profit';
+    let assistant: AIMessage;
+    if (activeConversationId) {
+      const result = await aiApi.continueChat(activeConversationId, text.trim());
+      setLoading(false);
+      if (!result.success) {
+        setMessages(m => m.filter(x => x.id !== 'thinking'));
+        setSendError(result.message);
+        return;
+      }
+      assistant = result.data.message;
+    } else {
+      const result = await aiApi.startChat(text.trim());
+      setLoading(false);
+      if (!result.success) {
+        setMessages(m => m.filter(x => x.id !== 'thinking'));
+        setSendError(result.message);
+        return;
+      }
+      assistant = result.data.message;
+      setActiveConversationId(result.data.conversation_id);
+    }
 
     const aiMsg: Message = {
-      id: Date.now().toString(),
+      id: assistant.id,
       role: 'assistant',
-      content: AI_RESPONSES[key] || AI_RESPONSES.default,
-      ts: new Date(),
-      sources: key === 'sales' ? ['Sales data'] : key === 'stock' ? ['Inventory'] : key === 'credit' ? ['Credits'] : ['All data'],
+      content: assistant.content,
+      ts: new Date(assistant.created_at),
+      sources: assistant.sources,
     };
     setMessages(m => m.filter(x => x.id !== 'thinking').concat(aiMsg));
-    setLoading(false);
-  }, [loading]);
+    loadConversations();
+  }, [loading, activeConversationId, loadConversations]);
 
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -296,31 +238,21 @@ Ninajua duka lako vizuri: mapato ya leo, hali ya stoo, madeni ya wateja, na zaid
   };
 
   const newChat = () => {
-    setMessages([{
-      id: 'm0', role: 'assistant', ts: new Date(),
-      content: `Habari! Mazungumzo mapya. Ninaweza kukusaidia na nini leo?`,
-    }]);
+    setActiveConversationId(null);
+    setSendError(null);
+    setMessages([welcomeMessage(firstName)]);
   };
 
-  if (!AI_ENABLED) {
-    return (
-      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Ziada AI' }]}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 420, gap: 20, filter: 'grayscale(1)', opacity: 0.55, userSelect: 'none', pointerEvents: 'none' }}>
-          <div style={{ width: 72, height: 72, borderRadius: 20, overflow: 'hidden', flexShrink: 0 }}>
-            <Image src="/ziada-final.jpeg" alt="Ziada AI" width={72} height={72} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 20, fontWeight: 500, marginBottom: 8 }}>Ziada AI</div>
-            <div style={{ fontSize: 13.5, color: 'var(--fg-3)', marginBottom: 6 }}>This feature is not yet configured.</div>
-            <div style={{ fontSize: 12, color: 'var(--fg-4)' }}>Kipengele hiki bado hakijawezeshwa.</div>
-          </div>
-          <div style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--line-2)', fontSize: 12, color: 'var(--fg-4)' }}>
-            Coming soon
-          </div>
-        </div>
-      </AppShell>
-    );
-  }
+  const openConversation = async (id: string) => {
+    if (id === activeConversationId) return;
+    setSendError(null);
+    const res = await aiApi.getConversation(id);
+    if (!res.success) return;
+    setActiveConversationId(id);
+    setMessages(res.data.messages.map((m) => ({
+      id: m.id, role: m.role, content: m.content, ts: new Date(m.created_at), sources: m.sources,
+    })));
+  };
 
   return (
     <AppShell
@@ -375,11 +307,18 @@ Ninajua duka lako vizuri: mapato ya leo, hali ya stoo, madeni ya wateja, na zaid
           {/* History */}
           <div style={{ padding: '10px 10px', flex: 1 }}>
             <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', letterSpacing: '0.08em', padding: '4px 6px 8px' }}>RECENT CHATS</div>
-            {CHAT_HISTORY.map((c, i) => (
-              <div key={c.id} className={'ai-chat-item' + (i === 0 ? ' active' : '')}>
+            {conversations.length === 0 && (
+              <div style={{ padding: '8px 6px', fontSize: 11.5, color: 'var(--fg-4)' }}>No conversations yet.</div>
+            )}
+            {conversations.map((c) => (
+              <div
+                key={c.id}
+                onClick={() => openConversation(c.id)}
+                className={'ai-chat-item' + (c.id === activeConversationId ? ' active' : '')}
+              >
                 <div style={{ fontSize: 12.5, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.title}</div>
-                <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.lastMsg}</div>
-                <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 4 }}>{c.ts.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</div>
+                <div style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.first_message_preview}</div>
+                <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginTop: 4 }}>{new Date(c.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</div>
               </div>
             ))}
           </div>
@@ -393,6 +332,14 @@ Ninajua duka lako vizuri: mapato ya leo, hali ya stoo, madeni ya wateja, na zaid
                 <span style={{ fontSize: 11.5, color: 'var(--fg-2)' }}>{c}</span>
               </div>
             ))}
+            {aiCredits && (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                <div className="mono" style={{ fontSize: 10, color: 'var(--fg-4)', marginBottom: 4 }}>AI CREDITS</div>
+                <div className="mono" style={{ fontSize: 12, color: aiCredits.pct_used >= 90 ? 'var(--bad)' : 'var(--fg-2)' }}>
+                  {aiCredits.remaining.toLocaleString()} / {aiCredits.allocated.toLocaleString()}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -411,7 +358,7 @@ Ninajua duka lako vizuri: mapato ya leo, hali ya stoo, madeni ya wateja, na zaid
                   <div style={{ fontSize: 13, color: 'var(--fg-3)', marginTop: 4 }}>Msaidizi wako wa biashara • Your business assistant</div>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginBottom: 24 }}>
-                  {SUGGESTED_PROMPTS.map((p) => (
+                  {suggestions.map((p) => (
                     <button key={p.label} className="prompt-chip" onClick={() => send(p.label)}>
                       <span>{p.icon}</span> {p.label}
                     </button>
@@ -421,13 +368,18 @@ Ninajua duka lako vizuri: mapato ya leo, hali ya stoo, madeni ya wateja, na zaid
             )}
 
             {messages.map((m) => <MessageBubble key={m.id} msg={m} />)}
+            {sendError && (
+              <div style={{ margin: '8px 0', padding: '10px 14px', borderRadius: 8, background: 'var(--bad-soft)', border: '1px solid rgba(248,113,113,0.25)', fontSize: 12.5, color: 'var(--bad)' }}>
+                {sendError}
+              </div>
+            )}
             <div ref={endRef} />
           </div>
 
           {/* Suggested prompts bar (always visible at bottom when not loading) */}
           {messages.length > 1 && !loading && (
             <div style={{ padding: '6px 24px 0', display: 'flex', gap: 6, overflowX: 'auto', flexShrink: 0 }}>
-              {SUGGESTED_PROMPTS.slice(0, 4).map((p) => (
+              {suggestions.slice(0, 4).map((p) => (
                 <button key={p.label} className="prompt-chip" style={{ fontSize: 11.5, padding: '5px 10px' }} onClick={() => send(p.label)}>
                   {p.icon} {p.label}
                 </button>
