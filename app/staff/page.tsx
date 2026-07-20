@@ -89,6 +89,17 @@ export default function StaffPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [permSaving, setPermSaving] = useState<string | null>(null);
 
+  const [addOpen, setAddOpen] = useState(false);
+  const [newFirstName, setNewFirstName] = useState('');
+  const [newLastName, setNewLastName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newRole, setNewRole] = useState('staff');
+  const [newShift, setNewShift] = useState('morning');
+  const [newPin, setNewPin] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
   useEffect(() => {
     setLoading(true);
     Promise.all([staffApi.getList(), staffApi.getKPIs()]).then(([listRes, kpiRes]) => {
@@ -123,11 +134,74 @@ export default function StaffPage() {
     setPermSaving(null);
   }
 
+  async function handleCreateStaff() {
+    if (!newFirstName.trim() || !newLastName.trim()) {
+      setCreateError('First and last name are required.');
+      return;
+    }
+    if (!/^\d{9,10}$/.test(newPhone.replace(/\s+/g, ''))) {
+      setCreateError('Enter a valid phone number.');
+      return;
+    }
+    if (newPin && !/^\d{4}$/.test(newPin)) {
+      setCreateError('PIN must be exactly 4 digits.');
+      return;
+    }
+    setCreating(true);
+    setCreateError(null);
+    const res = await staffApi.create({
+      first_name: newFirstName.trim(),
+      last_name: newLastName.trim(),
+      phone: newPhone.replace(/\s+/g, ''),
+      email: newEmail.trim() || undefined,
+      role: newRole,
+      shift: newShift,
+      pin: newPin || undefined,
+      can_refund: false,
+      can_discount: false,
+      can_view_reports: newRole === 'owner',
+    });
+    setCreating(false);
+    if (res.success) {
+      setAddOpen(false);
+      setNewFirstName(''); setNewLastName(''); setNewPhone(''); setNewEmail(''); setNewPin('');
+      setNewRole('staff'); setNewShift('morning');
+      setToast(`'${res.data.full_name}' added to the team`);
+      setTimeout(() => setToast(null), 3000);
+      setLoading(true);
+      Promise.all([staffApi.getList(), staffApi.getKPIs()]).then(([listRes, kpiRes]) => {
+        if (listRes.success) setStaff(listRes.data);
+        if (kpiRes.success) setKpis(kpiRes.data);
+        setLoading(false);
+      });
+    } else {
+      setCreateError(res.message);
+    }
+  }
+
+  function handleExportStaff() {
+    const header = ['Name', 'Phone', 'Email', 'Role', 'Shift', 'Status', 'Sales today', 'Total sales', 'Avg ticket'];
+    const rows = staff.map(m => [
+      m.full_name, m.phone, m.email, m.role, m.shift_display, m.employment_status,
+      String(m.sales_today), String(m.total_sales), String(m.avg_ticket),
+    ]);
+    const csv = [header, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `staff-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <AppShell
       crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Staff' }]}
       actions={
-        <button className="btn btn-primary" style={{ gap: 6 }}>
+        <button className="btn btn-primary" style={{ gap: 6 }} onClick={() => { setCreateError(null); setAddOpen(true); }}>
           {Icons.plus} Add staff
         </button>
       }
@@ -142,7 +216,7 @@ export default function StaffPage() {
           <p className="page-sub">Manage your team, shifts, access, and daily performance.</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost page-sec">{Icons.download} Export</button>
+          <button className="btn btn-ghost page-sec" onClick={handleExportStaff} disabled={!staff.length}>{Icons.download} Export</button>
         </div>
       </div>
 
@@ -381,6 +455,83 @@ export default function StaffPage() {
       )}
 
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
+
+      {addOpen && (
+        <div className="drawer-overlay" onClick={() => setAddOpen(false)}>
+          <div className="drawer" onClick={(e) => e.stopPropagation()} style={{ width: 400 }}>
+            <div className="drawer-head">
+              <span style={{ fontWeight: 500 }}>Add staff member</span>
+              <button className="icon-btn" onClick={() => setAddOpen(false)}>{Icons.close}</button>
+            </div>
+            <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>First name</label>
+                  <input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} placeholder="Amina"
+                    style={{ padding: '8px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg-3)', color: 'var(--fg)', fontSize: 13.5, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Last name</label>
+                  <input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} placeholder="Juma"
+                    style={{ padding: '8px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg-3)', color: 'var(--fg)', fontSize: 13.5, outline: 'none', fontFamily: 'inherit' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Phone number</label>
+                <input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="07XX XXX XXX"
+                  style={{ padding: '8px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg-3)', color: 'var(--fg)', fontSize: 13.5, outline: 'none', fontFamily: 'inherit' }} />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Email (optional)</label>
+                <input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="amina@shop.co.tz"
+                  style={{ padding: '8px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg-3)', color: 'var(--fg)', fontSize: 13.5, outline: 'none', fontFamily: 'inherit' }} />
+              </div>
+
+              <div className="form-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Role</label>
+                  <select value={newRole} onChange={(e) => setNewRole(e.target.value)}
+                    style={{ padding: '8px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg-3)', color: 'var(--fg)', fontSize: 13.5, outline: 'none', fontFamily: 'inherit' }}>
+                    <option value="staff">Staff / cashier</option>
+                    <option value="owner">Owner</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Shift</label>
+                  <select value={newShift} onChange={(e) => setNewShift(e.target.value)}
+                    style={{ padding: '8px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg-3)', color: 'var(--fg)', fontSize: 13.5, outline: 'none', fontFamily: 'inherit' }}>
+                    <option value="morning">Morning (7am–2pm)</option>
+                    <option value="evening">Evening (2pm–9pm)</option>
+                    <option value="full_day">Full day (7am–7pm)</option>
+                    <option value="weekend">Weekend (Sat–Sun)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>POS PIN (optional, 4 digits)</label>
+                <input value={newPin} onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="1234" inputMode="numeric"
+                  style={{ padding: '8px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg-3)', color: 'var(--fg)', fontSize: 13.5, outline: 'none', fontFamily: 'inherit' }} />
+              </div>
+
+              {createError && (
+                <div style={{ padding: '9px 12px', borderRadius: 7, background: 'var(--bad-soft)', border: '1px solid rgba(248,113,113,0.25)', fontSize: 12.5, color: 'var(--bad)' }}>
+                  {createError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                <button className="btn btn-primary" onClick={handleCreateStaff} disabled={creating} style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+                  {creating ? 'Adding…' : 'Add staff member'}
+                </button>
+                <button className="btn btn-ghost" onClick={() => setAddOpen(false)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }
