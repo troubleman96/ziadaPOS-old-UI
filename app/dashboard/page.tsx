@@ -4,8 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { AppShell, useNotifications } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
-import { fmt, fmtShort } from '../../lib/utils';
-import { analyticsApi, transactionApi, type DashboardData, type TransactionListItem } from '../../lib/api';
+import { fmt, fmtShort, localDateStr } from '../../lib/utils';
+import { analyticsApi, transactionApi, reportsApi, type DashboardData, type TransactionListItem } from '../../lib/api';
 import { getCachedUser } from '../../lib/auth';
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
@@ -30,6 +30,49 @@ function KPI({ label, value, delta, deltaKind = 'good', subtitle, accent = 'var(
       </div>
       <div className="dash-kpi-v" style={{ fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1 }}>{value}</div>
       {subtitle && <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 8 }}>{subtitle}</div>}
+    </div>
+  );
+}
+
+// ── Cycling KPI (mobile only) ───────────────────────────────────────────────────
+// Alternates between two KPI variants on a timer to save space on narrow
+// screens, where showing 5 distinct cards doesn't fit well. Desktop shows
+// both as separate cards instead — see the KPI grid below.
+function CyclingKPI({ variants, intervalMs = 3500 }: {
+  variants: { label: string; value: string; subtitle?: string; accent: string }[];
+  intervalMs?: number;
+}) {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (variants.length < 2) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % variants.length), intervalMs);
+    return () => clearInterval(t);
+  }, [variants.length, intervalMs]);
+
+  const v = variants[idx] ?? variants[0];
+  if (!v) return null;
+
+  return (
+    <div className="surface kpi-card" style={{
+      display: 'flex', flexDirection: 'column',
+      borderTop: `3px solid ${v.accent}`, transition: 'border-color 250ms',
+    }}>
+      <style>{`@keyframes kpiFade { from { opacity: 0.3; } to { opacity: 1; } }`}</style>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span className="mono" style={{ fontSize: 10.5, fontWeight: 600, color: 'var(--fg-4)', letterSpacing: '0.08em' }}>{v.label}</span>
+        <div style={{ display: 'flex', gap: 3 }}>
+          {variants.map((_, i) => (
+            <span key={i} style={{
+              width: 4, height: 4, borderRadius: 999,
+              background: i === idx ? v.accent : 'var(--line-2)',
+              transition: 'background 250ms',
+            }} />
+          ))}
+        </div>
+      </div>
+      <div key={idx} className="dash-kpi-v" style={{ fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1, animation: 'kpiFade 250ms ease' }}>{v.value}</div>
+      {v.subtitle && <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 8 }}>{v.subtitle}</div>}
     </div>
   );
 }
@@ -124,21 +167,22 @@ function smoothCurve(pts: [number, number][]): string {
   return d;
 }
 
-type ChartView = 'sales' | 'profit' | 'discounts' | 'credits';
+type ChartView = 'sales' | 'profit' | 'discounts' | 'credits' | 'expenses';
 
-const CHART_VIEWS: { key: ChartView; label: string; color: string; field: 'revenue' | 'profit' | 'discount_amount' | 'credit_amount' }[] = [
+const CHART_VIEWS: { key: ChartView; label: string; color: string; field: 'revenue' | 'profit' | 'discount_amount' | 'credit_amount' | 'expense_amount' }[] = [
   { key: 'sales',     label: 'Sales',     color: 'var(--accent)', field: 'revenue'         },
   { key: 'profit',    label: 'Profit',    color: '#10b981',       field: 'profit'          },
   { key: 'discounts', label: 'Discounts', color: '#60a5fa',       field: 'discount_amount' },
   { key: 'credits',   label: 'Credits',   color: '#fb7185',       field: 'credit_amount'   },
+  { key: 'expenses',  label: 'Expenses',  color: '#ef4444',       field: 'expense_amount'  },
 ];
 
 // Auto-cycles: Sales (5s) → Profit (4s) → Sales (5s) → Profit (4s) …
-// Discounts and Credits are manual-only — user pins them by clicking.
+// Discounts, Credits and Expenses are manual-only — user pins them by clicking.
 const AUTO_CYCLE: ChartView[] = ['sales', 'profit'];
-const AUTO_DURATIONS: Record<ChartView, number> = { sales: 5000, profit: 4000, discounts: 0, credits: 0 };
+const AUTO_DURATIONS: Record<ChartView, number> = { sales: 5000, profit: 4000, discounts: 0, credits: 0, expenses: 0 };
 
-function SalesChart({ hourly }: { hourly: { hour: number; label: string; revenue: number; profit: number; discount_amount: number; credit_amount: number; txn_count: number }[] }) {
+function SalesChart({ hourly }: { hourly: { hour: number; label: string; revenue: number; profit: number; discount_amount: number; credit_amount: number; expense_amount: number; txn_count: number }[] }) {
   const [view,   setView]   = useState<ChartView>('sales');
   const [pinned, setPinned] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -616,9 +660,8 @@ const RANGE_LABELS = ['Today', '7D', '30D', '90D', 'YTD'] as const;
 
 function getRangeDates(range: number): { dateFrom: string; dateTo: string; label: string } {
   const today = new Date();
-  const pad   = (d: Date) => d.toISOString().slice(0, 10);
-  const todayStr = pad(today);
-  const sub   = (days: number) => { const d = new Date(today); d.setDate(d.getDate() - days); return pad(d); };
+  const todayStr = localDateStr(today);
+  const sub   = (days: number) => { const d = new Date(today); d.setDate(d.getDate() - days); return localDateStr(d); };
   switch (range) {
     case 1:  return { dateFrom: sub(6),   dateTo: todayStr, label: 'last 7 days'  };
     case 2:  return { dateFrom: sub(29),  dateTo: todayStr, label: 'last 30 days' };
@@ -643,6 +686,7 @@ export default function DashboardPage() {
   const [txns,     setTxns]     = useState<TransactionListItem[]>([]);
   const [loading,  setLoading]  = useState(true);
   const [txnLoad,  setTxnLoad]  = useState(true);
+  const [exporting, setExporting] = useState(false);
 
   const user      = typeof window !== 'undefined' ? getCachedUser() : null;
   const firstName = user?.first_name || user?.full_name?.split(' ')[0] || 'there';
@@ -670,6 +714,13 @@ export default function DashboardPage() {
   const nudgeItem    = dash?.low_stock.find(p => p.stock === 0 || p.status === 'critical');
   const totalRevenue = dash?.kpis_today.revenue ?? 0;
   const { label: rangeLabel } = getRangeDates(range);
+
+  async function handleExport() {
+    const { dateFrom, dateTo } = getRangeDates(range);
+    setExporting(true);
+    await reportsApi.generateCSV('sales', { dateFrom, dateTo });
+    setExporting(false);
+  }
 
   return (
     <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '#' }, { label: 'Dashboard' }]}>
@@ -712,8 +763,13 @@ export default function DashboardPage() {
                 >{l}</button>
               ))}
             </div>
-            <button className="btn btn-ghost desktop-only" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {Icons.download} Export
+            <button
+              className="btn btn-ghost desktop-only"
+              onClick={handleExport}
+              disabled={exporting}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: exporting ? 0.6 : 1 }}
+            >
+              {Icons.download} {exporting ? 'Exporting…' : 'Export'}
             </button>
           </div>
         </div>
@@ -726,14 +782,15 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* KPI row */}
+      {/* KPI row — desktop: 5 distinct cards. Mobile: Discounts + Expenses
+          share one cycling card slot (2x2 grid) to save space. */}
       <style>{`
         .dash-kpi-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-        @media (min-width:640px) { .dash-kpi-grid { grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; } }
+        @media (min-width:769px) { .dash-kpi-grid { grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px; } }
         .dash-kpi-grid .surface { padding:14px 16px; min-height:unset; }
-        @media (min-width:640px) { .dash-kpi-grid .surface { padding:16px 20px; min-height:110px; } }
+        @media (min-width:769px) { .dash-kpi-grid .surface { padding:16px 20px; min-height:110px; } }
         .dash-kpi-v { font-size:22px; }
-        @media (min-width:640px) { .dash-kpi-v { font-size:28px; } }
+        @media (min-width:769px) { .dash-kpi-v { font-size:28px; } }
       `}</style>
       <div className="dash-kpi-grid">
         <KPI
@@ -751,18 +808,50 @@ export default function DashboardPage() {
           accent="#10b981"
         />
         <KPI
-          label="DISCOUNTS"
-          value={loading ? '—' : fmtShort(dash?.kpis_today.discount_amount ?? 0)}
-          subtitle={loading ? undefined : (dash?.kpis_today.discounted_count ?? 0) > 0 ? `${dash?.kpis_today.discounted_count} discounted sales` : 'no discounts today'}
-          accent="#60a5fa"
-        />
-        <KPI
           label="CREDIT"
           value={loading ? '—' : fmtShort(dash?.credit_kpi.total ?? 0)}
           subtitle={loading ? undefined : `${dash?.credit_kpi.customer_count ?? 0} customers`}
           deltaKind="warn"
           accent="var(--warn)"
         />
+
+        {/* Desktop: Discounts + Expenses as their own cards */}
+        <div className="desktop-only">
+          <KPI
+            label="DISCOUNTS"
+            value={loading ? '—' : fmtShort(dash?.kpis_today.discount_amount ?? 0)}
+            subtitle={loading ? undefined : (dash?.kpis_today.discounted_count ?? 0) > 0 ? `${dash?.kpis_today.discounted_count} discounted sales` : 'no discounts today'}
+            accent="#60a5fa"
+          />
+        </div>
+        <div className="desktop-only">
+          <KPI
+            label="EXPENSES"
+            value={loading ? '—' : fmtShort(dash?.kpis_today.expense_amount ?? 0)}
+            subtitle={loading ? undefined : (dash?.kpis_today.expense_count ?? 0) > 0 ? `${dash?.kpis_today.expense_count} expenses logged` : 'no expenses today'}
+            accent="var(--bad)"
+          />
+        </div>
+
+        {/* Mobile: Discounts and Expenses alternate in one card to fit a 2x2 grid */}
+        <div className="mobile-only">
+          <CyclingKPI
+            variants={[
+              {
+                label: 'DISCOUNTS',
+                value: loading ? '—' : fmtShort(dash?.kpis_today.discount_amount ?? 0),
+                subtitle: loading ? undefined : (dash?.kpis_today.discounted_count ?? 0) > 0 ? `${dash?.kpis_today.discounted_count} discounted sales` : 'no discounts today',
+                accent: '#60a5fa',
+              },
+              {
+                label: 'EXPENSES',
+                value: loading ? '—' : fmtShort(dash?.kpis_today.expense_amount ?? 0),
+                subtitle: loading ? undefined : (dash?.kpis_today.expense_count ?? 0) > 0 ? `${dash?.kpis_today.expense_count} expenses logged` : 'no expenses today',
+                accent: 'var(--bad)',
+              },
+            ]}
+          />
+        </div>
       </div>
 
       {/* Sales chart + payment mix */}

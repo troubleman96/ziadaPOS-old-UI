@@ -84,7 +84,7 @@ function QuickExportCard({
 
   async function handleCSV() {
     setLoadingCSV(true);
-    await reportsApi.generateCSV(rt.id, range);
+    await reportsApi.generateCSV(rt.id, { range });
     setLoadingCSV(false);
     onGenerated();
   }
