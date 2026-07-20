@@ -55,7 +55,14 @@ export default function StoresPage() {
   const [stats, setStats] = useState<StoreStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const [newName, setNewName] = useState('');
+  const [newAddress, setNewAddress] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  function loadStores() {
+    setLoading(true);
     Promise.all([storesApi.getList(), storesApi.getStats()]).then(([listRes, statsRes]) => {
       setLoading(false);
       if (listRes.success) {
@@ -69,7 +76,31 @@ export default function StoresPage() {
       }
       if (statsRes.success) setStats(statsRes.data);
     });
-  }, []);
+  }
+
+  useEffect(() => { loadStores(); }, []);
+
+  async function handleCreateStore() {
+    if (!newName.trim()) {
+      setCreateError('Store name is required.');
+      return;
+    }
+    setCreating(true);
+    setCreateError(null);
+    const res = await storesApi.create({
+      name: newName.trim(),
+      address: newAddress.trim() || undefined,
+      phone: newPhone.trim() || undefined,
+    });
+    setCreating(false);
+    if (res.success) {
+      setAddOpen(false);
+      setNewName(''); setNewAddress(''); setNewPhone('');
+      loadStores();
+    } else {
+      setCreateError(res.message);
+    }
+  }
 
   const weekTotals = stores.map((s, i) => ({
     ...s,
@@ -78,11 +109,29 @@ export default function StoresPage() {
   }));
   const maxWeekTotal = Math.max(...weekTotals.map(s => s.weekTotal), 1);
 
+  function handleExportStores() {
+    const header = ['Store', 'Status', 'Region', 'Manager', 'Staff on duty', 'Staff total', "Today's revenue", "Today's transactions", 'Week revenue'];
+    const rows = weekTotals.map(s => [
+      s.name, s.status, s.region, s.manager_name ?? '', String(s.staff_on_duty), String(s.staff_count),
+      String(s.today_revenue), String(s.today_txns), String(s.weekTotal),
+    ]);
+    const csv = [header, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stores-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <AppShell
       crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Stores' }]}
       actions={
-        <button className="btn btn-primary" onClick={() => setAddOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button className="btn btn-primary" onClick={() => { setCreateError(null); setAddOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {Icons.plus} Add store
         </button>
       }
@@ -106,7 +155,7 @@ export default function StoresPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost page-sec">{Icons.download} Export</button>
+          <button className="btn btn-ghost page-sec" onClick={handleExportStores} disabled={!stores.length}>{Icons.download} Export</button>
         </div>
       </div>
 
@@ -359,14 +408,15 @@ export default function StoresPage() {
             </div>
             <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
               {[
-                { label: 'Store name', placeholder: 'e.g. Temeke Branch' },
-                { label: 'Address', placeholder: 'Full address' },
-                { label: 'Manager name', placeholder: 'Full name' },
-                { label: 'Phone number', placeholder: '+255 7XX XXX XXX' },
+                { label: 'Store name', placeholder: 'e.g. Temeke Branch', value: newName, onChange: setNewName },
+                { label: 'Address', placeholder: 'Full address', value: newAddress, onChange: setNewAddress },
+                { label: 'Phone number', placeholder: '+255 7XX XXX XXX', value: newPhone, onChange: setNewPhone },
               ].map((field) => (
                 <div key={field.label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>{field.label}</label>
                   <input
+                    value={field.value}
+                    onChange={(e) => field.onChange(e.target.value)}
                     placeholder={field.placeholder}
                     style={{
                       padding: '8px 12px', borderRadius: 7, border: '1px solid var(--line)',
@@ -376,8 +426,15 @@ export default function StoresPage() {
                   />
                 </div>
               ))}
+              {createError && (
+                <div style={{ padding: '9px 12px', borderRadius: 7, background: 'var(--bad-soft)', border: '1px solid rgba(248,113,113,0.25)', fontSize: 12.5, color: 'var(--bad)' }}>
+                  {createError}
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                <button className="btn btn-primary" style={{ flex: 1 }}>Create store</button>
+                <button className="btn btn-primary" onClick={handleCreateStore} disabled={creating} style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+                  {creating ? 'Creating…' : 'Create store'}
+                </button>
                 <button className="btn btn-ghost" onClick={() => setAddOpen(false)}>Cancel</button>
               </div>
             </div>
