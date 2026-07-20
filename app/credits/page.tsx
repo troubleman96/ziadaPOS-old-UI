@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
-import { creditsApi, CreditCustomer, CreditsDashboard } from '../../lib/api';
+import { creditsApi, customerApi, reportsApi, CreditCustomer, CreditsDashboard, CustomerListItem } from '../../lib/api';
+import { openReportPrintWindow } from '../../lib/reportPdf';
 
 const SPINNER = (
   <>
@@ -120,12 +121,249 @@ function RecordPaymentDrawer({ open, customer, onClose, onSuccess }: { open: boo
   );
 }
 
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function Toast({ message, tone = 'good', onDismiss }: { message: string; tone?: 'good' | 'bad'; onDismiss: () => void }) {
+  return (
+    <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 300, background: 'var(--bg-2)', border: `1px solid var(--${tone})`, borderRadius: 10, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', maxWidth: '90vw' }}>
+      <span style={{ color: `var(--${tone})`, fontSize: 16 }}>{tone === 'good' ? '✓' : '⚠'}</span>
+      <span style={{ fontSize: 13.5 }}>{message}</span>
+      <button onClick={onDismiss} style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-3)', fontSize: 18, padding: 0, lineHeight: 1 }}>×</button>
+    </div>
+  );
+}
+
+// ── Issue Credit Drawer ────────────────────────────────────────────────────────
+function IssueCreditDrawer({ open, onClose, onSuccess }: { open: boolean; onClose: () => void; onSuccess: (msg: string) => void }) {
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState<CustomerListItem[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selected, setSelected] = useState<CustomerListItem | null>(null);
+  const [amount, setAmount] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setSearch(''); setResults([]); setSelected(null);
+    setAmount(''); setDueDate(''); setNote(''); setErr(null);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open || selected) return;
+    if (!search.trim()) { setResults([]); return; }
+    setSearching(true);
+    const t = setTimeout(() => {
+      customerApi.getList(`search=${encodeURIComponent(search.trim())}`).then((res) => {
+        setSearching(false);
+        if (res.success) setResults(res.data.slice(0, 8));
+      });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search, open, selected]);
+
+  async function handleSubmit() {
+    if (!selected) { setErr('Select a customer first.'); return; }
+    const amt = parseInt(amount, 10);
+    if (!amt || amt <= 0) { setErr('Enter a valid amount.'); return; }
+    setSaving(true);
+    setErr(null);
+    const res = await creditsApi.issueCredit(selected.id, {
+      amount: amt,
+      due_date: dueDate || undefined,
+      note: note.trim() || undefined,
+    });
+    setSaving(false);
+    if (res.success) {
+      onSuccess(`Credit of ${fmt(amt)} issued to ${selected.name}.`);
+      onClose();
+    } else {
+      setErr(res.message);
+    }
+  }
+
+  if (!open) return null;
+  const inputStyle: React.CSSProperties = {
+    width: '100%', padding: '8px 12px', borderRadius: 7, border: '1px solid var(--line)',
+    background: 'var(--bg-3)', color: 'var(--fg)', fontSize: 13.5, outline: 'none', fontFamily: 'inherit',
+  };
+
+  return (
+    <div className="drawer-overlay" onClick={onClose}>
+      <div className="drawer" onClick={(e) => e.stopPropagation()} style={{ width: 400 }}>
+        <div className="drawer-head">
+          <span style={{ fontWeight: 500 }}>Issue credit</span>
+          <button className="icon-btn" onClick={onClose}>{Icons.close}</button>
+        </div>
+        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Customer</label>
+            {selected ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 7, border: '1px solid var(--accent-line)', background: 'var(--accent-soft)' }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>{selected.name}</div>
+                  <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{selected.phone}</div>
+                </div>
+                <button className="icon-btn" style={{ width: 26, height: 26 }} onClick={() => { setSelected(null); setSearch(''); }}>×</button>
+              </div>
+            ) : (
+              <>
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or phone…" style={inputStyle} />
+                {searching && <div style={{ fontSize: 11.5, color: 'var(--fg-4)' }}>Searching…</div>}
+                {results.length > 0 && (
+                  <div style={{ border: '1px solid var(--line)', borderRadius: 7, overflow: 'hidden' }}>
+                    {results.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => { setSelected(c); setResults([]); }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', border: 'none', borderBottom: '1px solid var(--line)', background: 'var(--bg-3)', cursor: 'pointer', color: 'var(--fg)', fontFamily: 'inherit' }}
+                      >
+                        <div style={{ fontSize: 13 }}>{c.name}</div>
+                        <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{c.phone}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {!searching && search.trim() && results.length === 0 && (
+                  <div style={{ fontSize: 11.5, color: 'var(--fg-4)' }}>
+                    No matches. <Link href="/customers/new" style={{ color: 'var(--accent)' }}>Add a new customer</Link> first.
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Amount (TZS)</label>
+            <input
+              value={amount}
+              onChange={(e) => setAmount(e.target.value.replace(/\D/g, ''))}
+              placeholder="15000"
+              inputMode="numeric"
+              style={inputStyle}
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Due date (optional, default 30 days)</label>
+            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} style={inputStyle} />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Note (optional)</label>
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Why this credit was issued…" rows={2} style={{ ...inputStyle, resize: 'vertical' }} />
+          </div>
+
+          {err && (
+            <div style={{ padding: '9px 12px', borderRadius: 7, background: 'var(--bad-soft)', border: '1px solid rgba(248,113,113,0.25)', fontSize: 12.5, color: 'var(--bad)' }}>
+              {err}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button className="btn btn-primary" onClick={handleSubmit} disabled={saving} style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+              {saving ? 'Issuing…' : 'Issue credit'}
+            </button>
+            <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Draft Messages Modal ────────────────────────────────────────────────────────
+function DraftMessagesModal({ open, onClose, onSend }: { open: boolean; onClose: () => void; onSend: (body: string) => void }) {
+  const [tone, setTone] = useState<'friendly' | 'firm' | 'final_notice'>('friendly');
+  const [draft, setDraft] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [meta, setMeta] = useState<{ customers_with_credit: number; total_outstanding: number; overdue_count: number } | null>(null);
+
+  const generate = useCallback((t: typeof tone) => {
+    setLoading(true);
+    creditsApi.draftReminder(t).then((res) => {
+      setLoading(false);
+      if (res.success) {
+        setDraft(res.data.draft);
+        setMeta(res.data);
+      }
+    });
+  }, []);
+
+  useEffect(() => { if (open) generate(tone); }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!open) return null;
+  return (
+    <div className="drawer-overlay" onClick={onClose}>
+      <div className="drawer" onClick={(e) => e.stopPropagation()} style={{ width: 440 }}>
+        <div className="drawer-head">
+          <span style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>{Icons.sparkles} Draft messages with AI</span>
+          <button className="icon-btn" onClick={onClose}>{Icons.close}</button>
+        </div>
+        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {(['friendly', 'firm', 'final_notice'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => { setTone(t); generate(t); }}
+                style={{
+                  flex: 1, padding: '7px 8px', borderRadius: 6, fontSize: 11.5, cursor: 'pointer',
+                  border: '1px solid ' + (tone === t ? 'var(--accent-line)' : 'var(--line)'),
+                  background: tone === t ? 'var(--accent-soft)' : 'var(--bg)',
+                  color: tone === t ? 'var(--fg)' : 'var(--fg-2)',
+                }}
+              >
+                {t === 'friendly' ? 'Friendly' : t === 'firm' ? 'Firm' : 'Final notice'}
+              </button>
+            ))}
+          </div>
+
+          {meta && (
+            <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>
+              {meta.customers_with_credit} customers owe {fmt(meta.total_outstanding)} · {meta.overdue_count} overdue
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Message (edit freely — {'{name}'} and {'{amount}'} are filled in per customer)</label>
+            <textarea
+              value={loading ? 'Drafting…' : draft}
+              onChange={(e) => setDraft(e.target.value)}
+              disabled={loading}
+              rows={5}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg-3)', color: 'var(--fg)', fontSize: 13.5, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button className="btn btn-primary" onClick={() => onSend(draft)} disabled={loading || !draft.trim()} style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+              Send to all via SMS
+            </button>
+            <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CreditsPage() {
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [paymentTarget, setPaymentTarget] = useState<CreditCustomer | null>(null);
   const [dashboard, setDashboard] = useState<CreditsDashboard | null>(null);
   const [loading, setLoading] = useState(true);
+  const [issueOpen, setIssueOpen] = useState(false);
+  const [draftOpen, setDraftOpen] = useState(false);
+  const [statementLoading, setStatementLoading] = useState(false);
+  const [sendingReminders, setSendingReminders] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; tone: 'good' | 'bad' } | null>(null);
+
+  function notify(msg: string, tone: 'good' | 'bad' = 'good') {
+    setToast({ msg, tone });
+    setTimeout(() => setToast(null), 4000);
+  }
 
   const loadDashboard = useCallback(() => {
     setLoading(true);
@@ -137,6 +375,44 @@ export default function CreditsPage() {
   }, [filter]);
 
   useEffect(() => { loadDashboard(); }, [loadDashboard]);
+
+  async function handleStatementPDF() {
+    setStatementLoading(true);
+    const res = await reportsApi.generateJSON('credit', '90d');
+    setStatementLoading(false);
+    if (res.success && res.data) {
+      const d = res.data as Record<string, unknown>;
+      const reportData = (d.report as Record<string, unknown>) ?? d;
+      openReportPrintWindow(
+        'credit',
+        reportData,
+        {
+          report_name:  String(reportData.report_name ?? 'Credit Aged Debtors'),
+          store_name:   String(reportData.store_name  ?? ''),
+          period_label: String(d.period_label ?? reportData.period_label ?? '90d'),
+          date_from:    String(d.date_from    ?? reportData.date_from ?? ''),
+          date_to:      String(d.date_to      ?? reportData.date_to   ?? ''),
+        },
+        `${window.location.origin}/ziada-final.jpeg`,
+      );
+    } else {
+      notify(res.message || 'Could not generate statement.', 'bad');
+    }
+  }
+
+  async function handleSendAllReminders(body?: string) {
+    setSendingReminders(true);
+    const res = await creditsApi.sendAllReminders(body);
+    setSendingReminders(false);
+    setDraftOpen(false);
+    if (res.success) {
+      const { sent, failed } = res.data;
+      notify(res.message || `Sent ${sent} reminder(s).`, failed && !sent ? 'bad' : 'good');
+      loadDashboard();
+    } else {
+      notify(res.message || 'Failed to send reminders.', 'bad');
+    }
+  }
 
   const kpis = dashboard?.kpis;
   const agingBuckets = dashboard?.aging_buckets ?? [];
@@ -161,9 +437,9 @@ export default function CreditsPage() {
 
   return (
     <AppShell
-      crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Credits' }]}
+      crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Debts' }]}
       actions={
-        <button className="btn btn-primary" style={{ padding: '7px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <button className="btn btn-primary" style={{ padding: '7px 12px', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => setIssueOpen(true)}>
           {Icons.plus} Issue credit
         </button>
       }
@@ -172,7 +448,7 @@ export default function CreditsPage() {
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20, gap: 16, flexWrap: 'wrap' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em' }}>
-            Credits <span style={{ color: 'var(--fg-4)' }}>/</span>{' '}
+            Debts <span style={{ color: 'var(--fg-4)' }}>/</span>{' '}
             <span className="mono" style={{ fontSize: 16, fontWeight: 400, color: 'var(--fg-3)' }}>Madeni</span>
           </h1>
           <p style={{ margin: '6px 0 0', fontSize: 13.5, color: 'var(--fg-3)' }}>
@@ -183,8 +459,12 @@ export default function CreditsPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-ghost page-sec">{Icons.download} Statement PDF</button>
-          <button className="btn btn-soft page-sec">Send all reminders</button>
+          <button className="btn btn-ghost page-sec" onClick={handleStatementPDF} disabled={statementLoading}>
+            {Icons.download} {statementLoading ? 'Generating…' : 'Statement PDF'}
+          </button>
+          <button className="btn btn-soft page-sec" onClick={() => handleSendAllReminders()} disabled={sendingReminders}>
+            {sendingReminders ? 'Sending…' : 'Send all reminders'}
+          </button>
         </div>
       </div>
 
@@ -232,15 +512,18 @@ export default function CreditsPage() {
       )}
 
       {/* AI nudge */}
-      <div className="surface" style={{ padding: '14px 16px', borderColor: 'var(--accent-line)', background: 'linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-2) 100%)', marginBottom: 16, display: 'flex', gap: 14, alignItems: 'center' }}>
-        <span style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-2)', border: '1px solid var(--accent-line)', display: 'grid', placeItems: 'center', color: 'var(--accent)' }}>{Icons.sparkles}</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, color: 'var(--fg)', marginBottom: 2 }}>
-            <strong style={{ fontWeight: 500 }}>2 customers</strong> haven&apos;t responded to reminders in 7+ days. Want me to draft a personal message in Swahili?
+      {(kpis?.customer_count ?? 0) > 0 && (
+        <div className="surface" style={{ padding: '14px 16px', borderColor: 'var(--accent-line)', background: 'linear-gradient(180deg, var(--accent-soft) 0%, var(--bg-2) 100%)', marginBottom: 16, display: 'flex', gap: 14, alignItems: 'center' }}>
+          <span style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-2)', border: '1px solid var(--accent-line)', display: 'grid', placeItems: 'center', color: 'var(--accent)' }}>{Icons.sparkles}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, color: 'var(--fg)', marginBottom: 2 }}>
+              <strong style={{ fontWeight: 500 }}>{kpis?.customer_count} customer{kpis?.customer_count === 1 ? '' : 's'}</strong> currently owe credit
+              {(kpis?.overdue ?? 0) > 0 && <> — some overdue</>}. Want AI to draft a personal reminder in Swahili?
+            </div>
           </div>
+          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 5 }} onClick={() => setDraftOpen(true)}>{Icons.sparkles} Draft messages</button>
         </div>
-        <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12.5, display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.sparkles} Draft messages</button>
-      </div>
+      )}
 
       {/* Filter bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', marginBottom: 14, flexWrap: 'wrap' }}>
@@ -370,6 +653,20 @@ export default function CreditsPage() {
         onClose={() => setPaymentTarget(null)}
         onSuccess={loadDashboard}
       />
+
+      <IssueCreditDrawer
+        open={issueOpen}
+        onClose={() => setIssueOpen(false)}
+        onSuccess={(msg) => { notify(msg); loadDashboard(); }}
+      />
+
+      <DraftMessagesModal
+        open={draftOpen}
+        onClose={() => setDraftOpen(false)}
+        onSend={(body) => handleSendAllReminders(body)}
+      />
+
+      {toast && <Toast message={toast.msg} tone={toast.tone} onDismiss={() => setToast(null)} />}
     </AppShell>
   );
 }

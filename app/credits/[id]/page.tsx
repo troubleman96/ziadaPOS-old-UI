@@ -86,7 +86,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
 
   if (loading) {
     return (
-      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Credits', href: '/credits' }, { label: '…' }]}>
+      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Debts', href: '/credits' }, { label: '…' }]}>
         <div style={{ padding: 80, textAlign: 'center' }}>{SPINNER}</div>
       </AppShell>
     );
@@ -94,7 +94,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
 
   if (error || !profile) {
     return (
-      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Credits', href: '/credits' }, { label: 'Not found' }]}>
+      <AppShell crumbs={[{ label: 'ziada', href: '/' }, { label: 'Debts', href: '/credits' }, { label: 'Not found' }]}>
         <div style={{ textAlign: 'center', padding: '80px 20px' }}>
           <div style={{ fontSize: 18, fontWeight: 500, marginBottom: 8 }}>Customer not found</div>
           <p style={{ color: 'var(--fg-3)', marginBottom: 24 }}>No credit profile found for this customer.</p>
@@ -116,7 +116,7 @@ export default function CreditDetailPage({ params }: { params: Promise<{ id: str
 
   return (
     <AppShell
-      crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Credits', href: '/credits' }, { label: c.name }]}
+      crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Debts', href: '/credits' }, { label: c.name }]}
       actions={
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={openReminder} className="btn btn-ghost" style={{ padding: '7px 12px', fontSize: 13 }}>Send reminder</button>
