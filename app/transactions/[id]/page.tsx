@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
 import { fmt, fmtTime, fmtDate, fmtDT } from '../../../lib/utils';
-import { transactionApi, TransactionDetail } from '../../../lib/api';
+import { transactionApi, customerApi, aiApi, TransactionDetail, CustomerListItem } from '../../../lib/api';
+import { openReceiptPrintWindow } from '../../../lib/reportPdf';
 
 const SPINNER = (
   <>
@@ -56,11 +58,168 @@ const PrintIcon = () => <svg width="14" height="14" viewBox="0 0 16 16" fill="no
 const WhatsAppIcon = () => <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 14l1-3a6 6 0 1 1 2.5 2.5L2 14z"/></g></svg>;
 const RefundIcon = () => <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9a5 5 0 1 0 1.5-3.5"/><path d="M3 3v3h3"/></g></svg>;
 
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function Toast({ message, tone = 'good', onDismiss }: { message: string; tone?: 'good' | 'bad'; onDismiss: () => void }) {
+  return (
+    <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 300, background: 'var(--bg-2)', border: `1px solid var(--${tone})`, borderRadius: 10, padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.3)', maxWidth: '90vw' }}>
+      <span style={{ color: `var(--${tone})`, fontSize: 16 }}>{tone === 'good' ? '✓' : '⚠'}</span>
+      <span style={{ fontSize: 13.5 }}>{message}</span>
+      <button onClick={onDismiss} style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-3)', fontSize: 18, padding: 0, lineHeight: 1 }}>×</button>
+    </div>
+  );
+}
+
+const modalInputStyle: React.CSSProperties = {
+  width: '100%', padding: '8px 12px', borderRadius: 7, border: '1px solid var(--line)',
+  background: 'var(--bg-3)', color: 'var(--fg)', fontSize: 13.5, outline: 'none', fontFamily: 'inherit',
+};
+
+// ── Refund Modal ────────────────────────────────────────────────────────────
+function RefundModal({ open, onClose, onConfirm, saving }: { open: boolean; onClose: () => void; onConfirm: (reason: string) => void; saving: boolean }) {
+  const [reason, setReason] = useState('');
+  useEffect(() => { if (open) setReason(''); }, [open]);
+  if (!open) return null;
+  return (
+    <div className="drawer-overlay" onClick={onClose}>
+      <div className="drawer" onClick={(e) => e.stopPropagation()} style={{ width: 380 }}>
+        <div className="drawer-head">
+          <span style={{ fontWeight: 500 }}>Refund this sale</span>
+          <button className="icon-btn" onClick={onClose}>{Icons.close}</button>
+        </div>
+        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ padding: '10px 12px', borderRadius: 7, background: 'var(--warn-soft)', border: '1px solid rgba(251,191,36,0.3)', fontSize: 12.5, color: 'var(--warn)' }}>
+            This marks the sale as refunded and returns all items to stock. This cannot be undone.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Reason (optional)</label>
+            <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} placeholder="Customer changed mind, wrong item, etc." style={{ ...modalInputStyle, resize: 'vertical' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-soft" onClick={() => onConfirm(reason)} disabled={saving} style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center', color: 'var(--bad)' }}>
+              {saving ? 'Refunding…' : 'Confirm refund'}
+            </button>
+            <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Attach Customer Modal ─────────────────────────────────────────────────────
+function AttachCustomerModal({ open, transactionId, onClose, onSuccess }: { open: boolean; transactionId: string; onClose: () => void; onSuccess: (t: TransactionDetail, msg: string) => void }) {
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState<CustomerListItem[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [attaching, setAttaching] = useState<string | null>(null);
+
+  useEffect(() => { if (open) { setSearch(''); setResults([]); } }, [open]);
+  useEffect(() => {
+    if (!open || !search.trim()) { setResults([]); return; }
+    setSearching(true);
+    const t = setTimeout(() => {
+      customerApi.getList(`search=${encodeURIComponent(search.trim())}`).then((res) => {
+        setSearching(false);
+        if (res.success) setResults(res.data.slice(0, 8));
+      });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search, open]);
+
+  async function pick(c: CustomerListItem) {
+    setAttaching(c.id);
+    const res = await transactionApi.attachCustomer(transactionId, c.id);
+    setAttaching(null);
+    if (res.success) {
+      onSuccess(res.data, `${c.name} added to this sale.`);
+      onClose();
+    }
+  }
+
+  if (!open) return null;
+  return (
+    <div className="drawer-overlay" onClick={onClose}>
+      <div className="drawer" onClick={(e) => e.stopPropagation()} style={{ width: 380 }}>
+        <div className="drawer-head">
+          <span style={{ fontWeight: 500 }}>Add customer to this sale</span>
+          <button className="icon-btn" onClick={onClose}>{Icons.close}</button>
+        </div>
+        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or phone…" style={modalInputStyle} autoFocus />
+          {searching && <div style={{ fontSize: 11.5, color: 'var(--fg-4)' }}>Searching…</div>}
+          {results.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => pick(c)}
+              disabled={!!attaching}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', textAlign: 'left', padding: '9px 12px', border: '1px solid var(--line)', borderRadius: 7, background: 'var(--bg-3)', cursor: 'pointer', color: 'var(--fg)', fontFamily: 'inherit' }}
+            >
+              <div>
+                <div style={{ fontSize: 13 }}>{c.name}</div>
+                <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{c.phone}</div>
+              </div>
+              {attaching === c.id && <span style={{ fontSize: 11 }}>Adding…</span>}
+            </button>
+          ))}
+          {!searching && search.trim() && results.length === 0 && (
+            <div style={{ fontSize: 11.5, color: 'var(--fg-4)' }}>
+              No matches. <Link href="/customers/new" style={{ color: 'var(--accent)' }}>Add a new customer</Link> first.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Email Receipt Modal ────────────────────────────────────────────────────────
+function EmailReceiptModal({ open, onClose, onSend, sending }: { open: boolean; onClose: () => void; onSend: (email: string) => void; sending: boolean }) {
+  const [email, setEmail] = useState('');
+  useEffect(() => { if (open) setEmail(''); }, [open]);
+  if (!open) return null;
+  return (
+    <div className="drawer-overlay" onClick={onClose}>
+      <div className="drawer" onClick={(e) => e.stopPropagation()} style={{ width: 360 }}>
+        <div className="drawer-head">
+          <span style={{ fontWeight: 500 }}>Email receipt</span>
+          <button className="icon-btn" onClick={onClose}>{Icons.close}</button>
+        </div>
+        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 12.5, color: 'var(--fg-2)' }}>Email address</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="customer@email.com" style={modalInputStyle} autoFocus />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-primary" onClick={() => onSend(email)} disabled={sending || !email.trim()} style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+              {sending ? 'Sending…' : 'Send receipt'}
+            </button>
+            <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TransactionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [t, setT] = useState<TransactionDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refunding, setRefunding] = useState(false);
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; tone: 'good' | 'bad' } | null>(null);
+
+  function notify(msg: string, tone: 'good' | 'bad' = 'good') {
+    setToast({ msg, tone });
+    setTimeout(() => setToast(null), 4000);
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -73,6 +232,56 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
       }
     });
   }, [id]);
+
+  function handlePrint() {
+    if (!t) return;
+    openReceiptPrintWindow(t);
+  }
+
+  function handleWhatsApp() {
+    if (!t) return;
+    const lines = t.lines.map(l => `${l.qty}x ${l.product_name} - ${fmt(l.line_total)}`).join('\n');
+    const message = `Receipt ${t.txn_number}\n${fmtDT(new Date(t.created_at))}\n\n${lines}\n\nTOTAL: ${fmt(t.total)}\nPaid via ${t.payment_method}\n\nAsante sana!`;
+    const phone = (t.customer_phone || '').replace(/[^\d]/g, '');
+    const url = `https://wa.me/${phone.startsWith('255') ? phone : phone ? '255' + phone.replace(/^0/, '') : ''}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  }
+
+  async function handleRefund(reason: string) {
+    setRefunding(true);
+    const res = await transactionApi.refund(id, reason);
+    setRefunding(false);
+    setRefundOpen(false);
+    if (res.success) {
+      setT(res.data);
+      notify('Sale refunded and stock restored.');
+    } else {
+      notify(res.message || 'Refund failed.', 'bad');
+    }
+  }
+
+  async function handleAskAi() {
+    if (!t) return;
+    setAsking(true);
+    const lines = t.lines.map(l => `${l.qty}x ${l.product_name}`).join(', ');
+    const message = `Tell me about transaction ${t.txn_number}: ${fmt(t.total)} total, items: ${lines}, paid via ${t.payment_method}, customer: ${t.customer_name}. Anything notable about this sale — pricing, margin, or follow-up worth flagging?`;
+    const res = await aiApi.startChat(message);
+    setAsking(false);
+    if (res.success) router.push('/ai');
+    else notify(res.message || 'Could not reach Ziada AI.', 'bad');
+  }
+
+  async function handleEmailReceipt(email: string) {
+    setEmailSending(true);
+    const res = await transactionApi.emailReceipt(id, email);
+    setEmailSending(false);
+    if (res.success) {
+      notify(`Receipt sent to ${email}.`);
+      setEmailOpen(false);
+    } else {
+      notify(res.message || 'Could not send email.', 'bad');
+    }
+  }
 
   if (loading) {
     return (
@@ -137,10 +346,10 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}><PrintIcon /> Print receipt</button>
-            <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }}><WhatsAppIcon /> Send via WhatsApp</button>
-            {t.status !== 'refunded' && <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }}><RefundIcon /> Refund sale</button>}
-            <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.sparkles} Ask AI about this</button>
+            <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }} onClick={handlePrint}><PrintIcon /> Print receipt</button>
+            <button className="btn btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: 5 }} onClick={handleWhatsApp}><WhatsAppIcon /> Send via WhatsApp</button>
+            {t.status !== 'refunded' && <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }} onClick={() => setRefundOpen(true)}><RefundIcon /> Refund sale</button>}
+            <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }} onClick={handleAskAi} disabled={asking}>{Icons.sparkles} {asking ? 'Asking…' : 'Ask AI about this'}</button>
           </div>
         </div>
       </div>
@@ -323,13 +532,13 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
           <div className="surface" style={{ marginBottom: 14 }}>
             <div className="card-head">
               <span className="card-title">Customer</span>
-              {t.customer && <a href="#" className="mono" style={{ fontSize: 11, color: 'var(--accent)' }}>View profile →</a>}
+              {t.customer && <Link href={`/customers/${t.customer}`} className="mono" style={{ fontSize: 11, color: 'var(--accent)' }}>View profile →</Link>}
             </div>
             <div style={{ padding: '14px 16px' }}>
               {t.customer_name === 'Walk-in' || !t.customer_name ? (
                 <div style={{ color: 'var(--fg-3)', fontSize: 13 }}>
                   Walk-in customer (no profile attached).
-                  <button className="btn btn-ghost" style={{ marginTop: 10, padding: '5px 10px', fontSize: 12 }}>+ Add customer to this sale</button>
+                  <button className="btn btn-ghost" style={{ marginTop: 10, padding: '5px 10px', fontSize: 12 }} onClick={() => setAttachOpen(true)}>+ Add customer to this sale</button>
                 </div>
               ) : (
                 <>
@@ -364,8 +573,8 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
             <div className="card-head"><span className="card-title">Receipt</span></div>
             <div style={{ padding: 16 }}>
               <div style={{ background: 'var(--bg)', border: '1px dashed var(--line-2)', borderRadius: 6, padding: '14px 16px', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--fg-2)', lineHeight: 1.7 }}>
-                <div style={{ textAlign: 'center', color: 'var(--fg)', fontWeight: 500 }}>DUKA KUU — KARIAKOO</div>
-                <div style={{ textAlign: 'center', color: 'var(--fg-4)' }}>Tin: 109-882-461</div>
+                <div style={{ textAlign: 'center', color: 'var(--fg)', fontWeight: 500 }}>{t.store_name}</div>
+                {t.store_address && <div style={{ textAlign: 'center', color: 'var(--fg-4)' }}>{t.store_address}</div>}
                 <div style={{ borderTop: '1px dashed var(--line-2)', margin: '8px 0', color: 'var(--fg-3)' }}></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t.txn_number}</span><span>{fmtTime(ts)}</span></div>
                 <div style={{ borderTop: '1px dashed var(--line-2)', margin: '8px 0' }}></div>
@@ -386,13 +595,23 @@ export default function TransactionDetailPage({ params }: { params: Promise<{ id
                 <div style={{ textAlign: 'center', color: 'var(--fg-4)' }}>asante sana · come again</div>
               </div>
               <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-                <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '6px 10px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.download} PDF</button>
-                <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '6px 10px', fontSize: 12 }}>Email</button>
+                <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '6px 10px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }} onClick={handlePrint}>{Icons.download} PDF</button>
+                <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '6px 10px', fontSize: 12 }} onClick={() => setEmailOpen(true)}>Email</button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <RefundModal open={refundOpen} onClose={() => setRefundOpen(false)} onConfirm={handleRefund} saving={refunding} />
+      <AttachCustomerModal
+        open={attachOpen}
+        transactionId={id}
+        onClose={() => setAttachOpen(false)}
+        onSuccess={(updated, msg) => { setT(updated); notify(msg); }}
+      />
+      <EmailReceiptModal open={emailOpen} onClose={() => setEmailOpen(false)} onSend={handleEmailReceipt} sending={emailSending} />
+      {toast && <Toast message={toast.msg} tone={toast.tone} onDismiss={() => setToast(null)} />}
     </AppShell>
   );
 }

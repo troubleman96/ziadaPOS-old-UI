@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
-import { fmt, fmtShort, fmtTime } from '../../lib/utils';
+import { fmt, fmtShort, fmtTime, localDateStr } from '../../lib/utils';
 import { transactionApi, TransactionListItem } from '../../lib/api';
 
 const SPINNER = (
@@ -86,7 +86,7 @@ export default function TransactionsPage() {
       const from = new Date();
       from.setHours(0, 0, 0, 0);
       if (days > 0) from.setDate(from.getDate() - days);
-      params.set('date_from', from.toISOString().slice(0, 10));
+      params.set('date_from', localDateStr(from));
     }
     transactionApi.getList(params.toString()).then((res) => {
       if (cancelled) return;
