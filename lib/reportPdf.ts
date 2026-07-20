@@ -588,3 +588,73 @@ export function openReportPrintWindow(
   w.focus();
   setTimeout(() => w.print(), 600);
 }
+
+// ── Receipt print (Print receipt / PDF buttons on /transactions/[id]) ─────────
+
+interface ReceiptData {
+  txn_number: string;
+  created_at: string;
+  store_name: string;
+  store_address: string;
+  payment_method: string;
+  total: number;
+  cashier_name: string;
+  till_number: string;
+  lines: { qty: number; product_name: string; line_total: number }[];
+}
+
+export function openReceiptPrintWindow(t: ReceiptData): void {
+  const ts = new Date(t.created_at);
+  const dateStr = ts.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const timeStr = ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+  const linesHtml = t.lines.map(l => `
+    <div class="row"><span class="trunc">${l.qty}&times; ${escapeHtml(l.product_name)}</span><span>${fmtTZS(l.line_total)}</span></div>
+  `).join('');
+
+  const html = `<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Receipt ${t.txn_number}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Courier New',monospace;background:#f2f2f2;color:#111;padding:24px 0}
+  .receipt{width:300px;margin:0 auto;background:#fff;padding:20px 18px;font-size:12px;line-height:1.7;border:1px dashed #999}
+  .center{text-align:center}
+  .store{font-weight:700;font-size:13px}
+  .muted{color:#666}
+  .divider{border-top:1px dashed #999;margin:8px 0}
+  .row{display:flex;justify-content:space-between;gap:8px}
+  .trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .total{font-weight:700}
+  @media print{ body{background:#fff;padding:0} .receipt{border:none;width:100%} }
+</style>
+</head><body>
+<div class="receipt">
+  <div class="center store">${escapeHtml(t.store_name)}</div>
+  ${t.store_address ? `<div class="center muted">${escapeHtml(t.store_address)}</div>` : ''}
+  <div class="divider"></div>
+  <div class="row"><span>${t.txn_number}</span><span>${dateStr} ${timeStr}</span></div>
+  <div class="divider"></div>
+  ${linesHtml}
+  <div class="divider"></div>
+  <div class="row total"><span>TOTAL</span><span>${fmtTZS(t.total)}</span></div>
+  <div class="row muted"><span>${escapeHtml(t.payment_method)}</span><span>${fmtTZS(t.total)}</span></div>
+  <div class="divider"></div>
+  <div class="muted" style="font-size:10.5px">Cashier: ${escapeHtml(t.cashier_name)} &middot; Till: ${escapeHtml(t.till_number)}</div>
+  <div class="center muted" style="margin-top:8px">asante sana &middot; come again</div>
+</div>
+</body></html>`;
+
+  const w = window.open('', '_blank', 'width=420,height=720,scrollbars=yes');
+  if (!w) { alert('Pop-up blocked. Please allow pop-ups for this site.'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 400);
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}

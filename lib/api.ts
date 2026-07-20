@@ -45,7 +45,7 @@ export interface UserProfile {
   is_phone_verified: boolean;
   is_email_verified: boolean;
   organisation: number | null;
-  store: number | null;
+  store: string | null;
 }
 
 export interface Organisation {
@@ -58,6 +58,9 @@ export interface Organisation {
   sendafrica_api_key_masked?: string;
   sms_sender_id?: string;
   sms_configured?: boolean;
+  ngamia_api_key_masked?: string;
+  ngamia_configured?: boolean;
+  ai_credits_monthly?: number;
 }
 
 export interface SubscriptionInfo {
@@ -255,6 +258,26 @@ export const authApi = {
   async mySubscription(accessToken?: string) {
     return apiFetch<SubscriptionInfo>('/api/v1/subscriptions/my-subscription/', {}, accessToken ?? await getUsableAccessToken() ?? undefined);
   },
+
+  async resendEmailConfirmation(): Promise<ApiResult<null>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<null>('/api/v1/auth/resend-confirmation/', { method: 'POST' }, token ?? undefined);
+  },
+
+  async sendPhoneOtp(): Promise<ApiResult<null>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<null>('/api/v1/accounts/me/verify-phone/send/', { method: 'POST' }, token ?? undefined);
+  },
+
+  async verifyPhoneOtp(code: string): Promise<ApiResult<null>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<null>('/api/v1/accounts/me/verify-phone/confirm/', { method: 'POST', body: JSON.stringify({ code }) }, token ?? undefined);
+  },
+
+  async switchStore(storeId: string): Promise<ApiResult<MeResponse['user']>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<MeResponse['user']>('/api/v1/accounts/me/switch-store/', { method: 'POST', body: JSON.stringify({ store: storeId }) }, token ?? undefined);
+  },
 };
 
 // ── Organisation API ───────────────────────────────────────────────────────────
@@ -265,7 +288,7 @@ export const organisationApi = {
     return apiFetch<Organisation>('/api/v1/accounts/organisation/', {}, token ?? undefined);
   },
 
-  async patch(payload: Partial<{ sendafrica_api_key: string; sms_sender_id: string }>): Promise<ApiResult<Organisation>> {
+  async patch(payload: Partial<{ sendafrica_api_key: string; sms_sender_id: string; ngamia_api_key: string }>): Promise<ApiResult<Organisation>> {
     const token = await getUsableAccessToken();
     return apiFetch<Organisation>('/api/v1/accounts/organisation/', { method: 'PATCH', body: JSON.stringify(payload) }, token ?? undefined);
   },
@@ -376,6 +399,11 @@ export interface CompletedTransaction {
 }
 
 export const inventoryApi = {
+  async create(payload: Record<string, unknown>): Promise<ApiResult<InventoryProduct>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<InventoryProduct>('/api/v1/inventory/products/', { method: 'POST', body: JSON.stringify(payload) }, token ?? undefined);
+  },
+
   async getCategories(): Promise<ApiResult<Category[]>> {
     const token = await getUsableAccessToken();
     return apiFetch<Category[]>('/api/v1/inventory/categories/', {}, token ?? undefined);
@@ -476,8 +504,23 @@ export const inventoryApi = {
   },
 
   async restock(id: string, qty: number, note?: string): Promise<ApiResult<InventoryProduct>> {
+    return this.adjustStock(id, qty, note || 'Restock');
+  },
+
+  // Real endpoint: POST /products/{id}/adjust-stock/ — quantity_change is signed
+  // (+ to add, − to remove) and always creates an audited StockAdjustment record.
+  async adjustStock(id: string, quantityChange: number, note: string): Promise<ApiResult<InventoryProduct>> {
     const token = await getUsableAccessToken();
-    return apiFetch<InventoryProduct>(`/api/v1/inventory/products/${id}/restock/`, { method: 'POST', body: JSON.stringify({ qty, note }) }, token ?? undefined);
+    return apiFetch<InventoryProduct>(
+      `/api/v1/inventory/products/${id}/adjust-stock/`,
+      { method: 'POST', body: JSON.stringify({ quantity_change: quantityChange, note }) },
+      token ?? undefined,
+    );
+  },
+
+  async getAdjustments(id: string): Promise<ApiResult<{ id: string; adjustment_type: string; quantity_change: number; quantity_before: number; quantity_after: number; note: string; performed_by_name: string; created_at: string }[]>> {
+    const token = await getUsableAccessToken();
+    return apiFetch(`/api/v1/inventory/products/${id}/adjustments/`, {}, token ?? undefined);
   },
 };
 
@@ -494,13 +537,15 @@ export interface DashboardKPIs {
   refund_total: number;
   discount_amount: number;
   discounted_count: number;
+  expense_amount: number;
+  expense_count: number;
   revenue_delta_pct: number | null;
   transaction_delta_pct: number | null;
 }
 
 export interface DashboardData {
   kpis_today:   DashboardKPIs;
-  hourly_today: { hour: number; label: string; revenue: number; profit: number; discount_amount: number; credit_amount: number; txn_count: number }[];
+  hourly_today: { hour: number; label: string; revenue: number; profit: number; discount_amount: number; credit_amount: number; expense_amount: number; txn_count: number }[];
   payment_mix:  { method: string; amount: number; pct: number }[];
   top_products: { product_id: string; product_name: string; product_sku: string; qty_sold: number; revenue: number; profit: number }[];
   low_stock:    { id: string; name: string; sku: string; stock: number; min_stock: number; status: string }[];
@@ -531,6 +576,9 @@ export interface TransactionDetail extends TransactionListItem {
   tax_amount: number;
   cost_total: number;
   channel: string;
+  store_name: string;
+  store_address: string;
+  store_phone: string;
   customer: string | null;
   notes: string;
   lines: {
@@ -699,6 +747,21 @@ export const transactionApi = {
     const token = await getUsableAccessToken();
     return apiFetch<TransactionDetail>(`/api/v1/transactions/${id}/`, {}, token ?? undefined);
   },
+
+  async refund(id: string, reason?: string): Promise<ApiResult<TransactionDetail>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<TransactionDetail>(`/api/v1/transactions/${id}/refund/`, { method: 'POST', body: JSON.stringify({ reason: reason ?? '' }) }, token ?? undefined);
+  },
+
+  async attachCustomer(id: string, customerId: string): Promise<ApiResult<TransactionDetail>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<TransactionDetail>(`/api/v1/transactions/${id}/attach-customer/`, { method: 'POST', body: JSON.stringify({ customer_id: customerId }) }, token ?? undefined);
+  },
+
+  async emailReceipt(id: string, email?: string): Promise<ApiResult<null>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<null>(`/api/v1/transactions/${id}/email-receipt/`, { method: 'POST', body: JSON.stringify({ email: email ?? '' }) }, token ?? undefined);
+  },
 };
 
 // ── Credits API ────────────────────────────────────────────────────────────────
@@ -739,6 +802,21 @@ export const creditsApi = {
       { method: 'POST', body: JSON.stringify({ direction: 'out', ...payload }) },
       token ?? undefined,
     );
+  },
+
+  async issueCredit(customerId: string, payload: { amount: number; due_date?: string; note?: string }): Promise<ApiResult<unknown>> {
+    const token = await getUsableAccessToken();
+    return apiFetch(`/api/v1/credits/customers/${customerId}/issue-credit/`, { method: 'POST', body: JSON.stringify(payload) }, token ?? undefined);
+  },
+
+  async sendAllReminders(body?: string): Promise<ApiResult<{ sent: number; failed: number; total_amount: number; errors: { customer: string; error: string }[] }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch('/api/v1/credits/send-all-reminders/', { method: 'POST', body: JSON.stringify({ body: body ?? '' }) }, token ?? undefined);
+  },
+
+  async draftReminder(tone: 'friendly' | 'firm' | 'final_notice' = 'friendly'): Promise<ApiResult<{ draft: string; customers_with_credit: number; total_outstanding: number; overdue_count: number }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch('/api/v1/credits/draft-reminder/', { method: 'POST', body: JSON.stringify({ tone }) }, token ?? undefined);
   },
 };
 
@@ -788,6 +866,11 @@ export const storesApi = {
   async patch(id: string, data: Partial<StoreItem>): Promise<ApiResult<StoreItem>> {
     const token = await getUsableAccessToken();
     return apiFetch<StoreItem>(`/api/v1/stores/${id}/`, { method: 'PATCH', body: JSON.stringify(data) }, token ?? undefined);
+  },
+
+  async create(data: { name: string; address?: string; phone?: string }): Promise<ApiResult<StoreItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<StoreItem>('/api/v1/stores/', { method: 'POST', body: JSON.stringify(data) }, token ?? undefined);
   },
 };
 
@@ -952,6 +1035,14 @@ export const staffApi = {
     const token = await getUsableAccessToken();
     return apiFetch<StaffMember>(`/api/v1/staff/${id}/permissions/`, { method: 'PATCH', body: JSON.stringify(payload) }, token ?? undefined);
   },
+  async create(payload: {
+    first_name: string; last_name: string; phone: string; email?: string;
+    role: string; shift: string; pin?: string;
+    can_refund?: boolean; can_discount?: boolean; can_view_reports?: boolean;
+  }): Promise<ApiResult<StaffMember>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<StaffMember>('/api/v1/staff/', { method: 'POST', body: JSON.stringify(payload) }, token ?? undefined);
+  },
 };
 
 // ── Discounts API ──────────────────────────────────────────────────────────────
@@ -1045,14 +1136,17 @@ export const reportsApi = {
     return apiFetch<{ report_types: ReportType[] }>('/api/v1/reports/types/', {}, token ?? undefined);
   },
 
-  async generateCSV(reportType: string, range: string): Promise<boolean> {
+  async generateCSV(reportType: string, params: { range?: string; dateFrom?: string; dateTo?: string }): Promise<boolean> {
     const token = await getUsableAccessToken();
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
+    const body = params.dateFrom && params.dateTo
+      ? { report_type: reportType, format: 'csv', date_from: params.dateFrom, date_to: params.dateTo }
+      : { report_type: reportType, format: 'csv', range: params.range };
     try {
       const res = await fetch(`${BASE_URL}/api/v1/reports/generate/`, {
         method: 'POST', headers,
-        body: JSON.stringify({ report_type: reportType, format: 'csv', range }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) return false;
       const blob = await res.blob();
@@ -1175,6 +1269,115 @@ export interface ExpenseSummary {
 }
 
 // ── Expense API ───────────────────────────────────────────────────────────────
+
+// ── AI types ───────────────────────────────────────────────────────────────────
+
+export interface AIMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  model_used: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  sources: string[];
+  created_at: string;
+}
+
+export interface AIConversationListItem {
+  id: string;
+  title: string;
+  first_message_preview: string;
+  message_count: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AIConversationDetail extends AIConversationListItem {
+  messages: AIMessage[];
+}
+
+export interface AISuggestion {
+  icon: string;
+  label: string;
+  key: string;
+}
+
+export interface AICreditsStatus {
+  remaining: number;
+  used: number;
+  allocated: number;
+  pct_used: number;
+}
+
+export interface AIUsageEntry {
+  id: string;
+  conversation_title: string;
+  model_used: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  created_at: string;
+}
+
+export interface AIUsage {
+  totals: { messages: number; prompt_tokens: number; completion_tokens: number };
+  this_month: { messages: number; prompt_tokens: number; completion_tokens: number };
+  recent: AIUsageEntry[];
+  ai_credits: AICreditsStatus;
+  ngamia_configured: boolean;
+}
+
+// ── AI API ─────────────────────────────────────────────────────────────────────
+
+export const aiApi = {
+  async getConversations(): Promise<ApiResult<AIConversationListItem[]>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<AIConversationListItem[]>('/api/v1/ai/conversations/', {}, token ?? undefined);
+  },
+
+  async getConversation(id: string): Promise<ApiResult<AIConversationDetail>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<AIConversationDetail>(`/api/v1/ai/conversations/${id}/`, {}, token ?? undefined);
+  },
+
+  async startChat(message: string, title?: string): Promise<ApiResult<{ conversation_id: string; message: AIMessage }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<{ conversation_id: string; message: AIMessage }>(
+      '/api/v1/ai/chat/',
+      { method: 'POST', body: JSON.stringify({ message, title }) },
+      token ?? undefined,
+    );
+  },
+
+  async continueChat(conversationId: string, message: string): Promise<ApiResult<{ message: AIMessage }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<{ message: AIMessage }>(
+      `/api/v1/ai/conversations/${conversationId}/chat/`,
+      { method: 'POST', body: JSON.stringify({ message }) },
+      token ?? undefined,
+    );
+  },
+
+  async renameConversation(id: string, title: string): Promise<ApiResult<AIConversationListItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<AIConversationListItem>(`/api/v1/ai/conversations/${id}/`, { method: 'PATCH', body: JSON.stringify({ title }) }, token ?? undefined);
+  },
+
+  async archiveConversation(id: string): Promise<ApiResult<AIConversationListItem>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<AIConversationListItem>(`/api/v1/ai/conversations/${id}/`, { method: 'PATCH', body: JSON.stringify({ is_active: false }) }, token ?? undefined);
+  },
+
+  async getSuggestions(): Promise<ApiResult<{ suggestions: AISuggestion[]; ai_credits: AICreditsStatus }>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<{ suggestions: AISuggestion[]; ai_credits: AICreditsStatus }>('/api/v1/ai/suggestions/', {}, token ?? undefined);
+  },
+
+  async getUsage(): Promise<ApiResult<AIUsage>> {
+    const token = await getUsableAccessToken();
+    return apiFetch<AIUsage>('/api/v1/ai/usage/', {}, token ?? undefined);
+  },
+};
 
 export const expenseApi = {
   async getList(params?: string): Promise<ApiResult<ExpenseItem[]>> {

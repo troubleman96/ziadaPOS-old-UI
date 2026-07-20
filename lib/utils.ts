@@ -18,6 +18,16 @@ export const fmtDT = (d: Date) =>
   d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' }) +
   ' · ' + fmtTime(d);
 
+// YYYY-MM-DD in the browser's local timezone — NOT d.toISOString().slice(0,10),
+// which gives the UTC date and is wrong for hours after local midnight but
+// before UTC midnight (e.g. 01:00 EAT is still "yesterday" in UTC).
+export const localDateStr = (d: Date): string => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 function seeded(s: number) {
   const x = Math.sin(s) * 10000;
   return x - Math.floor(x);
