@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
 import { fmt, fmtShort } from '../../../lib/utils';
-import { inventoryApi, InventoryProduct, type Category } from '../../../lib/api';
+import { inventoryApi, aiApi, InventoryProduct, type Category } from '../../../lib/api';
 
 const SPINNER = (
   <>
@@ -112,8 +112,7 @@ function RestockModal({ product, onClose, onSuccess }: { product: InventoryProdu
     if (res.success) {
       onSuccess(product.stock + n);
     } else {
-      // Fallback: optimistic if API endpoint doesn't exist yet
-      onSuccess(product.stock + n);
+      setErr(res.message || 'Restock failed. Please try again.');
     }
   }
 
@@ -177,15 +176,15 @@ function AdjustModal({ product, onClose, onSuccess }: { product: InventoryProduc
     const n = parseInt(qty, 10);
     if (!n || n <= 0) { setErr('Enter a positive quantity.'); return; }
     if (direction === 'remove' && n > product.stock) { setErr('Cannot remove more than current stock.'); return; }
+    if (!reason) { setErr('Select a reason.'); return; }
     setBusy(true);
     const delta = direction === 'add' ? n : -n;
-    const newStock = product.stock + delta;
-    const res = await inventoryApi.update(product.id, { stock: newStock });
+    const res = await inventoryApi.adjustStock(product.id, delta, reason);
     setBusy(false);
-    if (res.success) onSuccess(newStock);
-    else {
-      // Fallback optimistic
-      onSuccess(newStock);
+    if (res.success) {
+      onSuccess(product.stock + delta);
+    } else {
+      setErr(res.message || 'Stock adjustment failed. Please try again.');
     }
   }
 
@@ -447,6 +446,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [editOpen,    setEditOpen]    = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [categories,  setCategories]  = useState<Category[]>([]);
+  const [asking,      setAsking]      = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [moreOpen,    setMoreOpen]    = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -500,6 +502,32 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const monthRevenue = weeklySold * 4 * p.price;
   const monthProfit = weeklySold * 4 * (p.price - p.cost);
 
+  async function handleAskAi() {
+    setMoreOpen(false);
+    setAsking(true);
+    const message = `Tell me about "${p!.name}" (SKU ${p!.sku}): ${p!.stock} units in stock (min ${p!.min_stock}, max ${p!.max_stock}), price TZS ${p!.price}, cost TZS ${p!.cost}. ${weeklySold} sold/week. Any pricing, restocking, or margin advice?`;
+    const res = await aiApi.startChat(message);
+    setAsking(false);
+    if (res.success) router.push('/ai');
+  }
+
+  async function handleDuplicate() {
+    setMoreOpen(false);
+    setDuplicating(true);
+    const res = await inventoryApi.create({
+      name: `Copy of ${p!.name}`,
+      category: p!.category,
+      price: p!.price,
+      cost: p!.cost,
+      stock: 0,
+      min_stock: p!.min_stock,
+      max_stock: p!.max_stock,
+      is_active: false,
+    });
+    setDuplicating(false);
+    if (res.success) router.push(`/inventory/${res.data.id}`);
+  }
+
   return (
     <AppShell
       crumbs={[{ label: 'ziada', href: '/' }, { label: 'Duka Kuu', href: '/' }, { label: 'Inventory', href: '/inventory' }, { label: p.name }]}
@@ -531,13 +559,49 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {p.barcode} <span style={{ color: 'var(--fg-4)', margin: '0 6px' }}>·</span>
             {p.supplier_name && <>supplier: {p.supplier_name}</>}
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {/* Desktop: all actions inline */}
+          <div className="desktop-only" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 5 }} onClick={() => setRestockOpen(true)}>{Icons.plus} Restock</button>
             <button className="btn btn-soft" onClick={() => setEditOpen(true)}>Edit product</button>
             <button className="btn btn-soft" onClick={() => setAdjustOpen(true)}>Stock adjustment</button>
-            <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{Icons.sparkles} Ask AI</button>
-            <button className="btn btn-ghost">Duplicate</button>
+            <button className="btn btn-soft" style={{ display: 'flex', alignItems: 'center', gap: 5 }} onClick={handleAskAi} disabled={asking}>{Icons.sparkles} {asking ? 'Asking…' : 'Ask AI'}</button>
+            <button className="btn btn-ghost" onClick={handleDuplicate} disabled={duplicating}>{duplicating ? 'Duplicating…' : 'Duplicate'}</button>
             <button className="btn btn-ghost" onClick={() => setArchiveOpen(true)}>Archive</button>
+          </div>
+
+          {/* Mobile: primary action + overflow menu to avoid ragged button wrapping */}
+          <div className="mobile-only" style={{ display: 'flex', gap: 8, position: 'relative' }}>
+            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: 5 }} onClick={() => setRestockOpen(true)}>{Icons.plus} Restock</button>
+            <button className="btn btn-soft icon-btn" style={{ width: 38, height: 38, flexShrink: 0 }} onClick={() => setMoreOpen(o => !o)} aria-label="More actions">{Icons.dotsVertical}</button>
+            {moreOpen && (
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 190 }} onClick={() => setMoreOpen(false)} />
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: 4, zIndex: 191,
+                  background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 10,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.22)', overflow: 'hidden', minWidth: 180,
+                }}>
+                  {[
+                    { label: 'Edit product', onClick: () => { setMoreOpen(false); setEditOpen(true); } },
+                    { label: 'Stock adjustment', onClick: () => { setMoreOpen(false); setAdjustOpen(true); } },
+                    { label: asking ? 'Asking…' : 'Ask AI', onClick: handleAskAi, disabled: asking },
+                    { label: duplicating ? 'Duplicating…' : 'Duplicate', onClick: handleDuplicate, disabled: duplicating },
+                    { label: 'Archive', onClick: () => { setMoreOpen(false); setArchiveOpen(true); }, danger: true },
+                  ].map((item) => (
+                    <button
+                      key={item.label}
+                      onClick={item.onClick}
+                      disabled={item.disabled}
+                      style={{
+                        display: 'block', width: '100%', padding: '10px 14px', border: 'none',
+                        background: 'transparent', color: item.danger ? 'var(--bad)' : 'var(--fg)',
+                        cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', fontSize: 13,
+                      }}
+                    >{item.label}</button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

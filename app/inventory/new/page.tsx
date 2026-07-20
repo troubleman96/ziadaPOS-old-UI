@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { AppShell } from '../../../components/app-shell';
 import { Icons } from '../../../components/icons';
-import { inventoryApi, type Category, type BulkCreateResult } from '../../../lib/api';
+import { inventoryApi, aiApi, type Category, type BulkCreateResult } from '../../../lib/api';
 
 // ── Category Combobox ──────────────────────────────────────────────────────────
 
@@ -310,6 +310,25 @@ function ProductCard({ draft, index, canRemove, onUpdate, onRemove }: ProductCar
   const { name, sku, price, cost, category, barcode, openStock, minStock, maxStock, supplier, status, imagePreview, errors, saved, saving } = draft;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  async function suggestPriceAndReorder() {
+    if (!name.trim()) { setAiError('Enter a product name first.'); return; }
+    setAiLoading(true);
+    setAiError(null);
+    setAiSuggestion(null);
+    const parts = [`Product: "${name.trim()}"`];
+    if (category) parts.push(`category: ${category}`);
+    if (cost) parts.push(`cost price: TZS ${cost}`);
+    if (price) parts.push(`current planned selling price: TZS ${price}`);
+    const message = `I'm about to add this new product to my inventory — ${parts.join(', ')}. Suggest a good selling price (with target margin) and a sensible reorder point / max stock for a Tanzanian retail shop. Be specific with numbers.`;
+    const res = await aiApi.startChat(message);
+    setAiLoading(false);
+    if (res.success) setAiSuggestion(res.data.message.content);
+    else setAiError(res.message);
+  }
 
   function handleImageSelect(file: File) {
     if (!file.type.startsWith('image/')) return;
@@ -490,10 +509,20 @@ function ProductCard({ draft, index, canRemove, onUpdate, onRemove }: ProductCar
               </div>
               <button
                 type="button"
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 7, border: '1px solid var(--accent-line)', background: 'var(--bg-2)', color: 'var(--accent)', fontSize: 12.5, fontFamily: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                onClick={suggestPriceAndReorder}
+                disabled={aiLoading}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 7, border: '1px solid var(--accent-line)', background: 'var(--bg-2)', color: 'var(--accent)', fontSize: 12.5, fontFamily: 'inherit', cursor: aiLoading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: aiLoading ? 0.6 : 1 }}
               >
-                {Icons.sparkles} Suggest price &amp; reorder
+                {Icons.sparkles} {aiLoading ? 'Thinking…' : 'Suggest price & reorder'}
               </button>
+              {aiError && (
+                <div style={{ marginTop: 10, fontSize: 12, color: 'var(--bad)' }}>{aiError}</div>
+              )}
+              {aiSuggestion && (
+                <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 7, background: 'var(--bg-2)', border: '1px solid var(--line)', fontSize: 12.5, color: 'var(--fg-2)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                  {aiSuggestion}
+                </div>
+              )}
             </div>
           </div>
 
