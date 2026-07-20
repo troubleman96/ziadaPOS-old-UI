@@ -6,7 +6,6 @@ import { AppShell } from '../../components/app-shell';
 import { Icons } from '../../components/icons';
 import { fmt, fmtShort } from '../../lib/utils';
 import { inventoryApi, transactionApi, customerApi, storesApi, type POSProduct, type Category, type CompletedTransaction } from '../../lib/api';
-import { getCachedSubscription } from '../../lib/auth';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -378,22 +377,6 @@ function MobileCartSheet({ cart, setCart, payment, setPayment, onClose, onComple
   );
 }
 
-// ── Trial banner ──────────────────────────────────────────────────────────────
-
-function TrialBanner({ daysRemaining, onDismiss }: { daysRemaining: number; onDismiss: () => void }) {
-  return (
-    <div style={{ padding: '8px 14px', borderBottom: '1px solid var(--line)', background: 'linear-gradient(90deg, rgba(251,191,36,0.08), transparent 60%)', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, minWidth: 0 }}>
-      <span className="pill warn" style={{ fontSize: 10, flexShrink: 0 }}>TRIAL</span>
-      <span style={{ fontSize: 12.5, color: 'var(--fg-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-        <span className="desktop-only">Trial ends in </span><strong style={{ color: 'var(--fg)' }}>{daysRemaining} day{daysRemaining !== 1 ? 's' : ''}</strong><span className="desktop-only"> left.</span><span className="mobile-only" style={{ color: 'var(--fg-3)' }}> left</span>
-      </span>
-      <div style={{ flex: 1 }} />
-      <Link href="/settings?tab=billing" className="btn btn-primary" style={{ padding: '5px 10px', fontSize: 12, flexShrink: 0, textDecoration: 'none' }}>Upgrade</Link>
-      <button onClick={onDismiss} className="icon-btn" style={{ width: 28, height: 28, fontSize: 18, flexShrink: 0 }}>×</button>
-    </div>
-  );
-}
-
 // ── Products sticky header ────────────────────────────────────────────────────
 
 function ProductsSticky({ query, setQuery, cat, setCat, categories, resultCount, totalCount, inputRef, cartCount, cartSubtotal, onOpenCart, scanMode, setScanMode, onScanEnter }: {
@@ -644,7 +627,13 @@ function CartPanel({ cart, setCart, payment, setPayment, discount, setDiscount, 
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', border: `1px solid ${discountAmt > 0 ? 'var(--accent-line)' : 'var(--line-2)'}`, borderRadius: 6, overflow: 'hidden', background: discountAmt > 0 ? 'var(--accent-soft)' : 'var(--bg)' }}>
                   <span style={{ paddingLeft: 6, fontFamily: 'var(--mono)', fontSize: 11, color: discountAmt > 0 ? 'var(--accent)' : 'var(--fg-4)' }}>TZS</span>
-                  <input type="number" min={0} value={discount === 0 ? '' : discount} placeholder="0" onChange={e => setDiscount(Math.max(0, Number(e.target.value) || 0))} style={{ width: 68, padding: '3px 6px', border: 0, outline: 0, background: 'transparent', color: discountAmt > 0 ? 'var(--accent)' : 'var(--fg)', fontFamily: 'var(--mono)', fontSize: 12.5, textAlign: 'right' }} />
+                  <input
+                    type="text" inputMode="numeric" pattern="[0-9]*"
+                    value={discount === 0 ? '' : discount}
+                    placeholder="0"
+                    onChange={e => setDiscount(Math.max(0, parseInt(e.target.value.replace(/\D/g, ''), 10) || 0))}
+                    style={{ width: 68, padding: '3px 6px', border: 0, outline: 0, background: 'transparent', color: discountAmt > 0 ? 'var(--accent)' : 'var(--fg)', fontFamily: 'var(--mono)', fontSize: 12.5, textAlign: 'right' }}
+                  />
                 </div>
                 {discountAmt > 0 && (
                   <>
@@ -734,9 +723,6 @@ export default function POSPage() {
   const [cart,      setCart]      = useState<Cart>({});
   const [payment,   setPayment]   = useState('Cash');
   const [discount,  setDiscount]  = useState(0);
-  const sub = getCachedSubscription();
-  const trialDaysLeft = sub?.is_trial && (sub.days_remaining ?? 0) <= 7 ? sub.days_remaining : null;
-  const [trialDismissed, setTrialDismissed] = useState(false);
   const [cartOpen,  setCartOpen]  = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<POSCustomer | null>(null);
   const [custPickerOpen,   setCustPickerOpen]   = useState(false);
@@ -881,10 +867,6 @@ export default function POSPage() {
       actions={<Link href="/transactions" className="btn btn-soft page-sec" style={{ padding: '7px 12px', fontSize: 13, textDecoration: 'none' }}>Recent sales</Link>}
     >
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-
-      {!trialDismissed && trialDaysLeft !== null && (
-        <TrialBanner daysRemaining={trialDaysLeft} onDismiss={() => setTrialDismissed(true)} />
-      )}
 
       {saleError && (
         <div style={{ padding: '8px 16px', background: 'rgba(251,113,133,0.12)', borderBottom: '1px solid rgba(251,113,133,0.2)', color: 'var(--bad)', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
