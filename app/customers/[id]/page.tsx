@@ -60,6 +60,26 @@ export default function CustomerDetailPage() {
   const [tab, setTab] = useState<'overview' | 'credit'>('overview');
   const [editOpen, setEditOpen] = useState(false);
 
+  const [smsOpen, setSmsOpen] = useState(false);
+  const [smsBody, setSmsBody] = useState('');
+  const [sendingSms, setSendingSms] = useState(false);
+  const [smsErr, setSmsErr] = useState<string | null>(null);
+  const [smsSent, setSmsSent] = useState(false);
+
+  async function sendSms() {
+    if (!customer || !smsBody.trim()) return;
+    setSendingSms(true);
+    setSmsErr(null);
+    const res = await customerApi.sendSms(customer.id, smsBody.trim());
+    setSendingSms(false);
+    if (res.success) {
+      setSmsSent(true);
+      setTimeout(() => { setSmsOpen(false); setSmsSent(false); setSmsBody(''); }, 1200);
+    } else {
+      setSmsErr(res.message);
+    }
+  }
+
   useEffect(() => {
     setLoading(true);
     customerApi.getDetail(id).then((res) => {
@@ -118,6 +138,9 @@ export default function CustomerDetailPage() {
               WhatsApp
             </button>
           </a>
+          <button className="btn btn-soft" onClick={() => { setSmsOpen(true); setSmsErr(null); setSmsSent(false); }} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+            {SmsIcon} SMS
+          </button>
           <button className="btn btn-soft" onClick={() => setEditOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
             {Icons.edit} Edit
           </button>
@@ -386,6 +409,46 @@ export default function CustomerDetailPage() {
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Save changes</button>
                 <button className="btn btn-ghost" onClick={() => setEditOpen(false)}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Send SMS drawer */}
+      {smsOpen && (
+        <div className="drawer-overlay" onClick={() => setSmsOpen(false)}>
+          <div className="drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="drawer-head">
+              <span style={{ fontWeight: 500 }}>Send SMS to {customer.name}</span>
+              <button className="icon-btn" style={{ width: 28, height: 28 }} onClick={() => setSmsOpen(false)}>×</button>
+            </div>
+            <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="mono" style={{ fontSize: 11, color: 'var(--fg-3)' }}>{customer.phone}</div>
+              <div className="form-group">
+                <label className="form-label">Message</label>
+                <textarea
+                  className="form-input"
+                  value={smsBody}
+                  onChange={(e) => setSmsBody(e.target.value)}
+                  rows={4}
+                  style={{ resize: 'vertical', fontFamily: 'inherit' }}
+                />
+                <div className="mono" style={{ fontSize: 10.5, color: 'var(--fg-4)', marginTop: 4 }}>{smsBody.length} chars · {Math.ceil(smsBody.length / 160) || 1} SMS part(s)</div>
+              </div>
+              {smsErr && (
+                <div style={{ padding: '10px 12px', borderRadius: 7, background: 'var(--bad-soft)', border: '1px solid rgba(248,113,113,0.25)', fontSize: 12.5, color: 'var(--bad)' }}>
+                  {smsErr}
+                  {smsErr.toLowerCase().includes('not configured') && (
+                    <> — <Link href="/settings" style={{ color: 'var(--bad)', textDecoration: 'underline' }}>configure in Settings</Link></>
+                  )}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <button onClick={sendSms} disabled={sendingSms || !smsBody.trim()} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', display: 'flex', alignItems: 'center' }}>
+                  {sendingSms ? 'Sending…' : smsSent ? 'Sent!' : 'Send SMS'}
+                </button>
+                <button className="btn btn-ghost" onClick={() => setSmsOpen(false)}>Cancel</button>
               </div>
             </div>
           </div>
