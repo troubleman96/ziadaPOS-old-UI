@@ -28,18 +28,9 @@ export default function ForgotPasswordPage() {
 
     setLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
-      const res = await fetch(`${apiUrl}/api/v1/auth/forgot-password/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: trimmed }),
-      });
-      if (res.ok) {
-        setStep('sent');
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setError(data.message ?? 'Something went wrong. Try again or contact support.');
-      }
+      // Mock: simulate success
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setStep('sent');
     } catch {
       setError('Could not reach the server. Check your connection and try again.');
     } finally {

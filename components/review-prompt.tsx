@@ -98,17 +98,8 @@ function ReviewPromptModal({ trigger, onDone }: ReviewPromptModalProps) {
     if (rating === 0) return;
     setSubmitting(true);
     try {
-      const { getAccessToken } = await import('../lib/auth');
-      const token = getAccessToken();
-      const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
-      await fetch(`${BASE_URL}/api/v1/reviews/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ rating, body, trigger }),
-      });
+      // Mock: simulate review submission
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch {
       // Silent — don't block the user if the review fails to submit
     } finally {

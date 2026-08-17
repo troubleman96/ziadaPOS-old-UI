@@ -665,49 +665,12 @@ export default function NewProductPage() {
       }
     }
 
-    // ── 2. Products with images — parallel individual FormData POSTs ──────────
+    // ── 2. Products with images — mock save ──────────
     if (withImages.length > 0) {
-      const token = (await import('../../../lib/auth')).getAccessToken();
-      const BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000').replace(/\/$/, '');
-      const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
-
       await Promise.all(withImages.map(async (draft) => {
-        const fd = new FormData();
-        fd.append('name',     draft.name.trim());
-        fd.append('price',    draft.price);
-        fd.append('cost',     draft.cost);
-        fd.append('is_active', String(draft.status === 'active'));
-        if (draft.sku.trim())      fd.append('sku',               draft.sku.trim());
-        if (draft.category.trim()) fd.append('category_name_input', draft.category.trim());
-        if (draft.barcode.trim())  fd.append('barcode',            draft.barcode.trim());
-        if (draft.openStock)       fd.append('stock',              draft.openStock);
-        if (draft.minStock)        fd.append('min_stock',          draft.minStock);
-        if (draft.maxStock)        fd.append('max_stock',          draft.maxStock);
-        fd.append('image', draft.imageFile!);
-
-        try {
-          const res  = await fetch(`${BASE_URL}/api/v1/inventory/products/`, {
-            method: 'POST',
-            headers: authHeader,
-            body: fd,
-          });
-          const json = await res.json() as Record<string, unknown>;
-          if (!res.ok) {
-            const flat: Record<string, string> = {};
-            if (json.errors) {
-              for (const [k, v] of Object.entries(json.errors as Record<string, unknown>)) {
-                flat[k] = Array.isArray(v) ? (v as string[])[0] : String(v);
-              }
-            } else {
-              flat._submit = (json.message as string) ?? 'Save failed.';
-            }
-            update(draft.id, { saving: false, errors: flat });
-          } else {
-            update(draft.id, { saving: false, saved: true, errors: {} });
-          }
-        } catch {
-          update(draft.id, { saving: false, errors: { _submit: 'Network error. Please try again.' } });
-        }
+        // Mock: simulate save success
+        await new Promise(resolve => setTimeout(resolve, 200));
+        update(draft.id, { saving: false, saved: true, errors: {} });
       }));
     }
 

@@ -110,6 +110,8 @@ export function tokenExpiresAt(token: string): Date | null {
 }
 
 export function tokenIsExpired(token: string): boolean {
+  // Mock tokens are never expired
+  if (token.startsWith('mock-')) return false;
   const exp = tokenExpiresAt(token);
   return exp === null || exp <= new Date();
 }
